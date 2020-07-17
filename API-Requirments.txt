@@ -1,0 +1,13 @@
+API Requirments:
+Get Local Player -> done
+Get and set Enviorment 
+Get and set Damage on Mobs -> game1 probably
+Get and set Damage on Player -> game1
+Hook the Draw in game1 so you can draw to the screen
+
+
+
+//TODO
+
+
+
