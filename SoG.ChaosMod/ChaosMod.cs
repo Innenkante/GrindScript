@@ -57,5 +57,6 @@ namespace SoG.ChaosMod
             Console.WriteLine("NPC damaged...");
             Console.WriteLine(damage + "::" + type.ToString());
         }
+
     }
 }

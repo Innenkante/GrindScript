@@ -33,7 +33,7 @@ namespace SoG.ModLauncher
             var injector = new Injection(secretsOfGrindea.Handle);
 
 
-            injector.Inject("modloader.dll"); 
+            injector.Inject("ModLoader.dll"); 
             
         }
 

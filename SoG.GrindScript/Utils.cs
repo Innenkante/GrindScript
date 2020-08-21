@@ -50,10 +50,17 @@ namespace SoG.GrindScript
             return (T)t.GetField(field, BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(instance);
         }
 
+        public static T GetPublicInstanceField<T>(this TypeInfo t, object instance, string field)
+        {
+            return (T)t.GetField(field, BindingFlags.Instance | BindingFlags.Public)?.GetValue(instance);
+        }
+
         public static T GetPublicStaticField<T>(this TypeInfo t, string field)
         {
             return (T) t.GetField(field, BindingFlags.Public | BindingFlags.Static)?.GetValue(null);
         }
+
+
     }
 
 
