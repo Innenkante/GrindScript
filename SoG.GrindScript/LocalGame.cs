@@ -13,9 +13,9 @@ namespace SoG.GrindScript
         }
 
         public dynamic GetUnderlayingGame()
-            => _originalType;
+            => _originalObject;
 
         public int GetCurrentFloor()
-            => _originalType.xGameSessionData.xRogueLikeSession.iCurrentFloor;
+            => _originalObject.xGameSessionData.xRogueLikeSession.iCurrentFloor;
     }
 }

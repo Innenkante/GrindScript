@@ -12,7 +12,7 @@ namespace SoG.GrindScript
 
         public Enemy(object originalType) : base(originalType)
         {
-            Type = (EnemyTypes)_originalType.enType;
+            Type = (EnemyTypes)_originalObject.enType;
         }
     }
 }

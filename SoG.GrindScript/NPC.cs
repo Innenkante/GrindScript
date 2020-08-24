@@ -14,25 +14,25 @@ namespace SoG.GrindScript
     {
         public bool IsInteractable
         {
-            get => _originalType.bIsInteractable;
-            set => _originalType.bIsInteractable = value;
+            get => _originalObject.bIsInteractable;
+            set => _originalObject.bIsInteractable = value;
         }
 
         public bool IsGhost
         {
-            get => _originalType.bIsTwilightGhost;
-            set => _originalType.bIsTwilightGhost = value;
+            get => _originalObject.bIsTwilightGhost;
+            set => _originalObject.bIsTwilightGhost = value;
         }
 
         public bool LookAtPlayerOnInteraction
         {
-            get => _originalType.bLookAtPlayerAtInteraction;
-            set => _originalType.bLookAtPlayerAtInteraction = value;
+            get => _originalObject.bLookAtPlayerAtInteraction;
+            set => _originalObject.bLookAtPlayerAtInteraction = value;
         }
 
         public NPCTypes GetNPCType()
         {
-            return Enum.Parse(typeof(NPCTypes), _originalType.enType.ToString());
+            return Enum.Parse(typeof(NPCTypes), _originalObject.enType.ToString());
         }
 
         public NPC(object originalType) : base(originalType)
