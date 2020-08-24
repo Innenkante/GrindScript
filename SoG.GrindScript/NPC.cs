@@ -12,8 +12,32 @@ namespace SoG.GrindScript
 {
     public class NPC : ConvertedType
     {
+        public bool IsInteractable
+        {
+            get => _originalType.bIsInteractable;
+            set => _originalType.bIsInteractable = value;
+        }
+
+        public bool IsGhost
+        {
+            get => _originalType.bIsTwilightGhost;
+            set => _originalType.bIsTwilightGhost = value;
+        }
+
+        public bool LookAtPlayerOnInteraction
+        {
+            get => _originalType.bLookAtPlayerAtInteraction;
+            set => _originalType.bLookAtPlayerAtInteraction = value;
+        }
+
+        public NPCTypes GetNPCType()
+        {
+            return Enum.Parse(typeof(NPCTypes), _originalType.enType.ToString());
+        }
+
         public NPC(object originalType) : base(originalType)
         {
+            
         }
 
         

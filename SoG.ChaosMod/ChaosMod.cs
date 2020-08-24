@@ -59,7 +59,17 @@ namespace SoG.ChaosMod
         public override void OnArcadiaLoad()
         {
             Console.WriteLine("Arcadia loaded....!");
-            NPC.AddNPCTo(LocalGame, NPCTypes.Evergrind_Gardener, new Vector2(1000, 250));
+            NPC npc = NPC.AddNPCTo(LocalGame, NPCTypes.Teddy, new Vector2(1000, 250));
+
+            npc.LookAtPlayerOnInteraction = true;
+        }
+
+        public override void OnNPCInteraction(NPC npc)
+        {
+            Console.WriteLine("NPC interaction....");
+
+            if(npc.GetNPCType() == NPCTypes.Teddy)
+                Dialogue.AddDialogueLineTo(LocalGame,"Hello Player, I hope you are doing well...");
         }
     }
 
