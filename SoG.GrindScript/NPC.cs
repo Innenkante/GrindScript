@@ -41,8 +41,10 @@ namespace SoG.GrindScript
         }
 
         
-        public static NPC AddNPCTo(dynamic game, NPCTypes npcType, Vector2 position)
+        public static NPC AddNPCTo(LocalGame localGame, NPCTypes npcType, Vector2 position)
         {
+
+            var game = localGame.GetUnderlayingGame();
             //Console.WriteLine(game != null ? "Game is not null man" : "Game is null man");
 
             var npcCTypex = Utils.GetGameType("SoG.NPCCodex").GetDeclaredNestedType("NPCTypes");

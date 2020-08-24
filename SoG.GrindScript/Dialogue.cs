@@ -8,8 +8,10 @@ namespace SoG.GrindScript
 {
     public class Dialogue
     {
-        public static void AddDialogueLineTo(dynamic game, string line)
+        public static void AddDialogueLineTo(LocalGame localGame, string line)
         {
+            var game = localGame.GetUnderlayingGame();
+
 			game.xInGameMenu.TrueExit();
             game.xShopMenu.ExitShop();
             game.xInput_Game.MenuButton.bPressed = false;

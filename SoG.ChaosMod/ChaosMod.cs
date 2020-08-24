@@ -12,7 +12,9 @@ namespace SoG.ChaosMod
 {
     public class ChaosMod : BaseScript
     {
-        private bool dead = false;
+        private bool questTaken = false;
+        private bool questFinished = false;
+        
 
         public ChaosMod()
         {
@@ -21,33 +23,45 @@ namespace SoG.ChaosMod
 
         public override void OnDraw()
         {
-            if(!dead)
+
+            if (!questTaken)
                 return;
 
-            var font = GetFont(FontType.Verdana20);
 
-            
+           /* var font = GetFont(FontType.Verdana8);
+
+
             SpriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
-            SpriteBatch.DrawString(font, "Oii, dead mate!", new Vector2(200,100), Color.Red);
+            SpriteBatch.DrawString(font, "Current Floor: " + LocalGame.GetCurrentFloor() + "/" + "5", new Vector2(400, 5), Color.Black);
             SpriteBatch.End();
-
+            */
         }
 
         public override void OnPlayerDamaged(ref int damage, ref byte type)
         {
-            Console.WriteLine("Orignal damage taken: " + damage + " of type: " + type);
-            damage = 10 * 1000;
-            Console.WriteLine("New damage taken: " + damage + " of type: " + type);
+            damage = (3 * LocalGame.GetCurrentFloor()) * damage; //e.g 300%, 600%, 900%... dmg
         }
 
         public override void OnPlayerKilled()
         {
-            dead = true;
+            if(LocalGame.GetCurrentFloor() < 5)
+                Dialogue.AddDialogueLineTo(LocalGame,"I am not going to lie, but it's not looking good...");
+            if (LocalGame.GetCurrentFloor() >= 5)
+            {
+                Dialogue.AddDialogueLineTo(LocalGame,
+                    "Looking but I am sorry to tell you, it's floor 10 now....just joking" + Environment.NewLine +
+                    "Grab your reward!");
+
+                questFinished = true;
+            }
         }
 
         public override void OnEnemyDamaged(Enemy enemy, ref int damage, ref byte type)
         {
-            Console.WriteLine(enemy.Type + "::" + damage + "::" + type.ToString());
+            var currentFloor = (double) LocalGame.GetCurrentFloor();
+            var factor = 1 - 0.15 * currentFloor;
+
+            damage = (int)Math.Floor(damage * factor);
         }
 
         public override void OnNPCDamaged(NPC npc, ref int damage, ref byte type)
@@ -66,12 +80,30 @@ namespace SoG.ChaosMod
 
         public override void OnNPCInteraction(NPC npc)
         {
-            Console.WriteLine("NPC interaction....");
-
-            if(npc.GetNPCType() == NPCTypes.Teddy)
-                Dialogue.AddDialogueLineTo(LocalGame,"Hello Player, I hope you are doing well...");
+            if (npc.GetNPCType() == NPCTypes.Teddy)
+            {
+                if (!questTaken)
+                {
+                    Dialogue.AddDialogueLineTo(LocalGame, "Nice to meet you " + LocalPlayer.GetName() +
+                                                          ", I hope you are doing well..."
+                                                          + Environment.NewLine +
+                                                          "Unfortunately you seem a bit too good for this game, therefore... here is your nerf..."
+                                                          + Environment.NewLine +
+                                                          "Reach Floor 5 and you will get a special reward!");
+                    questTaken = true;
+                }
+                else if(questFinished)
+                {
+                    Dialogue.AddDialogueLineTo(LocalGame,"You managed to reach floor 5! Here is your reward!" + Environment.NewLine + "*Proceeds to give you one gold coin*");
+                    LocalPlayer.Inventory.AddMoney(1);
+                }
+                else if (questTaken)
+                {
+                    Dialogue.AddDialogueLineTo(LocalGame, "'If the quest is too hard to take..." + Environment.NewLine + "You are just too weak...'" + Environment.NewLine + "~5Head");
+                }
+            }
         }
     }
 
-    
+
 }

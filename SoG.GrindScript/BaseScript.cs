@@ -10,10 +10,7 @@ namespace SoG.GrindScript
     {
         private readonly dynamic _game;
 
-        public dynamic LocalGame
-        {
-            get => _game;
-        }
+        public LocalGame LocalGame { get; }
 
         public LocalPlayer LocalPlayer { get; }
 
@@ -25,6 +22,8 @@ namespace SoG.GrindScript
             Utils.Initialize(AppDomain.CurrentDomain.GetAssemblies().First(a => a.GetName().Name == "Secrets Of Grindea"));
 
             _game = Utils.GetGameType("SoG.Program").GetMethod("GetTheGame")?.Invoke(null, null);
+
+            LocalGame = new LocalGame(_game);
 
             SpriteBatch = (SpriteBatch)Utils.GetGameType("SoG.Game1").
                 GetField("spriteBatch", BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(_game);

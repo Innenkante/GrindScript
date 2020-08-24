@@ -1006,7 +1006,7 @@ namespace SoG.GrindScript
         GhostShip
     }
 
-   public enum ZoneEnum
+    public enum ZoneEnum
     {
         Lobby = -2,
         None = -1,
@@ -1652,6 +1652,7 @@ namespace SoG.GrindScript
         RogueLike_Nurse = 3004,
         RogueLike_Trunk = 3005,
         RogueLike_ShadierMerchant = 3006,
+        RogueLike_PinMaster = 3007,
         NULL = 4000,
         Player01 = 4001,
         Player02 = 4002,
@@ -1672,6 +1673,7 @@ namespace SoG.GrindScript
         CombatPet_IceGolemLv1 = 9000,
         CombatPet_IceGolemLv2 = 9001,
         CombatPet_IceGolemLv3 = 9002,
+        CombatPet_FireballFae = 9003,
         Pet_Rabby = 10000,
         Pet_Slime = 10001,
         Pet_Jumpkin = 10002,
@@ -1689,9 +1691,9 @@ namespace SoG.GrindScript
         Pet_Arcadia_TreasureLood = 10014,
         Pet_Vegetable = 10015,
         Pet_Wisp = 10016,
-        Pet_LastOne = 10017
+        Pet_Arcadia_PinLood = 10017,
+        Pet_LastOne = 10018
     }
-
 }
 
 

@@ -71,6 +71,7 @@
     <Compile Include="Dialogue.cs" />
     <Compile Include="Enemy.cs" />
     <Compile Include="Enums.cs" />
+    <Compile Include="LocalGame.cs" />
     <Compile Include="NativeInterface.cs" />
     <Compile Include="LocalPlayer.cs" />
     <Compile Include="NPC.cs" />

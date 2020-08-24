@@ -50,7 +50,6 @@ namespace SoG.GrindScript
         }
     }
 
-
     public class Journal : ConvertedType
     {
         public Journal(object originalType) : base(originalType)
@@ -86,7 +85,8 @@ namespace SoG.GrindScript
         public int SetEP(int ep)
             => _originalType.xEntity.BaseStats.iEP = ep;
 
-
+        public string GetName()
+            => _originalType.sNetworkNickname;
 
     }
 }
