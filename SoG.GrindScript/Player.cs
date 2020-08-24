@@ -8,58 +8,77 @@ using System.Threading.Tasks;
 namespace SoG.GrindScript
 {
     
-    public abstract class ConvertedType
+    public abstract class ConvertedObject
     {
-        protected dynamic _originalType;
+        protected dynamic _originalObject;
 
-        protected ConvertedType(object originalType)
+        protected ConvertedObject(object originalObject)
         {
-            _originalType = originalType;
+            _originalObject = originalObject;
         }
     }
 
-    public class Inventory : ConvertedType 
+    public class Inventory : ConvertedObject 
     {
         public Inventory(object orignalType) : base(orignalType)
         {
         }
 
         public void AddItem(ItemTypes type, int amount)
-            => _originalType.AddItem(type, amount);
+            => _originalObject.AddItem(type, amount);
 
         public int GetItemAmount(ItemTypes type)
-            => _originalType.GetAmount(type);
+            => _originalObject.GetAmount(type);
 
         public void SetItemAmount(ItemTypes type, int amount)
-            => _originalType.SetItemAmount(type, amount);
+            => _originalObject.SetItemAmount(type, amount);
 
         public void AddMoney(int amount)
-            => _originalType.AddMoney(amount);
+            => _originalObject.AddMoney(amount);
 
         public int GetMoneyAmount()
-            => _originalType.GetMoney();
+            => _originalObject.GetMoney();
 
         public void SetMoneyAmount(int amount)
-            => _originalType.SetMoney(amount);
+            => _originalObject.SetMoney(amount);
 
     }
 
-    public class Equipment : ConvertedType
+
+    public class Equipment : ConvertedObject
     {
         public Equipment(object originalType) : base(originalType)
         {
         }
     }
 
-    public class Journal : ConvertedType
+    public class Journal : ConvertedObject
     {
         public Journal(object originalType) : base(originalType)
         {
         }
 
+        public void AddQuest(Quest quest)
+        {
+            dynamic qDescription = Activator.CreateInstance(Utils.GetGameType("Quests.QuestDescription"));
+            qDescription.sQuestNameReference = quest.Name;
+            qDescription.sSummaryReference = quest.Summary;
+            qDescription.iIntendedLevel = 1;
+            qDescription.xReward = Activator.CreateInstance(Utils.GetGameType("Quests.QuestReward"));
+
+            dynamic q = Activator.CreateInstance(Utils.GetGameType("Quests.Quest"));
+            q.xDescription = qDescription;
+            q.enQuestID = 44000;
+
+
+
+
+            _originalObject.xQuestLog.AddQuest(q);
+        }
+
     }
 
-    public class Player : ConvertedType
+    public class Player : ConvertedObject
     {
         public Inventory Inventory;
         public Equipment Equipment;
@@ -68,34 +87,34 @@ namespace SoG.GrindScript
 
         public Player(object originalType) : base(originalType)
         {
-            Inventory = new Inventory(_originalType.xInventory);
-            Equipment = new Equipment(_originalType.xEquipment);
-            Journal = new Journal(_originalType.xJournalInfo);
+            Inventory = new Inventory(_originalObject.xInventory);
+            Equipment = new Equipment(_originalObject.xEquipment);
+            Journal = new Journal(_originalObject.xJournalInfo);
         }
 
         /* Player Level Members */
         public ushort Level
         {
-            get { return _originalType.xViewStats.iLevel; }
-            set { _originalType.xViewStats.iLevel = value;  }
+            get { return _originalObject.xViewStats.iLevel; }
+            set { _originalObject.xViewStats.iLevel = value;  }
         }
 
         public ushort SilverSkillPoints
         {
-            get { return _originalType.xViewStats.iSkillPointsSilver; }
-            set { _originalType.xViewStats.iSkillPointsSilver = value; }
+            get { return _originalObject.xViewStats.iSkillPointsSilver; }
+            set { _originalObject.xViewStats.iSkillPointsSilver = value; }
         }
 
         public ushort GoldSkillPoints
         {
-            get { return _originalType.xViewStats.iSkillPointsGold; }
-            set { _originalType.xViewStats.iSkillPointsGold = value; }
+            get { return _originalObject.xViewStats.iSkillPointsGold; }
+            set { _originalObject.xViewStats.iSkillPointsGold = value; }
         }
 
         public ushort TalentPoints
         {
-            get { return _originalType.xViewStats.iTalentPoints; }
-            set { _originalType.xViewStats.iTalentPoints = value; }
+            get { return _originalObject.xViewStats.iTalentPoints; }
+            set { _originalObject.xViewStats.iTalentPoints = value; }
         }
 
         public void SetSkillLevel(SpellTypes type, byte level)
@@ -105,25 +124,25 @@ namespace SoG.GrindScript
 
             Utils.GetGameType("SoG.PlayerViewStats")
                  .GetPublicInstanceOverloadedMethods("SetSkillLevel").Single()
-                 .Invoke((object) _originalType.xViewStats, new[] { spellGameType, level });
+                 .Invoke((object) _originalObject.xViewStats, new[] { spellGameType, level });
         }
 
         /* Player Stat Members */
         public int Health
         {
-            get { return _originalType.xEntity.xBaseStats.iHP; }
-            set { _originalType.xEntity.BaseStats.iHP = value; }
+            get { return _originalObject.xEntity.xBaseStats.iHP; }
+            set { _originalObject.xEntity.BaseStats.iHP = value; }
         }
 
         public int EP
         {
-            get { return _originalType.xEntity.xBaseStats.iEP; }
-            set { _originalType.xEntity.BaseStats.iEP = value; }
+            get { return _originalObject.xEntity.xBaseStats.iEP; }
+            set { _originalObject.xEntity.BaseStats.iEP = value; }
         }
 
         public string Name
         {
-            get { return _originalType.sNetworkNickname; }
+            get { return _originalObject.sNetworkNickname; }
         }
     }
 }

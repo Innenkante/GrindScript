@@ -6,13 +6,13 @@ using System.Threading.Tasks;
 
 namespace SoG.GrindScript
 {
-    public class Enemy : ConvertedType
+    public class Enemy : ConvertedObject
     {
         public EnemyTypes Type;
 
         public Enemy(object originalType) : base(originalType)
         {
-            Type = (EnemyTypes)_originalType.enType;
+            Type = (EnemyTypes)_originalObject.enType;
         }
     }
 }

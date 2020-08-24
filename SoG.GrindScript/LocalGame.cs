@@ -6,16 +6,16 @@ using System.Threading.Tasks;
 
 namespace SoG.GrindScript
 {
-    public class LocalGame : ConvertedType
+    public class LocalGame : ConvertedObject
     {
         public LocalGame(object originalType) : base(originalType)
         {
         }
 
         public dynamic GetUnderlayingGame()
-            => _originalType;
+            => _originalObject;
 
         public int GetCurrentFloor()
-            => _originalType.xGameSessionData.xRogueLikeSession.iCurrentFloor;
+            => _originalObject.xGameSessionData.xRogueLikeSession.iCurrentFloor;
     }
 }
