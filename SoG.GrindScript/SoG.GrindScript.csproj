@@ -75,7 +75,6 @@
     <Compile Include="LocalPlayer.cs" />
     <Compile Include="NPC.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Quests.cs" />
     <Compile Include="Utils.cs" />
   </ItemGroup>
   <ItemGroup>
