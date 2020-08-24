@@ -21,6 +21,7 @@ namespace SoG.GrindScript
         private static List<OnDrawPrototype> _onDrawCallbacks = new List<OnDrawPrototype>();
         private static List<OnPlayerTakeDamagePrototype> _onPlayerTakeDamageCalllbacks = new List<OnPlayerTakeDamagePrototype>();
         private static List<OnPlayerKilledPrototype> _onPlayerKilledCallbacks = new List<OnPlayerKilledPrototype>();
+        private static List<PostPlayerLevelUpPrototype> _postPlayerLevelUpCallbacks = new List<PostPlayerLevelUpPrototype>();
         private static List<OnEnemyDamagedPrototype> _onEnemyDamagedCallbacks = new List<OnEnemyDamagedPrototype>();
         private static List<OnNPCDamagedPrototype> _onNpcDamagedCallbacks = new List<OnNPCDamagedPrototype>();
         private static List<OnNPCInteractionPrototype> _onNpcInteractionCallbacks = new List<OnNPCInteractionPrototype>();
@@ -47,6 +48,11 @@ namespace SoG.GrindScript
         public static void AddOnPlayerKilledCallback(OnPlayerKilledPrototype onPlayerKilled)
         {
             _onPlayerKilledCallbacks.Add(onPlayerKilled);
+        }
+
+        public static void AddPostPlayerLevelUpCallback(PostPlayerLevelUpPrototype postPlayerLevelUp)
+        {
+            _postPlayerLevelUpCallbacks.Add(postPlayerLevelUp);
         }
 
         public static void AddOnEnemyDamagedCallback(OnEnemyDamagedPrototype onEnemyDamaged)
@@ -92,6 +98,14 @@ namespace SoG.GrindScript
             foreach (var onPlayerKilledCallback in _onPlayerKilledCallbacks)
             {
                 onPlayerKilledCallback();
+            }
+        }
+
+        private static void PostPlayerLevelUp(dynamic xView)
+        {
+            foreach (var postPlayerLevelUp in _postPlayerLevelUpCallbacks)
+            {
+                postPlayerLevelUp(new Player(xView));
             }
         }
 
@@ -173,6 +187,14 @@ namespace SoG.GrindScript
                 Console.WriteLine(e);
                 throw;
             }
+        }
+
+        public static void InitializePostPlayerLevelUpCallbacks()
+        {
+            var postfix = typeof(Callbacks).GetTypeInfo().GetPrivateStaticMethod("PostPlayerLevelUp");
+            var original = Utils.GetGameType("SoG.Game1").GetPublicInstanceMethod("_Player_ApplyLvUpBonus");
+
+            harmony.Patch(original, null, new HarmonyMethod(postfix));
         }
 
         public static void InitializeOnEnemyTakeDamageCallbacks()
