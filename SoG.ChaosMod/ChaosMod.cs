@@ -84,7 +84,7 @@ namespace SoG.ChaosMod
             {
                 if (!questTaken)
                 {
-                    Dialogue.AddDialogueLineTo(LocalGame, "Nice to meet you " + LocalPlayer.GetName() +
+                    Dialogue.AddDialogueLineTo(LocalGame, "Nice to meet you " + LocalPlayer.Name +
                                                           ", I hope you are doing well..."
                                                           + Environment.NewLine +
                                                           "Unfortunately you seem a bit too good for this game, therefore... here is your nerf..."
