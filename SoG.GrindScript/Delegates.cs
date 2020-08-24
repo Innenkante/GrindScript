@@ -12,6 +12,8 @@ namespace SoG.GrindScript
 
     public delegate void OnPlayerKilledPrototype();
 
+    public delegate void PostPlayerLevelUpPrototype(Player xView);
+
     public delegate void OnEnemyDamagedPrototype(Enemy enemy, ref int damage, ref byte type);
 
     public delegate void OnNPCDamagedPrototype(NPC npc, ref int damage, ref byte type);

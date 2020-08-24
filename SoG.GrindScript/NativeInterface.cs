@@ -64,6 +64,7 @@ namespace SoG.GrindScript
             _loadedPlugins.ForEach(script => Callbacks.AddOnDrawCallback(script.OnDraw));
             _loadedPlugins.ForEach(script => Callbacks.AddOnPlayerTakeDamageCallback(script.OnPlayerDamaged));
             _loadedPlugins.ForEach(script =>  Callbacks.AddOnPlayerKilledCallback(script.OnPlayerKilled));
+            _loadedPlugins.ForEach(script => Callbacks.AddPostPlayerLevelUpCallback(script.PostPlayerLevelUp));
             _loadedPlugins.ForEach(script => Callbacks.AddOnEnemyDamagedCallback(script.OnEnemyDamaged));
             _loadedPlugins.ForEach(script => Callbacks.AddOnNPCDamagedCallback(script.OnNPCDamaged));
             _loadedPlugins.ForEach(script => Callbacks.AddOnNPCInteractionCallback(script.OnNPCInteraction));
@@ -72,6 +73,7 @@ namespace SoG.GrindScript
             Callbacks.InitializeOnDrawCallbacks();
             Callbacks.InitializeOnPlayerTakeDamageCallbacks();
             Callbacks.InitializeOnPlayerKilledCallbacks();
+            Callbacks.InitializePostPlayerLevelUpCallbacks();
             Callbacks.InitializeOnEnemyTakeDamageCallbacks();
             Callbacks.InitializeOnNPCTakeDamageCallbacks();
             Callbacks.InitializeOnNPCInteractionCallbacks();
