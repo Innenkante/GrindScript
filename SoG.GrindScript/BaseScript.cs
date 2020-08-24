@@ -12,7 +12,7 @@ namespace SoG.GrindScript
 
         public LocalGame LocalGame { get; }
 
-        public LocalPlayer LocalPlayer { get; }
+        public Player LocalPlayer { get; }
 
         public SpriteBatch SpriteBatch { get; }
 
@@ -28,7 +28,7 @@ namespace SoG.GrindScript
             SpriteBatch = (SpriteBatch)Utils.GetGameType("SoG.Game1").
                 GetField("spriteBatch", BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(_game);
 
-            LocalPlayer = new LocalPlayer(_game.xLocalPlayer);
+            LocalPlayer = new Player(_game.xLocalPlayer);
         }
 
 
@@ -49,6 +49,11 @@ namespace SoG.GrindScript
         }
 
         public virtual void OnPlayerKilled()
+        {
+            return;
+        }
+
+        public virtual void PostPlayerLevelUp(Player player)
         {
             return;
         }
