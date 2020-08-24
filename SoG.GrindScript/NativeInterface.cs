@@ -67,6 +67,7 @@ namespace SoG.GrindScript
             _loadedPlugins.ForEach(script => Callbacks.AddOnEnemyDamagedCallback(script.OnEnemyDamaged));
             _loadedPlugins.ForEach(script => Callbacks.AddOnNPCDamagedCallback(script.OnNPCDamaged));
             _loadedPlugins.ForEach(script => Callbacks.AddOnNPCInteractionCallback(script.OnNPCInteraction));
+            _loadedPlugins.ForEach(script => Callbacks.AddOnArcadiaLoadCallback(script.OnArcadiaLoad));
 
             Callbacks.InitializeOnDrawCallbacks();
             Callbacks.InitializeOnPlayerTakeDamageCallbacks();
@@ -74,6 +75,7 @@ namespace SoG.GrindScript
             Callbacks.InitializeOnEnemyTakeDamageCallbacks();
             Callbacks.InitializeOnNPCTakeDamageCallbacks();
             Callbacks.InitializeOnNPCInteractionCallbacks();
+            Callbacks.InitializeOnArcadiaLoadCallbacks();
 
             return 1;
         }

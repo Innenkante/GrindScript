@@ -35,6 +35,11 @@ namespace SoG.GrindScript
             return t.GetMethod(name, BindingFlags.Public|BindingFlags.Instance);
         }
 
+        public static MethodInfo[] GetPublicInstanceOverloadedMethods(this TypeInfo t, string name)
+        {
+            return t.GetMethods(BindingFlags.Public | BindingFlags.Instance).Where(m => m.Name == name).ToArray();
+        }
+
         public static MethodInfo GetPrivateInstanceMethod(this TypeInfo t, string name)
         {
             return t.GetMethod(name, BindingFlags.NonPublic | BindingFlags.Instance);

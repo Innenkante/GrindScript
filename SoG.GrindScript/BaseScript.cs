@@ -68,5 +68,10 @@ namespace SoG.GrindScript
         {
             return;
         }
+
+        public virtual void OnArcadiaLoad()
+        {
+            return;
+        }
     }
 }

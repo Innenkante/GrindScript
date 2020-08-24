@@ -19,40 +19,29 @@ namespace SoG.GrindScript
         
         public static NPC AddNPCTo(dynamic game, NPCTypes npcType, Vector2 position)
         {
-            Console.WriteLine(game != null ? "Game is not null man" : "Game is null man");
+            //Console.WriteLine(game != null ? "Game is not null man" : "Game is null man");
 
-            var npcCodex = Utils.GetGameType("SoG.NPCCodex");
-            var npcTypes = npcCodex.GetNestedType("NPCTypes");
+            var npcCTypex = Utils.GetGameType("SoG.NPCCodex").GetDeclaredNestedType("NPCTypes");
 
-            Console.WriteLine("Wild npc type:" + npcType.ToString());
+            //Console.WriteLine("Wild npc type:" + npcType.ToString());
 
-            var npc = Utils.GetGameType("SoG.Game1")
-                .GetMethod("_EntityMaster_AddNPC", new[] {npcTypes, typeof(Vector2)}).Invoke(game,
-                    new[] {npcTypes.GetField(npcType.ToString()).GetValue(null), new Vector2(100, 500)});
-
-            var addToDic = Utils.GetGameType("SoG.LevelMaster").GetField("denxNamedEntities").FieldType
-                .GetMethod("Add", new[] {npcTypes, Utils.GetGameType("SoG.IEntity")});
-
-            addToDic.Invoke(game.xLevelMaster.denxNamedEntities,
-                new object[] {npcTypes.GetField(npcType.ToString()).GetValue(null), npc});
+            var npcGameType = Enum.Parse(npcCTypex, npcType.ToString());
+            //Console.WriteLine(npcGameType.GetType());
 
 
+            var n = Utils.GetGameType("SoG.Game1").GetPublicInstanceOverloadedMethods("_EntityMaster_AddNPC").First()
+                .Invoke((object) game, new[] {npcGameType, position});
 
+            //Console.WriteLine(n.GetType());
 
+            var key = npcGameType;
+            var value = n;
 
-            npc.xRenderComponent.SwitchAnimation(1);
+            ((Type) game.xLevelMaster.denxNamedEntities.GetType()).GetMethod("Add", new[] {key.GetType(), Utils.GetGameType("SoG.IEntity")}).Invoke(game.xLevelMaster.denxNamedEntities, new []{key, value});
+            ((dynamic)n).xRenderComponent.SwitchAnimation(1);
 
-            Console.WriteLine("Initialized NPC... " + npc.enType.ToString());
-
-           // var npc = game._EntityMaster_AddNPC(npcTypes.GetField(npcType.ToString()).GetValue(null), new Vector2(100, 500)); //hacky af
-
-           //another idea: hook up the initialization and execute the code afterwards/before :thinking:
-
-            //I think adding the npc to the render loops kind of fucks up, because the guy is initialized but not not displayed
-
-
-
-            return new NPC(npc);
+            Console.WriteLine("Initialized NPC: " + npcType);
+            return new NPC(n);
         }
     }
 }

@@ -26,13 +26,17 @@ namespace SoG.GrindScript
         private static List<OnNPCInteractionPrototype> _onNpcInteractionCallbacks = new List<OnNPCInteractionPrototype>();
 
 
+        private static List<OnArcadiaLoadPrototype> _onArcadiaLoadCallbacks = new List<OnArcadiaLoadPrototype>();
+
+
         private static Harmony harmony = new Harmony("GrindScriptCallbackManager");
+
+        #region Callback adders
 
         public static void AddOnDrawCallback(OnDrawPrototype onDraw)
         {
             _onDrawCallbacks.Add(onDraw);
         }
-
 
         public static void AddOnPlayerTakeDamageCallback(OnPlayerTakeDamagePrototype onPlayerTakeDamage)
         {
@@ -60,6 +64,15 @@ namespace SoG.GrindScript
             _onNpcInteractionCallbacks.Add(onNpcInteraction);
         }
 
+        public static void AddOnArcadiaLoadCallback(OnArcadiaLoadPrototype onArcadiaLoad)
+        {
+            _onArcadiaLoadCallbacks.Add(onArcadiaLoad);
+        }
+
+        #endregion
+
+
+        #region Callbacks
 
         private static void OnFinalDrawPrefix()
         {
@@ -100,12 +113,24 @@ namespace SoG.GrindScript
 
         private static void OnNPCInteractionPrefix(dynamic xView, dynamic xNPC)
         {
-            foreach (var onNpcInteractionPrototype in _onNpcInteractionCallbacks)
+            foreach (var onNpcInteractionCallback in _onNpcInteractionCallbacks)
             {
-                onNpcInteractionPrototype(new NPC(xNPC));
+                onNpcInteractionCallback(new NPC(xNPC));
             }
         }
 
+        private static void OnArcadiaLoadPrefix()
+        {
+            foreach (var onArcadiaLoadCallback in _onArcadiaLoadCallbacks)
+            {
+                onArcadiaLoadCallback();
+            }
+        }
+
+
+        #endregion
+
+        #region Initializing Callbacks
 
         public static void InitializeOnDrawCallbacks()
         {
@@ -199,6 +224,23 @@ namespace SoG.GrindScript
                 throw;
             }
         }
+
+        public static void InitializeOnArcadiaLoadCallbacks()
+        {
+            try
+            {
+                var prefix = typeof(Callbacks).GetTypeInfo().GetPrivateStaticMethod("OnArcadiaLoadPrefix");
+                var original = Utils.GetGameType("SoG.Game1").GetPublicInstanceMethod("_LevelLoading_DoStuff_Arcadia");
+
+                harmony.Patch(original, new HarmonyMethod(prefix));
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+        }
+        #endregion
 
 
     }

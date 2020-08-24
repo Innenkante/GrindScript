@@ -18,6 +18,8 @@ namespace SoG.GrindScript
 
     public delegate void OnNPCInteractionPrototype(NPC npc);
 
+    public delegate void OnArcadiaLoadPrototype();
+
 
 
 

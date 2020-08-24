@@ -17,8 +17,6 @@ namespace SoG.ChaosMod
         public ChaosMod()
         {
             Console.WriteLine("Hello World from Chaosmod!");
-
-            NPC.AddNPCTo(LocalGame, NPCTypes.Desert_Farmer_Boy, new Vector2(1000, 500));
         }
 
         public override void OnDraw()
@@ -58,5 +56,12 @@ namespace SoG.ChaosMod
             Console.WriteLine(damage + "::" + type.ToString());
         }
 
+        public override void OnArcadiaLoad()
+        {
+            Console.WriteLine("Arcadia loaded....!");
+            NPC.AddNPCTo(LocalGame, NPCTypes.Evergrind_Gardener, new Vector2(1000, 250));
+        }
     }
+
+    
 }
