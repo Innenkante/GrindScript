@@ -10,7 +10,7 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace SoG.GrindScript
 {
-    public class NPC : ConvertedType
+    public class NPC : ConvertedObject
     {
         public bool IsInteractable
         {

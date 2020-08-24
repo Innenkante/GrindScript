@@ -8,17 +8,17 @@ using System.Threading.Tasks;
 namespace SoG.GrindScript
 {
     
-    public abstract class ConvertedType
+    public abstract class ConvertedObject
     {
         protected dynamic _originalType;
 
-        protected ConvertedType(object originalType)
+        protected ConvertedObject(object originalType)
         {
             _originalType = originalType;
         }
     }
 
-    public class Inventory : ConvertedType 
+    public class Inventory : ConvertedObject 
     {
         public Inventory(object orignalType) : base(orignalType)
         {
@@ -44,14 +44,14 @@ namespace SoG.GrindScript
 
     }
 
-    public class Equipment : ConvertedType
+    public class Equipment : ConvertedObject
     {
         public Equipment(object originalType) : base(originalType)
         {
         }
     }
 
-    public class Journal : ConvertedType
+    public class Journal : ConvertedObject
     {
         public Journal(object originalType) : base(originalType)
         {
@@ -59,7 +59,7 @@ namespace SoG.GrindScript
 
     }
 
-    public class Player : ConvertedType
+    public class Player : ConvertedObject
     {
         public Inventory Inventory;
         public Equipment Equipment;

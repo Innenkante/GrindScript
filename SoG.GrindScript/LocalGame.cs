@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace SoG.GrindScript
 {
-    public class LocalGame : ConvertedType
+    public class LocalGame : ConvertedObject
     {
         public LocalGame(object originalType) : base(originalType)
         {
