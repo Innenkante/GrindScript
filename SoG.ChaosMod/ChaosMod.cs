@@ -73,9 +73,14 @@ namespace SoG.ChaosMod
         public override void OnArcadiaLoad()
         {
             Console.WriteLine("Arcadia loaded....!");
-            NPC npc = NPC.AddNPCTo(LocalGame, NPCTypes.Teddy, new Vector2(1000, 250));
+            NPC teddy = NPC.AddNPCTo(LocalGame, NPCTypes.Teddy, new Vector2(1000, 250));
+            NPC vilya = NPC.AddNPCTo(LocalGame, NPCTypes.Desert_Saloon_PokerCaptain, new Vector2(990,260));
 
-            npc.LookAtPlayerOnInteraction = true;
+            vilya.IsInteractable = true;
+            vilya.LookAtPlayerOnInteraction = true;
+
+            teddy.IsInteractable = true;
+            teddy.LookAtPlayerOnInteraction = true;
         }
 
         public override void OnNPCInteraction(NPC npc)

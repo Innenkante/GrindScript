@@ -44,6 +44,7 @@ namespace SoG.GrindScript
 
     }
 
+
     public class Equipment : ConvertedObject
     {
         public Equipment(object originalType) : base(originalType)
@@ -55,6 +56,24 @@ namespace SoG.GrindScript
     {
         public Journal(object originalType) : base(originalType)
         {
+        }
+
+        public void AddQuest(Quest quest)
+        {
+            dynamic qDescription = Activator.CreateInstance(Utils.GetGameType("Quests.QuestDescription"));
+            qDescription.sQuestNameReference = quest.Name;
+            qDescription.sSummaryReference = quest.Summary;
+            qDescription.iIntendedLevel = 1;
+            qDescription.xReward = Activator.CreateInstance(Utils.GetGameType("Quests.QuestReward"));
+
+            dynamic q = Activator.CreateInstance(Utils.GetGameType("Quests.Quest"));
+            q.xDescription = qDescription;
+            q.enQuestID = 44000;
+
+
+
+
+            _originalObject.xQuestLog.AddQuest(q);
         }
 
     }
