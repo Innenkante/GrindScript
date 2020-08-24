@@ -91,6 +91,8 @@ namespace SoG.ChaosMod
                                                           + Environment.NewLine +
                                                           "Reach Floor 5 and you will get a special reward!");
                     questTaken = true;
+
+                    
                 }
                 else if(questFinished)
                 {
