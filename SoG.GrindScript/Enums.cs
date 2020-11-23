@@ -6,6 +6,14 @@ using System.Threading.Tasks;
 
 namespace SoG.GrindScript
 {
+    public enum MiscTextTypes
+    {
+        // To be populated
+        Default,
+        GenericItemDescription,
+        GenericItemName
+    }
+
     public enum FontType
     {
         Bold7Spacing1,
