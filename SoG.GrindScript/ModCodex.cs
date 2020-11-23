@@ -39,33 +39,7 @@ namespace SoG.GrindScript
 
         
 
-        public class ItemDescription : ConvertedObject
-        {
-            public static readonly ConstructorInfo _ctor;
-
-            static ItemDescription()
-            {
-                _ctor = Utils.GetGameType("SoG.ItemDescription").GetConstructor(Type.EmptyTypes);
-            }
-
-            public ItemDescription(object originalObject) : base(originalObject)
-            {
-                // Some fields are the same for all items
-            }
-
-            public ItemDescription() : base(_ctor.Invoke(null)) 
-            { 
-                // Some fields are the same for all items
-            }
-
-            public int EnType
-            {
-                get => (int)_originalObject.enType;
-                set => _originalObject.enType = Enum.ToObject(SoGType.ItemTypes, value);
-            }
-
-            public bool IsVanillaItem => Enum.IsDefined(SoGType.ItemTypes, EnType);
-        }
+        
 
         public class EquipmentInfo: ConvertedObject
         {

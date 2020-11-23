@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 
 namespace SoG.GrindScript
 {
+
     public static class Utils
     {
         
@@ -63,6 +64,11 @@ namespace SoG.GrindScript
         public static T GetPublicStaticField<T>(this TypeInfo t, string field)
         {
             return (T) t.GetField(field, BindingFlags.Public | BindingFlags.Static)?.GetValue(null);
+        }
+
+        public static dynamic GetPublicStaticField(this TypeInfo t, string field)
+        {
+            return t.GetField(field, BindingFlags.Public | BindingFlags.Static)?.GetValue(null);
         }
 
 

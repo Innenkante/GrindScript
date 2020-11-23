@@ -22,6 +22,8 @@ namespace SoG.GrindScript
 
     public delegate void OnArcadiaLoadPrototype();
 
+    public delegate void OnCustomContentLoadPrototype();
+
 
 
 

@@ -25,6 +25,7 @@ namespace SoG.GrindScript
         private static List<OnEnemyDamagedPrototype> _onEnemyDamagedCallbacks = new List<OnEnemyDamagedPrototype>();
         private static List<OnNPCDamagedPrototype> _onNpcDamagedCallbacks = new List<OnNPCDamagedPrototype>();
         private static List<OnNPCInteractionPrototype> _onNpcInteractionCallbacks = new List<OnNPCInteractionPrototype>();
+        private static List<OnCustomContentLoadPrototype> _onCustomContentLoadCallbacks = new List<OnCustomContentLoadPrototype>();
 
 
         private static List<OnArcadiaLoadPrototype> _onArcadiaLoadCallbacks = new List<OnArcadiaLoadPrototype>();
@@ -73,6 +74,11 @@ namespace SoG.GrindScript
         public static void AddOnArcadiaLoadCallback(OnArcadiaLoadPrototype onArcadiaLoad)
         {
             _onArcadiaLoadCallbacks.Add(onArcadiaLoad);
+        }
+
+        public static void AddOnCustomContentLoad(OnCustomContentLoadPrototype onCustomContentLoad)
+        {
+            _onCustomContentLoadCallbacks.Add(onCustomContentLoad);
         }
 
         #endregion
@@ -262,6 +268,12 @@ namespace SoG.GrindScript
                 throw;
             }
         }
+
+        public static void InitializeOnCustomContentLoad()
+        {
+            _onCustomContentLoadCallbacks.ForEach(onLoad => onLoad());
+        }
+
         #endregion
 
 

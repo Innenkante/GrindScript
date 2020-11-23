@@ -65,6 +65,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CustomItem.cs" />
     <Compile Include="Delegates.cs" />
     <Compile Include="BaseScript.cs" />
     <Compile Include="Callbacks.cs" />
@@ -72,11 +73,13 @@
     <Compile Include="Enemy.cs" />
     <Compile Include="Enums.cs" />
     <Compile Include="LocalGame.cs" />
+    <Compile Include="ModCodex.cs" />
     <Compile Include="NativeInterface.cs" />
     <Compile Include="Player.cs" />
     <Compile Include="NPC.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Quest.cs" />
+    <Compile Include="Ui.cs" />
     <Compile Include="Utils.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -84,6 +87,6 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>copy /y  "$(TargetPath)" "G:\Steam\steamapps\common\SecretsOfGrindea"</PostBuildEvent>
+    <PostBuildEvent>copy /y  "$(TargetPath)" "E:\Steam\steamapps\common\SecretsOfGrindea"</PostBuildEvent>
   </PropertyGroup>
 </Project>

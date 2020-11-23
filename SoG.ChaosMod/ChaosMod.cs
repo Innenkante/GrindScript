@@ -15,58 +15,13 @@ namespace SoG.ChaosMod
     {
         private bool questTaken = false;
         private bool questFinished = false;
+        private CustomItem alex;
         
 
         public ChaosMod()
         {
             
             Console.WriteLine("Hello World from Chaosmod!");
-
-            // Testing
-
-            string[] modItems =
-            {
-                "BananaMan",
-                "BagKnight"
-            };
-
-            foreach(string ID in modItems)
-            {
-                dynamic xIt = AddModItem(ID).Original;
-                switch (ID)
-                {
-                    case "BananaMan":
-                        {
-                            AddMiscText("Items", "BananaManName", "Banana Man", MiscTextTypes.GenericItemName);
-                            AddMiscText("Items", "BananaManDescription", "Lmao!", MiscTextTypes.GenericItemDescription);
-                            xIt.sFullName = "Banana Man";
-                            xIt.txDisplayImage = LocalGame.GetRegionContentManager().Load<Texture2D>("Items/DropAppearance/apple");
-                            xIt.lenCategory.Add((dynamic)Enum.ToObject(ModCodex.SoGType.ItemCategories, 0));
-                            xIt.sNameLibraryHandle = "BananaManName";
-                            xIt.sDescriptionLibraryHandle = "BananaManDescription";
-                            xIt.sCategory = "Misc";
-                            xIt.iInternalLevel = 1;
-                            xIt.iValue = 69;
-                        } 
-                        break;
-                    case "BagKnight":
-                        {
-                            AddMiscText("Items", "BagKnightName", "BagKnight", MiscTextTypes.GenericItemName);
-                            AddMiscText("Items", "BagKnightDescription", "Defends Evergrind City from the cover of mystery.", MiscTextTypes.GenericItemDescription);
-                            xIt.sFullName = "BagKnight";
-                            xIt.txDisplayImage = LocalGame.GetRegionContentManager().Load<Texture2D>("Items/DropAppearance/bag");
-                            xIt.lenCategory.Add((dynamic)Enum.ToObject(ModCodex.SoGType.ItemCategories, 0));
-                            xIt.sNameLibraryHandle = "BagKnightName";
-                            xIt.sDescriptionLibraryHandle = "BagKnightDescription";
-                            xIt.sCategory = "Misc";
-                            xIt.iInternalLevel = 1;
-                            xIt.iValue = 69;
-                        }
-                        break;
-                }
-            }
-
-            LoadModItems();
         }
 
         public override void OnDraw()
@@ -85,6 +40,15 @@ namespace SoG.ChaosMod
             */
         }
 
+        public override void OnCustomContentLoad()
+        {
+            Console.WriteLine("Trying to load custom content....");
+
+            alex = CustomItem.AddCustomItemTo(LocalGame, "Alex", "Knows the game", "Items/DropAppearance/bag", 420);
+
+            Console.WriteLine("Custom Content Loaded!");
+        }
+
         public override void OnPlayerDamaged(ref int damage, ref byte type)
         {
             damage = (3 * LocalGame.GetCurrentFloor()) * damage; //e.g 300%, 600%, 900%... dmg
@@ -94,8 +58,11 @@ namespace SoG.ChaosMod
             dynamic player = game.xLocalPlayer;
             var function = ((TypeInfo)gameType).GetDeclaredMethods("_EntityMaster_AddItem").First();
 
-            function.Invoke(LocalGame.GetUnderlayingGame(), new[] { GetModItemFromString("BagKnight"), player.xEntity.xTransform.v2Pos, player.xEntity.xRenderComponent.fVirtualHeight, player.xEntity.xCollisionComponent.ibitCurrentColliderLayer, Vector2.Zero });
-            function.Invoke(LocalGame.GetUnderlayingGame(), new[] { GetModItemFromString("BananaMan"), player.xEntity.xTransform.v2Pos, player.xEntity.xRenderComponent.fVirtualHeight, player.xEntity.xCollisionComponent.ibitCurrentColliderLayer, Vector2.Zero });
+            //function.Invoke(LocalGame.GetUnderlayingGame(), new[] { GetModItemFromString("BagKnight"), player.xEntity.xTransform.v2Pos, player.xEntity.xRenderComponent.fVirtualHeight, player.xEntity.xCollisionComponent.ibitCurrentColliderLayer, Vector2.Zero });
+            //function.Invoke(LocalGame.GetUnderlayingGame(), new[] { GetModItemFromString("BananaMan"), player.xEntity.xTransform.v2Pos, player.xEntity.xRenderComponent.fVirtualHeight, player.xEntity.xCollisionComponent.ibitCurrentColliderLayer, Vector2.Zero });
+
+            alex.SpawnOn(LocalGame,LocalPlayer);
+
         }
 
         public override void OnPlayerKilled()
