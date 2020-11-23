@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
@@ -16,6 +17,8 @@ namespace SoG.GrindScript
         {
             _originalObject = originalObject;
         }
+
+        public dynamic Original => _originalObject;
     }
 
     public class Inventory : ConvertedObject 

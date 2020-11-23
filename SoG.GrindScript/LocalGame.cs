@@ -17,5 +17,8 @@ namespace SoG.GrindScript
 
         public int GetCurrentFloor()
             => _originalObject.xGameSessionData.xRogueLikeSession.iCurrentFloor;
+
+        public dynamic GetRegionContentManager()
+            => _originalObject.Content;
     }
 }
