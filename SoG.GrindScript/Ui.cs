@@ -22,21 +22,30 @@ namespace SoG.GrindScript
 
                 switch (textType)
                 {
+                    case MiscTextTypes.GenericSpellMoreInfo:
+                        // This is where extra spell info is written
+                        textEntry.iMaxWidth = 350;
+                        textEntry.iMaxHeight = 164;
+                        textEntry.enFontType = (dynamic)Enum.ToObject(Utils.GetGameType("SoG.FontManager").GetDeclaredNestedType("FontType"), (int)FontType.Reg7); //Reg 7
+                        break;
+                    case MiscTextTypes.GenericSpellName:
                     case MiscTextTypes.GenericItemName:
+                        // Talent names also fit here
                         textEntry.iMaxWidth = 170;
                         textEntry.iMaxHeight = 19;
                         textEntry.enFontType = (dynamic)Enum.ToObject(Utils.GetGameType("SoG.FontManager").GetDeclaredNestedType("FontType"), (int)FontType.Bold8Spacing1); //Bold8Spacing1
                         break;
+                    case MiscTextTypes.GenericSpellFlavor:
                     case MiscTextTypes.GenericItemDescription:
-                        // "You screwed up but we're putting in random values anyway" case
-                        textEntry.iMaxWidth = 200;
-                        textEntry.iMaxHeight = 100;
+                        // Talent details also fit here
+                        textEntry.iMaxWidth = 280;
+                        textEntry.iMaxHeight = 30;
                         textEntry.enFontType = (dynamic)Enum.ToObject(Utils.GetGameType("SoG.FontManager").GetDeclaredNestedType("FontType"), (int)FontType.Reg7); //Reg 7
                         break;
                     case MiscTextTypes.Default:
                     default:
                         // "You screwed up but we're putting in random values anyway" case
-                        textEntry.iMaxWidth = 200;
+                        textEntry.iMaxWidth = 100;
                         textEntry.iMaxHeight = 100;
                         textEntry.enFontType = (dynamic)Enum.ToObject(Utils.GetGameType("SoG.FontManager").GetDeclaredNestedType("FontType"), (int)FontType.Reg7); //Reg 7
                         break;

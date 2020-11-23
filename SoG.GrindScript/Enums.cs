@@ -11,7 +11,10 @@ namespace SoG.GrindScript
         // To be populated
         Default,
         GenericItemDescription,
-        GenericItemName
+        GenericItemName,
+        GenericSpellName,
+        GenericSpellFlavor,
+        GenericSpellMoreInfo
     }
 
     public enum FontType

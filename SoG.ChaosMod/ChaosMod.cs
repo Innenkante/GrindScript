@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using SoG.GrindScript;
-using ItemDescription = SoG.GrindScript.ModCodex.ItemDescription;
 
 namespace SoG.ChaosMod
 {
