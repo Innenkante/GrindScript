@@ -15,6 +15,8 @@ namespace SoG.ChaosMod
         private bool questTaken = false;
         private bool questFinished = false;
         private CustomItem alex;
+        private CustomItem GordonFreeman;
+        private CustomEquipmentInfo ZordonZreeman;
         
 
         public ChaosMod()
@@ -44,6 +46,12 @@ namespace SoG.ChaosMod
             Console.WriteLine("Trying to load custom content....");
 
             alex = CustomItem.AddCustomItemTo(LocalGame, "Alex", "Knows the game", "Items/DropAppearance/bag", 420);
+            alex.AddItemCategories(ItemCategories.Misc);
+
+            GordonFreeman = CustomItem.AddCustomItemTo(LocalGame, "The Free Weapon", "When all you have is a bent metal rod, every problem looks like an alien crab.", "Items/DropAppearance/WoodenShield", 420);
+            GordonFreeman.AddItemCategories(ItemCategories.Shield);
+            ZordonZreeman = CustomEquipmentInfo.AddEquipmentInfoForCustomItem("Wooden", GordonFreeman.EnType);
+            ZordonZreeman.SetStatChanges(ShldHP: 1337);
 
             Console.WriteLine("Custom Content Loaded!");
         }
@@ -61,6 +69,7 @@ namespace SoG.ChaosMod
             //function.Invoke(LocalGame.GetUnderlayingGame(), new[] { GetModItemFromString("BananaMan"), player.xEntity.xTransform.v2Pos, player.xEntity.xRenderComponent.fVirtualHeight, player.xEntity.xCollisionComponent.ibitCurrentColliderLayer, Vector2.Zero });
 
             alex.SpawnOn(LocalGame,LocalPlayer);
+            GordonFreeman.SpawnOn(LocalGame, LocalPlayer);
 
         }
 

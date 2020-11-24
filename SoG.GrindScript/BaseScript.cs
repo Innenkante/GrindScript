@@ -11,6 +11,7 @@ namespace SoG.GrindScript
     public partial class BaseScript
     {
         internal static List<CustomItem> CustomItems = new List<CustomItem>();
+        internal static List<CustomEquipmentInfo> CustomEquipmentInfos = new List<CustomEquipmentInfo>();
 
         private readonly dynamic _game;
 

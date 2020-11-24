@@ -284,6 +284,32 @@ namespace SoG.GrindScript
 
                 harmony.Patch(original, new HarmonyMethod(prefix));
             }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+
+            try
+            {
+                // GetEquipmentInfo prefix patches
+                // (EquipmentCodex declares 4 functions, so I'm patching all 4 with the same function. Yeehaw.)
+                // (it should work the same, since the functions effectively act as separate storage mediums)
+                // (the patches just change the storage in question to a shared dictionary)
+                var prefix = typeof(CustomEquipmentInfo).GetTypeInfo().GetPrivateStaticMethod("OnGetEquipmentInfoPrefix");
+
+                var original = Utils.GetGameType("SoG.EquipmentCodex").GetMethod("GetArmorInfo");
+                harmony.Patch(original, new HarmonyMethod(prefix));
+
+                original = Utils.GetGameType("SoG.EquipmentCodex").GetMethod("GetAccessoryInfo");
+                harmony.Patch(original, new HarmonyMethod(prefix));
+
+                original = Utils.GetGameType("SoG.EquipmentCodex").GetMethod("GetShieldInfo");
+                harmony.Patch(original, new HarmonyMethod(prefix));
+
+                original = Utils.GetGameType("SoG.EquipmentCodex").GetMethod("GetShoesInfo");
+                harmony.Patch(original, new HarmonyMethod(prefix));
+            }
             catch(Exception e)
             {
                 Console.WriteLine(e);

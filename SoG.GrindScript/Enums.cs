@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 namespace SoG.GrindScript
 {
+    // These should include a comment with the last version in which they were updated
+    // Since we need to update these every time SoG adds stuff (for items, enemies, etc.)
+
     public enum MiscTextTypes
     {
         // To be populated
@@ -1050,6 +1053,39 @@ namespace SoG.GrindScript
         _RogueLikeArcadiaReward_NPC_RobinHood = 300016,
         _RogueLikeArcadiaReward_NPC_PapaGuard = 300017,
         _RogueLikeArcadiaReward_PidgysBirds = 300018
+    }
+
+    public enum StatEnum : byte
+    {
+        HP,
+        MaxHP,
+        EP,
+        MaxEP,
+        ATK,
+        MATK,
+        DEF,
+        SDEF,
+        ASPD,
+        CSPD,
+        Crit,
+        CritDMG,
+        CON,
+        FireResist,
+        IceResist,
+        ElectricResist,
+        DarkResist,
+        EPRegen,
+        ShldHP,
+        CritVulnerabilityFlat,
+        CritVulnerabilityMultiplier,
+        DamageResistance,
+        ATKMultiplier,
+        DEFMultiplier,
+        MATKMultiplier,
+        ShldRegen,
+        PLACEBO,
+        FlatMoveSpeed,
+        KnockbackResistance
     }
 
     public enum WorldRegion
