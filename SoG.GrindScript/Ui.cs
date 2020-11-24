@@ -57,5 +57,20 @@ namespace SoG.GrindScript
                 Console.WriteLine("Reason: " + e);
             }
         }
+
+        public static string GetMiscTextFrom(LocalGame game, string category, string entry)
+        {
+            try
+            {
+                // try-catch addiction
+                return game.GetUnderlayingGame().xMiscTextGod_Default.dsxTextCollections[category].dsxTexts[entry];
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Couldn't properly retrieve misc text " + category + ":" + entry);
+                Console.WriteLine("Reason: " + e);
+                return "Yo, string not found!";
+            }
+        }
     }
 }

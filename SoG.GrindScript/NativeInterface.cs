@@ -81,6 +81,8 @@ namespace SoG.GrindScript
             Callbacks.InitializeOnArcadiaLoadCallbacks(); 
             Callbacks.InitializeOnCustomContentLoad();
 
+            Callbacks.InitializeUniquePatches();
+
             return 1;
         }
 

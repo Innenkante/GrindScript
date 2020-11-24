@@ -274,9 +274,24 @@ namespace SoG.GrindScript
             _onCustomContentLoadCallbacks.ForEach(onLoad => onLoad());
         }
 
+        public static void InitializeUniquePatches()
+        {
+            try
+            {
+                // GetItemInstance prefix patch
+                var prefix = typeof(CustomItem).GetTypeInfo().GetPrivateStaticMethod("OnGetItemInstancePrefix");
+                var original = Utils.GetGameType("SoG.ItemCodex").GetMethod("GetItemInstance");
+
+                harmony.Patch(original, new HarmonyMethod(prefix));
+            }
+            catch(Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+        }
+
         #endregion
-
-
     }
 }
 
