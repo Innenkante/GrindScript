@@ -12,6 +12,9 @@ namespace SoG.GrindScript
     {
         internal static List<CustomItem> CustomItems = new List<CustomItem>();
         internal static List<CustomEquipmentInfo> CustomEquipmentInfos = new List<CustomEquipmentInfo>();
+        internal static List<CustomWeaponInfo> CustomWeaponInfos = new List<CustomWeaponInfo>();
+        internal static List<CustomFacegearInfo> CustomFacegearInfos = new List<CustomFacegearInfo>();
+        internal static List<CustomHatInfo> CustomHatInfos = new List<CustomHatInfo>();
 
         private readonly dynamic _game;
 

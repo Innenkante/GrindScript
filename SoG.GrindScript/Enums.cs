@@ -1055,6 +1055,20 @@ namespace SoG.GrindScript
         _RogueLikeArcadiaReward_PidgysBirds = 300018
     }
 
+    public enum AutoAttackSpell
+    {
+        None,
+        Generic1H,
+        Generic2H
+    }
+
+    public enum WeaponCategory
+    {
+        OneHanded,
+        TwoHanded,
+        Bow
+    }
+
     public enum StatEnum : byte
     {
         HP,

@@ -309,6 +309,25 @@ namespace SoG.GrindScript
 
                 original = Utils.GetGameType("SoG.EquipmentCodex").GetMethod("GetShoesInfo");
                 harmony.Patch(original, new HarmonyMethod(prefix));
+
+
+                // Facegear Codex's GetHatInfo patch
+                prefix = typeof(CustomFacegearInfo).GetTypeInfo().GetPrivateStaticMethod("OnGetFacegearInfoPrefix");
+
+                original = Utils.GetGameType("SoG.FacegearCodex").GetMethod("GetHatInfo");
+                harmony.Patch(original, new HarmonyMethod(prefix));
+
+                // Hat Codex's GetHatInfo patch
+                prefix = typeof(CustomHatInfo).GetTypeInfo().GetPrivateStaticMethod("OnGetHatInfoPrefix");
+
+                original = Utils.GetGameType("SoG.HatCodex").GetMethod("GetHatInfo");
+                harmony.Patch(original, new HarmonyMethod(prefix));
+
+                // Weapon Codex's GetWeaponInfo patch
+                prefix = typeof(CustomWeaponInfo).GetTypeInfo().GetPrivateStaticMethod("OnGetWeaponInfoPrefix");
+
+                original = Utils.GetGameType("SoG.WeaponCodex").GetMethod("GetWeaponInfo");
+                harmony.Patch(original, new HarmonyMethod(prefix));
             }
             catch(Exception e)
             {
