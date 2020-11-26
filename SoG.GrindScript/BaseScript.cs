@@ -43,7 +43,6 @@ namespace SoG.GrindScript
             return (SpriteFont)Utils.GetGameType("SoG.FontManager").GetMethod("GetFont")?.Invoke(null, new object[] { (int)font });
         }
 
-
         public virtual void OnDraw()
         {
             return;

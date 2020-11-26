@@ -15,103 +15,103 @@ namespace SoG.GrindScript
     {
         public const int BaseItemTypesPos = 400000;
 
-        public int Id { get; set; }
+        public int RelativeID { get; set; }
 
-        public int EnType
+        public int IntType
         {
             get => (int)_originalObject.enType;
-            set => _originalObject.enType = (dynamic)Enum.ToObject(Utils.GetGameType("SoG.ItemCodex+ItemTypes"), value);
+            set => _originalObject.enType = Utils.GetEnumObject("SoG.ItemCodex+ItemTypes", value);
         }
 
         public bool IsVanillaItem 
-            => Enum.IsDefined(Utils.GetGameType("SoG.ItemCodex+ItemTypes"), EnType);
+            => Enum.IsDefined(Utils.GetGameType("SoG.ItemCodex+ItemTypes"), IntType);
 
-        public bool IsDefinedModItem
-            => !IsVanillaItem && EnType >= BaseItemTypesPos && EnType <= BaseItemTypesPos + BaseScript.CustomItems.Count;
+        public bool IsModItem
+            => !IsVanillaItem && IntType >= BaseItemTypesPos && IntType <= BaseItemTypesPos + BaseScript.CustomItems.Count;
 
         public CustomItem(object originalObject) : base(originalObject)
         {
             
         }
 
-        public static bool ValueIsVanillaItem(int enType)
+        public static bool ValueIsVanillaItem(int intType)
         {
-            return Enum.IsDefined(Utils.GetGameType("SoG.ItemCodex+ItemTypes"), enType);
+            return Enum.IsDefined(Utils.GetGameType("SoG.ItemCodex+ItemTypes"), intType);
         }
 
-        public static bool ValueIsDefinedModItem(int enType)
+        public static bool ValueIsModItem(int intType)
         {
-            return !ValueIsVanillaItem(enType) && enType >= BaseItemTypesPos && enType <= BaseItemTypesPos + BaseScript.CustomItems.Count;
+            return !ValueIsVanillaItem(intType) && intType >= BaseItemTypesPos && intType <= BaseItemTypesPos + BaseScript.CustomItems.Count;
         }
 
         public static CustomItem AddCustomItemTo(LocalGame game, string name, string description, string appearance, int value)
         {
-            int newId = 1;
-            if (BaseScript.CustomItems.Count > 0)
-                newId = BaseScript.CustomItems.Count + 1;
-
-
-            dynamic newItem = Utils.GetGameType("SoG.ItemDescription").GetConstructor(Type.EmptyTypes).Invoke(null);
-
+            int newId = BaseScript.CustomItems.Count + 1;
+            dynamic newItem = Utils.DefaultConstructObject("SoG.ItemDescription");
             string baseEntryName = name.Replace(" ", "");
 
             Ui.AddMiscTextTo(game, "Items", baseEntryName + "_Name", name, MiscTextTypes.GenericItemName);
-            Ui.AddMiscTextTo(game,"Items", baseEntryName + "_Description", description, MiscTextTypes.GenericItemDescription);
+            Ui.AddMiscTextTo(game, "Items", baseEntryName + "_Description", description, MiscTextTypes.GenericItemDescription);
 
             newItem.sFullName = name;
             newItem.txDisplayImage = game.GetContentManager().Load<Texture2D>(appearance);
-            newItem.lenCategory.Add((dynamic)Enum.ToObject(ModCodex.SoGType.ItemCategories, 0));
             newItem.sNameLibraryHandle = baseEntryName + "_Name";
             newItem.sDescriptionLibraryHandle = baseEntryName + "_Description";
             newItem.sCategory = "";
             newItem.iInternalLevel = 1;
             newItem.iValue = value;
+            newItem.enType = Utils.GetEnumObject("SoG.ItemCodex+ItemTypes", BaseItemTypesPos + newId);
 
             dynamic items = Utils.GetGameType("SoG.ItemCodex").GetPublicStaticField("denxLoadedDescriptions");
-
-
-            newItem.enType = (dynamic)Enum.ToObject(Utils.GetGameType("SoG.ItemCodex+ItemTypes"), 400000 + newId);
-
-
             items[newItem.enType] = newItem;
 
-            Console.WriteLine("Added the custom item called " + name + " with the id " + (400000 + newId) + "...");
-
-            var customItem = new CustomItem(newItem) {Id = newId};
-
+            var customItem = new CustomItem(newItem) {RelativeID = newId};
             BaseScript.CustomItems.Add(customItem);
 
+            Console.WriteLine("Added custom item" + name + " with game ID " + (BaseItemTypesPos + newId) + ", relative ID " + newId + "...");
             return customItem;
         }
 
-        public void AddItemCategories(params ItemCategories[] cats)
+        public void AddItemCategories(params ItemCategories[] categories)
         {
             dynamic xSet = Original.lenCategory;
-            foreach (ItemCategories cat in cats)
+            foreach (ItemCategories cat in categories)
             {
-                xSet.Add((dynamic)Enum.ToObject(Utils.GetGameType("SoG.ItemCodex+ItemCategories"), (int)cat));
+                xSet.Add(Utils.GetEnumObject("SoG.ItemCodex+ItemCategories", (int)cat));
             }
         }
 
-        public void RemoveItemCategories(params ItemCategories[] cats)
+        public void RemoveItemCategories(params ItemCategories[] categories)
         {
             dynamic xSet = Original.lenCategory;
-            foreach (ItemCategories cat in cats)
+            foreach (ItemCategories cat in categories)
             {
-                xSet.Remove((dynamic)Enum.ToObject(Utils.GetGameType("SoG.ItemCodex+ItemCategories"), (int)cat));
+                xSet.Remove(Utils.GetEnumObject("SoG.ItemCodex+ItemCategories", (int)cat));
             }
         }
 
         public void SpawnOn(LocalGame game,Player player)
         {
             // While the Player fix is coming, this should work for now
-            dynamic playaa = ((dynamic)Utils.GetGameType("SoG.Program").GetMethod("GetTheGame")?.Invoke(null, null)).xLocalPlayer;
+            dynamic playaa = game.GetUnderlayingGame().xLocalPlayer;
 
             var function = Utils.GetGameType("SoG.Game1").GetDeclaredMethods("_EntityMaster_AddItem").First();
-            function.Invoke(game.GetUnderlayingGame(), new[] { EnType, playaa.xEntity.xTransform.v2Pos, playaa.xEntity.xRenderComponent.fVirtualHeight, playaa.xEntity.xCollisionComponent.ibitCurrentColliderLayer, Vector2.Zero });
+            function.Invoke(game.GetUnderlayingGame(), new[] { IntType, playaa.xEntity.xTransform.v2Pos, playaa.xEntity.xRenderComponent.fVirtualHeight, playaa.xEntity.xCollisionComponent.ibitCurrentColliderLayer, Vector2.Zero });
         }
 
-        #region GetItemInstance patch
+        public void SpawnAt(Vector2 v2Pos, float fVirtualHeight, int colliderLayer, Vector2 v2Dir)
+        {
+            if(v2Pos == null || v2Dir == null)
+            {
+                Console.WriteLine("Tried to spawn item at null position or with null direction!");
+                return;
+            }
+
+            dynamic game = Utils.GetTheGame();
+
+            var function = Utils.GetGameType("SoG.Game1").GetDeclaredMethods("_EntityMaster_AddItem").First();
+            function.Invoke(game, new dynamic[] { IntType, v2Pos, fVirtualHeight, colliderLayer, v2Dir });
+        }
 
         private static bool OnGetItemInstancePrefix(ref dynamic __result, ref int enType)
         {
@@ -122,7 +122,7 @@ namespace SoG.GrindScript
             }
 
             dynamic items = Utils.GetGameType("SoG.ItemCodex").GetPublicStaticField("denxLoadedDescriptions");
-            dynamic enumType = Enum.ToObject(Utils.GetGameType("SoG.ItemCodex+ItemTypes"), enType);
+            dynamic enumType = Utils.GetEnumObject("SoG.ItemCodex+ItemTypes", enType);
 
             if (!items.ContainsKey(enumType))
             {
@@ -131,26 +131,25 @@ namespace SoG.GrindScript
             }
 
             // Create new instance and return it, skipping original code
-            __result = Activator.CreateInstance(Utils.GetGameType("SoG.Item"));
+            __result = Utils.DefaultConstructObject("SoG.Item");
 
             // The "Regional" Content Manager is used here. Default shadow seems to be the rabby feet's shadow
             __result.enType = enumType;
             __result.xRenderComponent.txTexture = items[enumType].txDisplayImage;
-            __result.xRenderComponent.txShadowTexture = ((dynamic)Utils.GetGameType("SoG.Program").GetMethod("GetTheGame")?.Invoke(null, null)).xLevelMaster.contRegionContent.Load<Texture2D>("Items/DropAppearance/hartass02");
+            __result.xRenderComponent.txShadowTexture = Utils.GetTheGame().xLevelMaster.contRegionContent.Load<Texture2D>("Items/DropAppearance/hartass02");
             __result.sFullName = items[enumType].sFullName;
 
-            if (items[enumType].lenCategory.Contains((dynamic)Enum.ToObject(Utils.GetGameType("SoG.ItemCodex+ItemCategories"), (int)ItemCategories.GrantToServer)))
+            if (items[enumType].lenCategory.Contains(Utils.GetEnumObject("SoG.ItemCodex+ItemCategories", (int)ItemCategories.GrantToServer)))
             {
                 __result.bGiveToServer = true;
             }
-            __result.xCollisionComponent.xMovementCollider = Activator.CreateInstance(Utils.GetGameType("SoG.SphereCollider"), 10f, Vector2.Zero, __result.xTransform, 1f, __result);
+
+            __result.xCollisionComponent.xMovementCollider = Utils.ConstructObject("SoG.SphereCollider", 10f, Vector2.Zero, __result.xTransform, 1f, __result);
             __result.xCollisionComponent.xMovementCollider.bCollideWithFlat = true;
 
             // Skip original code
             return false;
         }
-
-        #endregion
     }
 
     public class CustomEquipmentInfo : ConvertedObject
@@ -160,24 +159,24 @@ namespace SoG.GrindScript
 
         }
 
-        public int EnType
+        public int IntType
         {
             get => (int)_originalObject.enItemType;
-            set => _originalObject.enItemType = (dynamic)Enum.ToObject(Utils.GetGameType("SoG.ItemCodex+ItemTypes"), value);
+            set => _originalObject.enItemType = Utils.GetEnumObject("SoG.ItemCodex+ItemTypes", value);
         }
 
-        public static CustomEquipmentInfo AddEquipmentInfoForCustomItem(string resource, int enType)
+        public static CustomEquipmentInfo AddEquipmentInfoForCustomItem(string resource, int intType)
         {
-            if (!CustomItem.ValueIsDefinedModItem(enType))
+            if (!CustomItem.ValueIsModItem(intType))
             {
-                Console.WriteLine("Error in AddEquipmentInfoForCustomItem(): Item " + enType + " has no defined ItemDescription.");
+                Console.WriteLine("Error in AddEquipmentInfoForCustomItem(): Item " + intType + " has no defined ItemDescription.");
                 return null;
             }
-            CustomEquipmentInfo xInfo = new CustomEquipmentInfo(Activator.CreateInstance(Utils.GetGameType("SoG.EquipmentInfo"), resource, Enum.ToObject(Utils.GetGameType("SoG.ItemCodex+ItemTypes"), enType)));
+            CustomEquipmentInfo xInfo = new CustomEquipmentInfo(Activator.CreateInstance(Utils.GetGameType("SoG.EquipmentInfo"), resource, Enum.ToObject(Utils.GetGameType("SoG.ItemCodex+ItemTypes"), intType)));
 
             BaseScript.CustomEquipmentInfos.Add(xInfo);
 
-            Console.WriteLine("Custom item with the id " + enType + " now has equipment info...");
+            Console.WriteLine("Custom item with the id " + intType + " now has equipment info...");
 
             return xInfo;
         }
@@ -220,28 +219,19 @@ namespace SoG.GrindScript
 
         private static bool OnGetEquipmentInfoPrefix(ref dynamic __result, ref int enType)
         {
-            if (CustomItem.ValueIsVanillaItem(enType))
+            if (CustomItem.ValueIsVanillaItem(enType) || !CustomItem.ValueIsModItem(enType))
             {
-                // Continue with original
+                // Borked - continue with original
                 return true;
             }
-
-            if (!CustomItem.ValueIsDefinedModItem(enType))
-            {
-                // No such item? Continue with original anyway...
-                return true;
-            }
-
-            // Return info stored in BaseScript
             int lmao = enType;
-            __result = BaseScript.CustomEquipmentInfos.Find(info => (int)info.EnType == lmao).Original;
+            __result = BaseScript.CustomEquipmentInfos.Find(info => (int)info.IntType == lmao).Original;
 
-            // Skip original code
+            // Return info from BaseScript, skip original code
             return false;
         }
     }
 
-    // Similar to CustomEquipmentInfo, but it has some extra info
     public class CustomFacegearInfo : CustomEquipmentInfo
     {
         public CustomFacegearInfo(object originalObject) : base(originalObject)
@@ -251,42 +241,36 @@ namespace SoG.GrindScript
 
         public static CustomFacegearInfo AddFacegearInfoForCustomItem(string resource, int enType)
         {
-            if (!CustomItem.ValueIsDefinedModItem(enType))
+            if (!CustomItem.ValueIsModItem(enType))
             {
                 Console.WriteLine("Error in AddFacegearInfoForCustomItem(): Item " + enType + " has no defined ItemDescription.");
                 return null;
             }
 
             // Deal with resources
-            CustomFacegearInfo xInfo = new CustomFacegearInfo(Activator.CreateInstance(Utils.GetGameType("SoG.FacegearInfo"), Enum.ToObject(Utils.GetGameType("SoG.ItemCodex+ItemTypes"), enType)));
+            CustomFacegearInfo xInfo = new CustomFacegearInfo(Utils.ConstructObject("SoG.FacegearInfo", Utils.GetEnumObject("SoG.ItemCodex+ItemTypes", enType)));
             xInfo.Original.sResourceName = resource;
 
             string sHatPath = "Sprites/Equipment/Facegear/" + resource + "/";
-            dynamic Content = ((dynamic)Utils.GetGameType("SoG.Program").GetMethod("GetTheGame")?.Invoke(null, null)).Content;
+            dynamic Content = Utils.GetTheGame().Content;
 
-            for (int i = 0; i < 4; i++)
+            string[] sDirs = { "Up", "Right", "Down", "Left" };
+            for (int i = 0; i <= 3; i++)
             {
-                string sDir = "Up";
-                if (i == 1) sDir = "Right";
-                else if (i == 2) sDir = "Down";
-                else if (i == 3) sDir = "Left";
                 try
                 {
-                    xInfo.Original.atxTextures[i] = Content.Load<Texture2D>(sHatPath + sDir);
+                    xInfo.Original.atxTextures[i] = Content.Load<Texture2D>(sHatPath + sDirs[i]);
                 }
                 catch(Exception e)
                 {
-                    Console.WriteLine("Exception for facegear " + enType + "'s " + sDir + " texture: " + e.Message + " -> Setting to txNullTex");
+                    Console.WriteLine("Exception for facegear " + enType + "'s " + sDirs[i] + " texture: " + e.Message + ". Setting to txNullTex.");
                     xInfo.Original.atxTextures[i] = Utils.GetGameType("SoG.RenderMaster").GetPublicStaticField("txNullTex");
                 }
+
+                xInfo.Original.av2RenderOffsets[i] = new Vector2(0f, 0f);
             }
 
             // "Default" params - modders should set these to the correct values later on, though
-            xInfo.Original.av2RenderOffsets[0] = new Vector2(0f, 0f);
-            xInfo.Original.av2RenderOffsets[1] = new Vector2(0f, 0f);
-            xInfo.Original.av2RenderOffsets[2] = new Vector2(0f, 0f);
-            xInfo.Original.av2RenderOffsets[3] = new Vector2(0f, 0f);
-
             xInfo.SetOverHair(true, true, true, true); // All above 
             xInfo.SetOverHat(false, false, false, false); // All behind hats
             xInfo.SetBehindCharacter(false, false, false, false); // Don't render behind character
@@ -294,7 +278,6 @@ namespace SoG.GrindScript
             BaseScript.CustomFacegearInfos.Add(xInfo);
 
             Console.WriteLine("Custom item with the id " + enType + " now has facegear info...");
-
             return xInfo;
         }
 
@@ -332,28 +315,20 @@ namespace SoG.GrindScript
 
         private static bool OnGetFacegearInfoPrefix(ref dynamic __result, ref int enType)
         {
-            if (CustomItem.ValueIsVanillaItem(enType))
+            if (CustomItem.ValueIsVanillaItem(enType) || !CustomItem.ValueIsModItem(enType))
             {
-                // Continue with original
+                // Borked - continue with original
                 return true;
             }
 
-            if (!CustomItem.ValueIsDefinedModItem(enType))
-            {
-                // No such item? Continue with original anyway...
-                return true;
-            }
-
-            // Return info stored in BaseScript
             int lmao = enType;
-            __result = BaseScript.CustomFacegearInfos.Find(info => (int)info.EnType == lmao).Original;
+            __result = BaseScript.CustomFacegearInfos.Find(info => (int)info.IntType == lmao).Original;
 
-            // Skip original code
+            // Return info stored in BaseScript and skip original code
             return false;
         }
     }
 
-    // Similar to CustomEquipmentInfo, but it has some extra info
     public class CustomHatInfo : CustomEquipmentInfo
     {
 
@@ -364,7 +339,7 @@ namespace SoG.GrindScript
 
         public static CustomHatInfo AddHatInfoForCustomItem(string resource, int enType)
         {
-            if (!CustomItem.ValueIsDefinedModItem(enType))
+            if (!CustomItem.ValueIsModItem(enType))
             {
                 Console.WriteLine("Error in AddHatInfoForCustomItem(): Item " + enType + " has no defined ItemDescription.");
                 return null;
@@ -375,29 +350,23 @@ namespace SoG.GrindScript
             string sHatPath = "Sprites/Equipment/Hats/" + resource + "/";
             dynamic Content = ((dynamic)Utils.GetGameType("SoG.Program").GetMethod("GetTheGame")?.Invoke(null, null)).Content;
 
-            for (int i = 0; i < 4; i++)
+            string[] sDirs = { "Up", "Right", "Down", "Left" };
+            for (int i = 0; i <= 3; i++)
             {
-                string sDir = "Up";
-                if (i == 1) sDir = "Right";
-                else if (i == 2) sDir = "Down";
-                else if (i == 3) sDir = "Left";
                 try
                 {
-                    xInfo.Original.xDefaultSet.atxTextures[i] = Content.Load<Texture2D>(sHatPath + sDir);
+                    xInfo.Original.xDefaultSet.atxTextures[i] = Content.Load<Texture2D>(sHatPath + sDirs[i]);
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine("Exception for hat " + enType + "'s " + sDir + " texture: " + e.Message + " -> Setting to txNullTex");
+                    Console.WriteLine("Exception for hat " + enType + "'s " + sDirs[i] + " texture: " + e.Message + " -> Setting to txNullTex");
                     xInfo.Original.xDefaultSet.atxTextures[i] = Utils.GetGameType("SoG.RenderMaster").GetPublicStaticField("txNullTex");
                 }
+
+                xInfo.Original.xDefaultSet.av2RenderOffsets[i] = new Vector2(0f, 0f);
             }
 
             // "Default" params - modders should set these to the correct values later on, though
-            xInfo.Original.xDefaultSet.av2RenderOffsets[0] = new Vector2(0f, 0f);
-            xInfo.Original.xDefaultSet.av2RenderOffsets[1] = new Vector2(0f, 0f);
-            xInfo.Original.xDefaultSet.av2RenderOffsets[2] = new Vector2(0f, 0f);
-            xInfo.Original.xDefaultSet.av2RenderOffsets[3] = new Vector2(0f, 0f);
-
             xInfo.SetUnderHair(false, false, false, false); // All above 
             xInfo.SetBehindCharacter(false, false, false, false); // Don't render behind character
             xInfo.SetObstructions(true, true, false); // Obstruct all hair except bottom - default for most hats
@@ -405,7 +374,6 @@ namespace SoG.GrindScript
             BaseScript.CustomHatInfos.Add(xInfo);
 
             Console.WriteLine("Custom item with the id " + enType + " now has hat info...");
-
             return xInfo;
         }
 
@@ -442,39 +410,33 @@ namespace SoG.GrindScript
 
         public void AddAltSet(int enType)
         {
-            dynamic enumType = Enum.ToObject(Utils.GetGameType("SoG.ItemCodex+ItemTypes"), enType);
+            dynamic enumType = Utils.GetEnumObject("SoG.ItemCodex+ItemTypes", enType);
             if (!Original.denxAlternateVisualSets.Contains(enumType))
             {
-                Original.denxAlternateVisualSets[enumType] = Activator.CreateInstance(Utils.GetGameType("SoG.HatInfo+VisualSet"));
+                Original.denxAlternateVisualSets[enumType] = Utils.DefaultConstructObject("SoG.HatInfo+VisualSet");
             }
 
             // Copy textures...
             string sHatPath = "Sprites/Equipment/Facegear/" + Original.sResourceName + "/";
             dynamic Content = ((dynamic)Utils.GetGameType("SoG.Program").GetMethod("GetTheGame")?.Invoke(null, null)).Content;
             dynamic xAlt = Original.denxAlternateVisualSets[enumType];
-            for (int i = 0; i < 4; i++)
+
+            string[] sDirs = { "Up", "Right", "Down", "Left" };
+            for (int i = 0; i <= 3; i++)
             {
-                string sDir = "Up";
-                if (i == 1) sDir = "Right";
-                else if (i == 2) sDir = "Down";
-                else if (i == 3) sDir = "Left";
                 try
                 {
-                    xAlt.atxTextures[i] = Content.Load<Texture2D>(sHatPath + sDir);
+                    xAlt.atxTextures[i] = Content.Load<Texture2D>(sHatPath + sDirs[i]);
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine("Exception for hat " + enType + "'s " + sDir + " texture: " + e.Message + " -> Setting to txNullTex");
+                    Console.WriteLine("Exception for hat " + enType + "'s " + sDirs[i] + " texture: " + e.Message + " -> Setting to txNullTex");
                     xAlt.atxTextures[i] = Utils.GetGameType("SoG.RenderMaster").GetPublicStaticField("txNullTex");
                 }
+                xAlt.av2RenderOffsets[i] = new Vector2(0f, 0f);
             }
 
             // "Default" params - modders should set these to the correct values later on, though
-            xAlt.av2RenderOffsets[0] = new Vector2(0f, 0f);
-            xAlt.av2RenderOffsets[1] = new Vector2(0f, 0f);
-            xAlt.av2RenderOffsets[2] = new Vector2(0f, 0f);
-            xAlt.av2RenderOffsets[3] = new Vector2(0f, 0f);
-
             SetUnderHairForAltSet(enType, false, false, false, false); // All above 
             SetBehindCharacterForAltSet(enType, false, false, false, false); // Don't render behind character
             SetObstructionsForAltSet(enType, true, true, false); // Obstruct all hair except bottom - default for most hats
@@ -482,10 +444,10 @@ namespace SoG.GrindScript
 
         public void SetUnderHairForAltSet(int enType, bool up, bool right, bool down, bool left)
         {
-            dynamic enumType = Enum.ToObject(Utils.GetGameType("SoG.ItemCodex+ItemTypes"), enType);
+            dynamic enumType = Utils.GetEnumObject("SoG.ItemCodex+ItemTypes", enType);
             if (!Original.denxAlternateVisualSets.Contains(enumType))
             {
-                Console.WriteLine("Can't set alternate visual set parameters for item " + EnType + " -> " + enType + " if alt set hasn't been created!");
+                Console.WriteLine("Can't set alternate visual set parameters for item " + IntType + " -> " + enType + " if alt set hasn't been created!");
             }
             Original.denxAlternateVisualSets[enumType].abUnderHair[0] = up;
             Original.denxAlternateVisualSets[enumType].abUnderHair[1] = right;
@@ -495,10 +457,10 @@ namespace SoG.GrindScript
 
         public void SetBehindCharacterForAltSet(int enType, bool up, bool right, bool down, bool left)
         {
-            dynamic enumType = Enum.ToObject(Utils.GetGameType("SoG.ItemCodex+ItemTypes"), enType);
+            dynamic enumType = Utils.GetEnumObject("SoG.ItemCodex+ItemTypes", enType);
             if (!Original.denxAlternateVisualSets.Contains(enumType))
             {
-                Console.WriteLine("Can't set alternate visual set parameters for item " + EnType + " -> " + enType + " if alt set hasn't been created!");
+                Console.WriteLine("Can't set alternate visual set parameters for item " + IntType + " -> " + enType + " if alt set hasn't been created!");
             }
             Original.denxAlternateVisualSets[enumType].abBehindCharacter[0] = up;
             Original.denxAlternateVisualSets[enumType].abBehindCharacter[1] = right;
@@ -508,10 +470,10 @@ namespace SoG.GrindScript
 
         public void SetObstructionsForAltSet(int enType, bool top, bool sides, bool bottom)
         {
-            dynamic enumType = Enum.ToObject(Utils.GetGameType("SoG.ItemCodex+ItemTypes"), enType);
+            dynamic enumType = Utils.GetEnumObject("SoG.ItemCodex+ItemTypes", enType);
             if (!Original.denxAlternateVisualSets.Contains(enumType))
             {
-                Console.WriteLine("Can't set alternate visual set parameters for item " + EnType + " -> " + enType + " if alt set hasn't been created!");
+                Console.WriteLine("Can't set alternate visual set parameters for item " + IntType + " -> " + enType + " if alt set hasn't been created!");
             }
             Original.denxAlternateVisualSets[enumType].bObstructsTop = top;
             Original.denxAlternateVisualSets[enumType].bObstructsSides = sides;
@@ -520,10 +482,10 @@ namespace SoG.GrindScript
 
         public void SetRenderOffsetsForAltSet(int enType, Vector2 up, Vector2 right, Vector2 down, Vector2 left)
         {
-            dynamic enumType = Enum.ToObject(Utils.GetGameType("SoG.ItemCodex+ItemTypes"), enType);
+            dynamic enumType = Utils.GetEnumObject("SoG.ItemCodex+ItemTypes", enType);
             if (!Original.denxAlternateVisualSets.Contains(enumType))
             {
-                Console.WriteLine("Can't set alternate visual set parameters for item " + EnType + " -> " + enType + " if alt set hasn't been created!");
+                Console.WriteLine("Can't set alternate visual set parameters for item " + IntType + " -> " + enType + " if alt set hasn't been created!");
             }
             if (up != null) Original.denxAlternateVisualSets[enumType].av2RenderOffsets[0] = new Vector2(up.X, up.Y);
             if (right != null) Original.denxAlternateVisualSets[enumType].av2RenderOffsets[1] = new Vector2(right.X, right.Y);
@@ -533,23 +495,16 @@ namespace SoG.GrindScript
 
         private static bool OnGetHatInfoPrefix(ref dynamic __result, ref int enType)
         {
-            if (CustomItem.ValueIsVanillaItem(enType))
+            if (CustomItem.ValueIsVanillaItem(enType) || !CustomItem.ValueIsModItem(enType))
             {
-                // Continue with original
+                // Borked - continue with original
                 return true;
             }
 
-            if (!CustomItem.ValueIsDefinedModItem(enType))
-            {
-                // No such item? Continue with original anyway...
-                return true;
-            }
-
-            // Return info stored in BaseScript
             int lmao = enType;
-            __result = BaseScript.CustomHatInfos.Find(info => (int)info.EnType == lmao).Original;
+            __result = BaseScript.CustomHatInfos.Find(info => (int)info.IntType == lmao).Original;
 
-            // Skip original code
+            // Return info stored in BaseScript and skip original code
             return false;
         }
     }
@@ -563,7 +518,7 @@ namespace SoG.GrindScript
 
         public static CustomWeaponInfo AddWeaponInfoForCustomItem(string resource, int enType, int enWeaponCategory, bool isMagicWeapon, string palette = "")
         {
-            if (!CustomItem.ValueIsDefinedModItem(enType))
+            if (!CustomItem.ValueIsModItem(enType))
             {
                 Console.WriteLine("Error in AddWeaponInfoForCustomItem(): Item " + enType + " has no defined ItemDescription.");
                 return null;
@@ -571,16 +526,16 @@ namespace SoG.GrindScript
 
             // For now, no custom palettes. C'est la vie
             palette = "blueish";
-            CustomWeaponInfo xInfo = new CustomWeaponInfo(Activator.CreateInstance(Utils.GetGameType("SoG.WeaponInfo"), resource, Enum.ToObject(Utils.GetGameType("SoG.ItemCodex+ItemTypes"), enType), Enum.ToObject(Utils.GetGameType("SoG.WeaponInfo+WeaponCategory"), enWeaponCategory), palette));
+            CustomWeaponInfo xInfo = new CustomWeaponInfo(Utils.ConstructObject("SoG.WeaponInfo", resource, Utils.GetEnumObject("SoG.ItemCodex+ItemTypes", enType), Utils.GetEnumObject("SoG.WeaponInfo+WeaponCategory", enWeaponCategory), palette));
 
             // Standard weapon multipliers and stuff
 
-            xInfo.Original.enAutoAttackSpell = (dynamic)Enum.ToObject(Utils.GetGameType("SoG.WeaponInfo+AutoAttackSpell"), (int)AutoAttackSpell.None);
+            xInfo.Original.enAutoAttackSpell = Utils.GetEnumObject("SoG.WeaponInfo+AutoAttackSpell", (int)AutoAttackSpell.None);
             if (enWeaponCategory == (int)WeaponCategory.OneHanded)
             {
                 if (isMagicWeapon)
                 {
-                    xInfo.Original.enAutoAttackSpell = (dynamic)Enum.ToObject(Utils.GetGameType("SoG.WeaponInfo+AutoAttackSpell"), (int)AutoAttackSpell.Generic1H);
+                    xInfo.Original.enAutoAttackSpell = Utils.GetEnumObject("SoG.WeaponInfo+AutoAttackSpell", (int)AutoAttackSpell.Generic1H);
                 }
                 xInfo.Original.iDamageMultiplier = 90;
             }
@@ -588,7 +543,7 @@ namespace SoG.GrindScript
             {
                 if (isMagicWeapon)
                 {
-                    xInfo.Original.enAutoAttackSpell = (dynamic)Enum.ToObject(Utils.GetGameType("SoG.WeaponInfo+AutoAttackSpell"), (int)AutoAttackSpell.Generic2H);
+                    xInfo.Original.enAutoAttackSpell = Utils.GetEnumObject("SoG.WeaponInfo+AutoAttackSpell", (int)AutoAttackSpell.Generic2H);
                 }
                 xInfo.Original.iDamageMultiplier = 125;
             }
@@ -596,29 +551,21 @@ namespace SoG.GrindScript
             BaseScript.CustomWeaponInfos.Add(xInfo);
 
             Console.WriteLine("Custom item with the id " + enType + " now has weapon info...");
-
             return xInfo;
         }
 
         private static bool OnGetWeaponInfoPrefix(ref dynamic __result, ref int enType)
         {
-            if (CustomItem.ValueIsVanillaItem(enType))
+            if (CustomItem.ValueIsVanillaItem(enType) || !CustomItem.ValueIsModItem(enType))
             {
-                // Continue with original
+                // Borked - continue with original
                 return true;
             }
 
-            if (!CustomItem.ValueIsDefinedModItem(enType))
-            {
-                // No such item? Continue with original anyway...
-                return true;
-            }
-
-            // Return info stored in BaseScript
             int lmao = enType;
-            __result = BaseScript.CustomWeaponInfos.Find(info => (int)info.EnType == lmao).Original;
+            __result = BaseScript.CustomWeaponInfos.Find(info => (int)info.IntType == lmao).Original;
 
-            // Skip original code
+            // Return info stored in BaseScript, skip original code
             return false;
         }
     }

@@ -21,11 +21,37 @@ namespace SoG.GrindScript
 
         }
 
+        public static dynamic GetTheGame()
+        {
+            // Since non-BaseScript code doesn't have access to LocalGame or whatever, this method is needed
+            // Ideally, shouldn't return null...
+            return Utils.GetGameType("SoG.Program").GetMethod("GetTheGame")?.Invoke(null, null);
+        }
+
+        public static dynamic GetLocalPlayer()
+        {
+            return Utils.GetTheGame().xLocalPlayer;
+        }
+
         public static TypeInfo GetGameType(string name)
         {
             return _definedTypes.First(t => t.FullName == name);
         }
 
+        public static dynamic GetEnumObject(string enumFullName, int value)
+        {
+            return Enum.ToObject(GetGameType(enumFullName), value);
+        }
+
+        public static dynamic DefaultConstructObject(string typeFullName)
+        {
+            return Activator.CreateInstance(GetGameType(typeFullName));
+        }
+
+        public static dynamic ConstructObject(string typeFullName, params object[] args)
+        {
+            return Activator.CreateInstance(GetGameType(typeFullName), args);
+        }
 
     }
 
