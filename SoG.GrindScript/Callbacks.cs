@@ -279,7 +279,7 @@ namespace SoG.GrindScript
             try
             {
                 // GetItemInstance prefix patch
-                var prefix = typeof(CustomItem).GetTypeInfo().GetPrivateStaticMethod("OnGetItemInstancePrefix");
+                var prefix = typeof(ModItem).GetTypeInfo().GetPrivateStaticMethod("OnGetItemInstancePrefix");
                 var original = Utils.GetGameType("SoG.ItemCodex").GetMethod("GetItemInstance");
 
                 harmony.Patch(original, new HarmonyMethod(prefix));
@@ -296,7 +296,7 @@ namespace SoG.GrindScript
                 // (EquipmentCodex declares 4 functions, so I'm patching all 4 with the same function. Yeehaw.)
                 // (it should work the same, since the functions effectively act as separate storage mediums)
                 // (the patches just change the storage in question to a shared dictionary)
-                var prefix = typeof(CustomEquipmentInfo).GetTypeInfo().GetPrivateStaticMethod("OnGetEquipmentInfoPrefix");
+                var prefix = typeof(ModEquipment).GetTypeInfo().GetPrivateStaticMethod("OnGetEquipmentInfoPrefix");
 
                 var original = Utils.GetGameType("SoG.EquipmentCodex").GetMethod("GetArmorInfo");
                 harmony.Patch(original, new HarmonyMethod(prefix));
@@ -312,19 +312,19 @@ namespace SoG.GrindScript
 
 
                 // Facegear Codex's GetHatInfo patch
-                prefix = typeof(CustomFacegearInfo).GetTypeInfo().GetPrivateStaticMethod("OnGetFacegearInfoPrefix");
+                prefix = typeof(ModFacegear).GetTypeInfo().GetPrivateStaticMethod("OnGetFacegearInfoPrefix");
 
                 original = Utils.GetGameType("SoG.FacegearCodex").GetMethod("GetHatInfo");
                 harmony.Patch(original, new HarmonyMethod(prefix));
 
                 // Hat Codex's GetHatInfo patch
-                prefix = typeof(CustomHatInfo).GetTypeInfo().GetPrivateStaticMethod("OnGetHatInfoPrefix");
+                prefix = typeof(ModHat).GetTypeInfo().GetPrivateStaticMethod("OnGetHatInfoPrefix");
 
                 original = Utils.GetGameType("SoG.HatCodex").GetMethod("GetHatInfo");
                 harmony.Patch(original, new HarmonyMethod(prefix));
 
                 // Weapon Codex's GetWeaponInfo patch
-                prefix = typeof(CustomWeaponInfo).GetTypeInfo().GetPrivateStaticMethod("OnGetWeaponInfoPrefix");
+                prefix = typeof(ModWeapon).GetTypeInfo().GetPrivateStaticMethod("OnGetWeaponInfoPrefix");
 
                 original = Utils.GetGameType("SoG.WeaponCodex").GetMethod("GetWeaponInfo");
                 harmony.Patch(original, new HarmonyMethod(prefix));

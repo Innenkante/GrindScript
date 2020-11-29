@@ -15,19 +15,20 @@ namespace SoG.ChaosMod
     {
         private bool questTaken = false;
         private bool questFinished = false;
-        private CustomItem alex;
-        private CustomItem GordonFreeman;
-        private CustomEquipmentInfo ZordonZreeman;
-        private CustomItem InstaRepair;
-        private CustomEquipmentInfo ZnstaZepair;
-        private CustomItem Hattus;
-        private CustomItem Weapon;
+        private ModItem alex;
+        private ModItem GordonFreeman;
+        private ModItem InstaRepair;
+        private ModItem Hattus;
+        private ModItem Weapon;
+
+        bool grant = false;
         
 
         public ChaosMod()
         {
             
             Console.WriteLine("Hello World from Chaosmod!");
+            Console.WriteLine(typeof(ChaosMod).Name);
         }
 
         public override void OnDraw()
@@ -48,33 +49,34 @@ namespace SoG.ChaosMod
 
         public override void OnCustomContentLoad()
         {
+
             Console.WriteLine("Trying to load custom content....");
 
-            alex = CustomItem.AddCustomItemTo(LocalGame, "Alex", "Knows the game", "Items/DropAppearance/bag", 420);
+            alex = ModItem.AddItem("Alex", "Knows the game", "Items/DropAppearance/bag", 420);
             alex.AddItemCategories(ItemCategories.Misc);
 
-            GordonFreeman = CustomItem.AddCustomItemTo(LocalGame, "The Free Weapon", "When all you have is a bent metal rod, every problem looks like an alien crab.", "Items/DropAppearance/WoodenShield", 420);
+            GordonFreeman = ModItem.AddItem("The Free Weapon", "When all you have is a bent metal rod, every problem looks like an alien crab.", "Items/DropAppearance/WoodenShield", 420);
             GordonFreeman.AddItemCategories(ItemCategories.Shield);
-            ZordonZreeman = CustomEquipmentInfo.AddEquipmentInfoForCustomItem("Wooden", GordonFreeman.IntType);
-            ZordonZreeman.SetStatChanges(ShldHP: 1337);
+            GordonFreeman.AddEquipmentInfo("Wooden");
+            GordonFreeman.EquipInfo.SetStats(ShldHP: 1337);
 
-            InstaRepair = CustomItem.AddCustomItemTo(LocalGame, "FastAsFakch", "Do you like moovin'? We do too!", "Items/DropAppearance/blindfold", 420);
+            InstaRepair = ModItem.AddItem("Critical Blindfold", "True strength reveals itself when all oods are stacked against you.", "Items/DropAppearance/blindfold", 420);
             InstaRepair.AddItemCategories(ItemCategories.Facegear);
-            var Insta = CustomFacegearInfo.AddFacegearInfoForCustomItem("Blindfold", InstaRepair.IntType);
-            Insta.SetRenderOffsets(new Vector2(2f, -1f), new Vector2(5f, -3f), new Vector2(3f, -5f), new Vector2(2f, -1f));
-            Insta.SetStatChanges(CritDMG: 1337, EPRegen: -60);
+            InstaRepair.AddFacegearInfo("Blindfold");
+            InstaRepair.FacegearInfo.SetRenderOffsets(new Vector2(2f, -1f), new Vector2(5f, -3f), new Vector2(3f, -5f), new Vector2(2f, -1f));
+            InstaRepair.FacegearInfo.SetStats(CritDMG: 485, Crit: -100);
 
-            Hattus = CustomItem.AddCustomItemTo(LocalGame, "Hattus Maxxus", "Maxximus prottectus!", "Items/DropAppearance/Slimehat", 420);
+            Hattus = ModItem.AddItem("Hattus Maxxus", "Maxximus prottectus!", "Items/DropAppearance/Slimehat", 420);
             Hattus.AddItemCategories(ItemCategories.Hat);
-            var Hat = CustomHatInfo.AddHatInfoForCustomItem("Slimehat", Hattus.IntType);
-            Hat.SetStatChanges(DEF: 420, HP: 69);
-            Hat.SetObstructions(true, true, false);
-            Hat.SetRenderOffsets(new Vector2(4f, 7f), new Vector2(5f, 5f), new Vector2(5f, 5f), new Vector2(4f, 7f));
+            Hattus.AddHatInfo("Slimehat");
+            Hattus.HatInfo.SetStats(DEF: 420, HP: 69);
+            Hattus.HatInfo.SetObstructions(true, true, false);
+            Hattus.HatInfo.SetRenderOffsets(new Vector2(4f, 7f), new Vector2(5f, 5f), new Vector2(5f, 5f), new Vector2(4f, 7f));
 
-            Weapon = GordonFreeman = CustomItem.AddCustomItemTo(LocalGame, "The Free Weapon", "When all you have is a bent metal rod, every problem looks like an alien crab.", "Items/DropAppearance/Claymore", 420);
+            Weapon = ModItem.AddItem("The Free Weapon", "When all you have is a bent metal rod, every problem looks like an alien crab.", "Items/DropAppearance/Claymore", 420);
             Weapon.AddItemCategories(ItemCategories.Weapon);
-            var What = CustomWeaponInfo.AddWeaponInfoForCustomItem("Claymore", Weapon.IntType, (int)WeaponCategory.TwoHanded, false);
-            What.SetStatChanges(ATK: 75, ASPD: -10, Crit: 10);
+            Weapon.AddWeaponInfo("Claymore", (int)WeaponCategory.TwoHanded, false);
+            Weapon.WeaponInfo.SetStats(ATK: 75, ASPD: -10, Crit: 10);
 
 
             Console.WriteLine("Custom Content Loaded!");
@@ -82,6 +84,19 @@ namespace SoG.ChaosMod
 
         public override void OnPlayerDamaged(ref int damage, ref byte type)
         {
+            // disable this code for now
+            if (!grant)
+            {
+                grant = true;
+
+                GordonFreeman.SpawnOn(LocalGame, LocalPlayer);
+                InstaRepair.SpawnOn(LocalGame, LocalPlayer);
+                Weapon.SpawnOn(LocalGame, LocalPlayer);
+                Hattus.SpawnOn(LocalGame, LocalPlayer);
+            }
+
+            return;
+
             damage = (3 * LocalGame.GetCurrentFloor()) * damage; //e.g 300%, 600%, 900%... dmg
 
             Type gameType = Utils.GetGameType("SoG.Game1");
@@ -91,8 +106,6 @@ namespace SoG.ChaosMod
 
             //function.Invoke(LocalGame.GetUnderlayingGame(), new[] { GetModItemFromString("BagKnight"), player.xEntity.xTransform.v2Pos, player.xEntity.xRenderComponent.fVirtualHeight, player.xEntity.xCollisionComponent.ibitCurrentColliderLayer, Vector2.Zero });
             //function.Invoke(LocalGame.GetUnderlayingGame(), new[] { GetModItemFromString("BananaMan"), player.xEntity.xTransform.v2Pos, player.xEntity.xRenderComponent.fVirtualHeight, player.xEntity.xCollisionComponent.ibitCurrentColliderLayer, Vector2.Zero });
-
-            Weapon.SpawnOn(LocalGame, LocalPlayer);
         }
 
         public override void OnPlayerKilled()

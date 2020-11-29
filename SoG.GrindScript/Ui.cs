@@ -8,12 +8,13 @@ namespace SoG.GrindScript
 {
     public class Ui
     {
-        public static void AddMiscTextTo(LocalGame game, string category, string entry, string text, MiscTextTypes textType = MiscTextTypes.Default)
+        public static void AddMiscTextTo(string category, string entry, string text, MiscTextTypes textType = MiscTextTypes.Default)
         {
             try
             {
+                dynamic game = Utils.GetTheGame();
                 dynamic textEntry = Utils.GetGameType("SoG.MiscText").GetConstructor(Type.EmptyTypes).Invoke(null);
-                game.GetUnderlayingGame().xMiscTextGod_Default.dsxTextCollections[category].dsxTexts[entry] = textEntry;
+                game.xMiscTextGod_Default.dsxTextCollections[category].dsxTexts[entry] = textEntry;
 
                 // Set extra params
 

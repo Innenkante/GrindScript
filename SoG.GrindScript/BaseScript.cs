@@ -4,19 +4,23 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 
 namespace SoG.GrindScript
 {
     public partial class BaseScript
     {
-        internal static List<CustomItem> CustomItems = new List<CustomItem>();
-        internal static List<CustomEquipmentInfo> CustomEquipmentInfos = new List<CustomEquipmentInfo>();
-        internal static List<CustomWeaponInfo> CustomWeaponInfos = new List<CustomWeaponInfo>();
-        internal static List<CustomFacegearInfo> CustomFacegearInfos = new List<CustomFacegearInfo>();
-        internal static List<CustomHatInfo> CustomHatInfos = new List<CustomHatInfo>();
+        internal static List<ModItem> CustomItems = new List<ModItem>();
+
+        // WIP - something better could be useful
+        internal static Dictionary<string, ContentManager> ModContentManagers = new Dictionary<string, ContentManager>();
 
         private readonly dynamic _game;
+
+        protected ContentManager ModContent;
+
+        protected string assetPath = "Content";
 
         public LocalGame LocalGame { get; }
 
@@ -27,6 +31,14 @@ namespace SoG.GrindScript
         protected BaseScript() 
         {
             Utils.Initialize(AppDomain.CurrentDomain.GetAssemblies().First(a => a.GetName().Name == "Secrets Of Grindea"));
+
+            assetPath = "ModContent\\" + this.GetType().Name;
+
+            ModContent = new ContentManager(Utils.GetTheGame().Content.ServiceProvider, assetPath);
+
+            ModContentManagers.Add(this.GetType().Name, ModContent);
+
+            Console.WriteLine(this.GetType().Name + " ContentManager path set as " + ModContent.RootDirectory);
 
             _game = Utils.GetGameType("SoG.Program").GetMethod("GetTheGame")?.Invoke(null, null);
 

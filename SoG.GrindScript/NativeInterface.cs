@@ -47,6 +47,12 @@ namespace SoG.GrindScript
                 Directory.CreateDirectory("Mods");
             }
 
+            if (!Directory.Exists("ModContent"))
+            {
+                Console.WriteLine("ModContent directory does not exist, creating...");
+                Directory.CreateDirectory("ModContent");
+            }
+
             var dir = Path.GetFullPath(Directory.GetCurrentDirectory() + "\\Mods");
 
             foreach (var file in Directory.GetFiles(dir))
