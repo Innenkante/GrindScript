@@ -11,16 +11,12 @@ namespace SoG.GrindScript
 {
     public partial class BaseScript
     {
+        // Collection of important data for mods and the mod loader
         internal static List<ModItem> CustomItems = new List<ModItem>();
-
-        // WIP - something better could be useful
-        internal static Dictionary<string, ContentManager> ModContentManagers = new Dictionary<string, ContentManager>();
 
         private readonly dynamic _game;
 
         protected ContentManager ModContent;
-
-        protected string assetPath = "Content";
 
         public LocalGame LocalGame { get; }
 
@@ -32,13 +28,17 @@ namespace SoG.GrindScript
         {
             Utils.Initialize(AppDomain.CurrentDomain.GetAssemblies().First(a => a.GetName().Name == "Secrets Of Grindea"));
 
-            assetPath = "ModContent\\" + this.GetType().Name;
+            #region ModContent
+
+            string assetPath = "ModContent/" + this.GetType().Name;
 
             ModContent = new ContentManager(Utils.GetTheGame().Content.ServiceProvider, assetPath);
 
-            ModContentManagers.Add(this.GetType().Name, ModContent);
+            ModLibrary.ModContentManagers.Add(this.GetType().Name, ModContent);
 
             Console.WriteLine(this.GetType().Name + " ContentManager path set as " + ModContent.RootDirectory);
+
+            #endregion
 
             _game = Utils.GetGameType("SoG.Program").GetMethod("GetTheGame")?.Invoke(null, null);
 

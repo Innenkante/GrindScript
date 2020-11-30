@@ -8,7 +8,7 @@ namespace SoG.GrindScript
 {
     public class Ui
     {
-        public static void AddMiscTextTo(string category, string entry, string text, MiscTextTypes textType = MiscTextTypes.Default)
+        public static void AddMiscText(string category, string entry, string text, MiscTextTypes textType = MiscTextTypes.Default)
         {
             try
             {

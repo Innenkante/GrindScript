@@ -24,23 +24,9 @@ namespace SoG.GrindScript
 
         public ModWeapon WeaponInfo { get => EquipInfo as ModWeapon; }
 
-        private ContentManager _managerToUse = null;
+        public string ModResource { get; private set; }
 
-        public ContentManager ManagerToUse
-        {
-            get 
-            {
-                if(_managerToUse == null)
-                {
-                    return Utils.GetTheGame().Content;
-                }
-                else
-                {
-                    return _managerToUse;
-                }
-            }
-            set => _managerToUse = value;
-        }
+        public string Resource { get; private set; }
 
         public int RelativeID { get; set; }
 
@@ -48,6 +34,11 @@ namespace SoG.GrindScript
         {
             get => (int)_originalObject.enType;
             set => _originalObject.enType = Utils.GetEnumObject("SoG.ItemCodex+ItemTypes", value);
+        }
+
+        public string Name
+        {
+            get => _originalObject.sFullName;
         }
 
         public bool IsVanillaItem 
@@ -150,18 +141,19 @@ namespace SoG.GrindScript
             return false;
         }
 
-        public static ModItem AddItem(string name, string description, string appearance, int value, ContentManager manager)
+        public static ModItem AddItem(string name, string description, string resource, int value, BaseScript mod)
         {
-            dynamic Content = manager ?? Utils.GetTheGame().Content;
+            ContentManager Content = ModLibrary.GetModContent(mod);
+
             int newId = BaseScript.CustomItems.Count + 1;
             dynamic newItem = Utils.DefaultConstructObject("SoG.ItemDescription");
-            string baseEntryName = name.Replace(" ", "");
 
-            Ui.AddMiscTextTo("Items", baseEntryName + "_Name", name, MiscTextTypes.GenericItemName);
-            Ui.AddMiscTextTo("Items", baseEntryName + "_Description", description, MiscTextTypes.GenericItemDescription);
+            string baseEntryName = name.Replace(" ", "");
+            Ui.AddMiscText("Items", baseEntryName + "_Name", name, MiscTextTypes.GenericItemName);
+            Ui.AddMiscText("Items", baseEntryName + "_Description", description, MiscTextTypes.GenericItemDescription);
 
             newItem.sFullName = name;
-            newItem.txDisplayImage = Content.Load<Texture2D>(appearance);
+            newItem.txDisplayImage = Content.Load<Texture2D>("Items/DropAppearance/" + resource);
             newItem.sNameLibraryHandle = baseEntryName + "_Name";
             newItem.sDescriptionLibraryHandle = baseEntryName + "_Description";
             newItem.sCategory = "";
@@ -169,60 +161,52 @@ namespace SoG.GrindScript
             newItem.iValue = value;
             newItem.enType = Utils.GetEnumObject("SoG.ItemCodex+ItemTypes", BaseItemTypesPos + newId);
 
-            dynamic items = Utils.GetGameType("SoG.ItemCodex").GetPublicStaticField("denxLoadedDescriptions");
-            items[newItem.enType] = newItem;
+            Utils.GetGameType("SoG.ItemCodex").GetPublicStaticField("denxLoadedDescriptions")[newItem.enType] = newItem;
 
             var customItem = new ModItem(newItem) { RelativeID = newId };
+
+            // The resource is prefixed with the mod. This is relevant for future use
+            customItem.ModResource = ModLibrary.PrefixResourceWithMod(resource, mod);
+            customItem.Resource = resource;
+
+            ModLibrary.AddItemToMod(customItem.IntType, mod);
             BaseScript.CustomItems.Add(customItem);
 
-            customItem.ManagerToUse = Content;
-
-            Console.WriteLine("Added custom item" + name + " with game ID " + (BaseItemTypesPos + newId) + ", relative ID " + newId + "...");
+            Utils.WriteToConsole("Added item \"" + customItem.Name + "\":" + customItem.IntType, "CustomItem");
             return customItem;
         }
 
         public ModEquipment AddEquipmentInfo(string resource)
         {
-            int intType = this.IntType;
-            if(EquipInfo != null)
+            if(EquipInfo != null || !ModItem.ValueIsModItem(IntType))
             {
-                Console.WriteLine("Error: Item " + intType + " already has equipment info!");
+                Utils.WriteToConsole("Failed to add equipment info for \"" + Name + "\":" + IntType + "!", "CustomItem");
+                Utils.WriteToConsole("Item either has equipment info already, or is not a mod item.");
                 return null;
             }
 
-            if (!ModItem.ValueIsModItem(intType))
-            {
-                Console.WriteLine("Error: Can't add equipment info to item " + intType + " since it has no defined ItemDescription!");
-                return null;
-            }
-
-            EquipInfo = new ModEquipment(Activator.CreateInstance(Utils.GetGameType("SoG.EquipmentInfo"), resource, Enum.ToObject(Utils.GetGameType("SoG.ItemCodex+ItemTypes"), intType)));
-            Console.WriteLine("Custom item with the id " + intType + " now has equipment info...");
-
+            // The resource is prefixed with the mod. This is relevant for future use
+            EquipInfo = new ModEquipment(Utils.ConstructObject("SoG.EquipmentInfo", resource, Utils.GetEnumObject("SoG.ItemCodex+ItemTypes", IntType)));
+            
+            Utils.WriteToConsole("Added equipment info for item \"" + Name + "\":" + IntType, "CustomItem");
             return EquipInfo;
         }
 
         public ModFacegear AddFacegearInfo(string resource)
         {
-            int intType = this.IntType;
-            if (EquipInfo != null)
+            if (EquipInfo != null || !ModItem.ValueIsModItem(IntType))
             {
-                Console.WriteLine("Error: Item " + intType + " already has equipment info!");
+                Utils.WriteToConsole("Failed to add equipment info for \"" + Name + "\":" + IntType + "!", "CustomItem");
+                Utils.WriteToConsole("Item either has equipment info already, or is not a mod item.");
                 return null;
             }
 
-            if (!ModItem.ValueIsModItem(intType))
-            {
-                Console.WriteLine("Error: Can't add equipment info to item " + intType + " since it has no defined ItemDescription!");
-                return null;
-            }
-
-            // Deal with resources
-            ModFacegear xInfo = new ModFacegear(Utils.ConstructObject("SoG.FacegearInfo", Utils.GetEnumObject("SoG.ItemCodex+ItemTypes", intType)));
-            xInfo.Original.sResourceName = resource;
+            // The resource is prefixed with the mod. This is relevant for future use
+            ModFacegear xInfo = new ModFacegear(Utils.ConstructObject("SoG.FacegearInfo", Utils.GetEnumObject("SoG.ItemCodex+ItemTypes", IntType)));
+            xInfo.Original.sResourceName = ModResource;
 
             string sHatPath = "Sprites/Equipment/Facegear/" + resource + "/";
-            dynamic Content = Utils.GetTheGame().Content;
+            dynamic Content = ModLibrary.GetItemModContent(IntType);
 
             string[] sDirs = { "Up", "Right", "Down", "Left" };
             for (int i = 0; i <= 3; i++)
@@ -233,10 +217,10 @@ namespace SoG.GrindScript
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine("Exception for facegear " + intType + "'s " + sDirs[i] + " texture: " + e.Message + ". Setting to txNullTex.");
-                    xInfo.Original.atxTextures[i] = Utils.GetGameType("SoG.RenderMaster").GetPublicStaticField("txNullTex");
+                    Utils.WriteToConsole("Exception raised for facegear \"" + Name + "\":" + IntType + ", texture " + sDirs[i] + ".", "CustomItem");
+                    Utils.WriteToConsole("Exception message: " + e.Message, "CustomItem");
+                    xInfo.Original.atxTextures[i] = Utils.GetNullTex();
                 }
-
                 xInfo.Original.av2RenderOffsets[i] = new Vector2(0f, 0f);
             }
 
@@ -247,30 +231,25 @@ namespace SoG.GrindScript
 
             EquipInfo = xInfo;
 
-            Console.WriteLine("Custom item with the id " + intType + " now has facegear info...");
+            Utils.WriteToConsole("Added facegear info for item \"" + Name + "\":" + IntType, "CustomItem");
             return EquipInfo as ModFacegear;
         }
 
         public ModHat AddHatInfo(string resource, bool doubleSlot = false)
         {
-            int intType = this.IntType;
-            if (EquipInfo != null)
+            if (EquipInfo != null || !ModItem.ValueIsModItem(IntType))
             {
-                Console.WriteLine("Error: Item " + intType + " already has equipment info!");
+                Utils.WriteToConsole("Failed to add equipment info for \"" + Name + "\":" + IntType + "!", "CustomItem");
+                Utils.WriteToConsole("Item either has equipment info already, or is not a mod item.", "CustomItem");
                 return null;
             }
 
-            if (!ModItem.ValueIsModItem(intType))
-            {
-                Console.WriteLine("Error: Can't add equipment info to item " + intType + " since it has no defined ItemDescription!");
-                return null;
-            }
-
-            ModHat xInfo = new ModHat(Activator.CreateInstance(Utils.GetGameType("SoG.HatInfo"), Enum.ToObject(Utils.GetGameType("SoG.ItemCodex+ItemTypes"), intType)));
-            xInfo.Original.sResourceName = resource;
+            // The resource is prefixed with the mod. This is relevant for future use
+            ModHat xInfo = new ModHat(Utils.ConstructObject("SoG.HatInfo", Utils.GetEnumObject("SoG.ItemCodex+ItemTypes", IntType)));
+            xInfo.Original.sResourceName = ModResource;
 
             string sHatPath = "Sprites/Equipment/Hats/" + resource + "/";
-            dynamic Content = ((dynamic)Utils.GetGameType("SoG.Program").GetMethod("GetTheGame")?.Invoke(null, null)).Content;
+            dynamic Content = ModLibrary.GetItemModContent(IntType);
 
             string[] sDirs = { "Up", "Right", "Down", "Left" };
             for (int i = 0; i <= 3; i++)
@@ -281,10 +260,10 @@ namespace SoG.GrindScript
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine("Exception for hat " + intType + "'s " + sDirs[i] + " texture: " + e.Message + " -> Setting to txNullTex");
-                    xInfo.Original.xDefaultSet.atxTextures[i] = Utils.GetGameType("SoG.RenderMaster").GetPublicStaticField("txNullTex");
+                    Utils.WriteToConsole("Exception raised for hat \"" + Name + "\":" + IntType + ", texture " + sDirs[i] + ".", "CustomItem");
+                    Utils.WriteToConsole("Exception message: " + e.Message, "CustomItem");
+                    xInfo.Original.xDefaultSet.atxTextures[i] = Utils.GetNullTex();
                 }
-
                 xInfo.Original.xDefaultSet.av2RenderOffsets[i] = new Vector2(0f, 0f);
             }
 
@@ -296,31 +275,24 @@ namespace SoG.GrindScript
 
             EquipInfo = xInfo;
 
-            Console.WriteLine("Custom item with the id " + intType + " now has hat info...");
+            Utils.WriteToConsole("Added hat info for item \"" + Name + "\":" + IntType, "CustomItem");
             return EquipInfo as ModHat;
         }
 
         public ModWeapon AddWeaponInfo(string resource, int enWeaponCategory, bool isMagicWeapon, string palette = "")
         {
-            int intType = this.IntType;
-            if (EquipInfo != null)
+            if (EquipInfo != null || !ModItem.ValueIsModItem(IntType))
             {
-                Console.WriteLine("Error: Item " + intType + " already has equipment info!");
+                Utils.WriteToConsole("Failed to add equipment info for \"" + Name + "\":" + IntType + "!", "CustomItem");
+                Utils.WriteToConsole("Item either has equipment info already, or is not a mod item.");
                 return null;
             }
 
-            if (!ModItem.ValueIsModItem(intType))
-            {
-                Console.WriteLine("Error: Can't add equipment info to item " + intType + " since it has no defined ItemDescription!");
-                return null;
-            }
-
-            // For now, no custom palettes. C'est la vie
+            // For now, no custom palettes. C'est la vie. The vanilla palettes are loaded using the vanilla content manager
             palette = "blueish";
-            ModWeapon xInfo = new ModWeapon(Utils.ConstructObject("SoG.WeaponInfo", resource, Utils.GetEnumObject("SoG.ItemCodex+ItemTypes", intType), Utils.GetEnumObject("SoG.WeaponInfo+WeaponCategory", enWeaponCategory), palette));
+            ModWeapon xInfo = new ModWeapon(Utils.ConstructObject("SoG.WeaponInfo", resource, Utils.GetEnumObject("SoG.ItemCodex+ItemTypes", IntType), Utils.GetEnumObject("SoG.WeaponInfo+WeaponCategory", enWeaponCategory), palette));
 
             // Standard weapon multipliers and stuff
-
             xInfo.Original.enAutoAttackSpell = Utils.GetEnumObject("SoG.WeaponInfo+AutoAttackSpell", (int)AutoAttackSpell.None);
             if (enWeaponCategory == (int)WeaponCategory.OneHanded)
             {
@@ -340,8 +312,7 @@ namespace SoG.GrindScript
             }
 
             EquipInfo = xInfo;
-
-            Console.WriteLine("Custom item with the id " + intType + " now has weapon info...");
+            Utils.WriteToConsole("Added weapon info for item \"" + Name + "\":" + IntType, "CustomItem");
             return EquipInfo as ModWeapon;
         }
 
@@ -349,9 +320,19 @@ namespace SoG.GrindScript
 
     public class ModEquipment : ConvertedObject
     {
+        public const int BaseSpecialEffectsPos = 200;
+
+        public string ModResource { get; private set; }
+
+        public string Resource { get; private set; }
+
         public ModEquipment(object originalObject) : base(originalObject)
         {
+            ModResource = ModLibrary.PrefixResourceWithItemMod(Original.sResourceName, IntType);
 
+            Resource = Original.sResourceName;
+
+            Original.sResourceName = ModResource;
         }
 
         public int IntType
@@ -396,6 +377,16 @@ namespace SoG.GrindScript
             else xDict.Add((dynamic)Enum.ToObject(type, (int)StatEnum.ShldRegen), ShldRegen);
         }
 
+        public void AddSpecialEffect(int intEffect)
+        {
+            Original.lenSpecialEffects.Add(Utils.GetEnumObject("SoG.EquipmentInfo+SpecialEffect", intEffect));
+        }
+
+        public void RemoveSpecialEffect(int intEffect)
+        {
+            Original.lenSpecialEffects.Remove(Utils.GetEnumObject("SoG.EquipmentInfo+SpecialEffect", intEffect));
+        }
+
         private static bool OnGetEquipmentInfoPrefix(ref dynamic __result, ref int enType)
         {
             if (ModItem.ValueIsVanillaItem(enType) || !ModItem.ValueIsModItem(enType))
@@ -416,6 +407,8 @@ namespace SoG.GrindScript
             // Return info from BaseScript, skip original code
             return false;
         }
+
+
     }
 
     public class ModFacegear : ModEquipment

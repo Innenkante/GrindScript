@@ -328,6 +328,29 @@ namespace SoG.GrindScript
 
                 original = Utils.GetGameType("SoG.WeaponCodex").GetMethod("GetWeaponInfo");
                 harmony.Patch(original, new HarmonyMethod(prefix));
+
+                // Item Content Manager related patches
+                prefix = typeof(ModLibrary).GetTypeInfo().GetPrivateStaticMethod("OnOneHandedDictionaryFillPrefix");
+
+                original = Utils.GetGameType("WeaponAssets.WeaponAssetLoader").GetPrivateStaticMethod("OneHandedDictionaryFill");
+                harmony.Patch(original, new HarmonyMethod(prefix));
+
+                prefix = typeof(ModLibrary).GetTypeInfo().GetPrivateStaticMethod("OnTwoHandedDictionaryFillPrefix");
+
+                original = Utils.GetGameType("WeaponAssets.WeaponAssetLoader").GetPrivateStaticMethod("TwoHandedDictionaryFill");
+                harmony.Patch(original, new HarmonyMethod(prefix));
+
+                prefix = typeof(ModLibrary).GetTypeInfo().GetPrivateStaticMethod("OnLoadBatchPrefix");
+
+                original = Utils.GetGameType("WeaponAssets.WeaponContentManager").GetMethods(BindingFlags.NonPublic | BindingFlags.Instance).Where(item => item.Name == "LoadBatch").ElementAt(1);
+                harmony.Patch(original, new HarmonyMethod(prefix));
+
+                prefix = typeof(ModLibrary).GetTypeInfo().GetPrivateStaticMethod("On_Animations_GetAnimationSetPrefix");
+
+                original = Utils.GetGameType("SoG.Game1").GetMethods(BindingFlags.Public | BindingFlags.Instance).Where(item => item.Name == "_Animations_GetAnimationSet").ElementAt(1);
+                harmony.Patch(original, new HarmonyMethod(prefix));
+
+                
             }
             catch(Exception e)
             {

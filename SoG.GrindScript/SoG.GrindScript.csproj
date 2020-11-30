@@ -74,6 +74,7 @@
     <Compile Include="Enums.cs" />
     <Compile Include="LocalGame.cs" />
     <Compile Include="ModCodex.cs" />
+    <Compile Include="ModContent.cs" />
     <Compile Include="NativeInterface.cs" />
     <Compile Include="Player.cs" />
     <Compile Include="NPC.cs" />
@@ -87,6 +88,6 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>copy /y  "$(TargetPath)" "E:\Steam\steamapps\common\SecretsOfGrindea"</PostBuildEvent>
+    <PostBuildEvent>copy /y  "$(TargetPath)" "C:\Program Files (x86)\Steam\steamapps\common\SecretsOfGrindea"</PostBuildEvent>
   </PropertyGroup>
 </Project>

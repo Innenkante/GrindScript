@@ -1102,6 +1102,52 @@ namespace SoG.GrindScript
         KnockbackResistance
     }
 
+    public enum SpecialEffect : ushort
+    {
+        _Unique_StingerBonuses,
+        _Unique_ArcherApple,
+        _Unique_WispShield_BetterProjectileReflect,
+        _Unique_CrystalShield_PGDamageReduce01,
+        _Unique_CrystalShield_PGDamageReduce02,
+        _Unique_MissileControlUnit,
+        _Unique_GoblinShoes_LessSlippery,
+        _Unique_WinterShield_ColdGuard,
+        _Unique_RedFlowerWhip_LongerPlantDurations,
+        _Unique_RollerBlades_FasterChargeMovement,
+        _Unique_IcePendant_StrongerIceSpells,
+        _Unique_MushroomShield_SpawnShrooms,
+        _Unique_GiantIcicle_ChillingTouch,
+        _Unique_Pickaxe_InstantBreakEnvironment,
+        _Unique_LightningGlove_StaticTouch,
+        _Unique_CrystalPumps_MoveSlowWhileChargingMagic,
+        _Unique_GasMask_PoisonResistance,
+        _Unique_ExtraDamagePerCard,
+        _Unique_Shiidu,
+        _Unique_BladeOfEchoes_Cursed,
+        _Unique_ThornWorm_ReturnDamage,
+        _Unique_SailorHat_FasterChargeMovement,
+        _Unique_AncientPendant_IncreasedChargeSpeed,
+        _Unique_BarrelHat_BarrelShieldSynergy,
+        _Unique_MagicBattery_EPRegOnCrit,
+        _Unique_CameraShield_StunOnPG,
+        _Unique_CameraLens_CritIncreaseOnPG,
+        _Unique_SolemShield_LaserBlast,
+        _Unique_LuckySeven_GuaranteedCrits,
+        _Unique_CactusClub_SpawnThorns,
+        _Unique_RecipeBook_LoosePages,
+        _Unique_Pan_PotionRechargeIncrease,
+        _Unique_GoldenEarrings_IncreasedGoldDrops,
+        _Unique_SpectralBlindfold_TradeHPForEP,
+        _Unique_CaptainBonesHead_Summon,
+        _Unique_EmptyBottle_QuickerPotionRecharge,
+        _Unique_RestlessSpirit_RandomMovementWhenIdle,
+        _Unique_BugNet_BugCatcher,
+        _Unique_SmashLight_BurningTouch,
+        _Unique_BootsOfBloodthirst_HPDrainASPDBuff,
+        _Unique_KobesTag_SummonCollar,
+        _Unique_MysteryCube_RandomEffectOnBasicAttackHit
+    }
+
     public enum WorldRegion
     {
         NotLoaded,

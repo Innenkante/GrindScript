@@ -20,6 +20,7 @@ namespace SoG.ChaosMod
         private ModItem InstaRepair;
         private ModItem Hattus;
         private ModItem Weapon;
+        private ModItem WeaponOne;
 
         bool grant = false;
         
@@ -52,32 +53,38 @@ namespace SoG.ChaosMod
 
             Console.WriteLine("Trying to load custom content....");
 
-            alex = ModItem.AddItem("Alex", "Knows the game", "Items/DropAppearance/bag", 420);
+            alex = ModItem.AddItem("Alex", "Knows the game", "roomba", 420, this);
             alex.AddItemCategories(ItemCategories.Misc);
 
-            GordonFreeman = ModItem.AddItem("The Free Weapon", "When all you have is a bent metal rod, every problem looks like an alien crab.", "Items/DropAppearance/WoodenShield", 420);
+            GordonFreeman = ModItem.AddItem("The Freeman's Shield", "*Insert relevant and funny description*", "WoodenShield", 420, this);
             GordonFreeman.AddItemCategories(ItemCategories.Shield);
             GordonFreeman.AddEquipmentInfo("Wooden");
             GordonFreeman.EquipInfo.SetStats(ShldHP: 1337);
-
-            InstaRepair = ModItem.AddItem("Critical Blindfold", "True strength reveals itself when all oods are stacked against you.", "Items/DropAppearance/blindfold", 420);
+            
+            InstaRepair = ModItem.AddItem("Critical Blindfold", "True strength reveals itself when all oods are stacked against you.", "Flybold", 420, this);
             InstaRepair.AddItemCategories(ItemCategories.Facegear);
-            InstaRepair.AddFacegearInfo("Blindfold");
+            InstaRepair.AddFacegearInfo("Flybold");
             InstaRepair.FacegearInfo.SetRenderOffsets(new Vector2(2f, -1f), new Vector2(5f, -3f), new Vector2(3f, -5f), new Vector2(2f, -1f));
-            InstaRepair.FacegearInfo.SetStats(CritDMG: 485, Crit: -100);
+            InstaRepair.FacegearInfo.SetStats(CritDMG: 80, Crit: 80, EPRegen: -65, DEF: -20, ASPD: -10, CSPD: -20, EP: -20);
 
-            Hattus = ModItem.AddItem("Hattus Maxxus", "Maxximus prottectus!", "Items/DropAppearance/Slimehat", 420);
+            Hattus = ModItem.AddItem("Hattus Maxxus", "Maxximus prottectus!", "Slimeus", 420, this);
             Hattus.AddItemCategories(ItemCategories.Hat);
-            Hattus.AddHatInfo("Slimehat");
+            Hattus.AddHatInfo("Slimeus");
             Hattus.HatInfo.SetStats(DEF: 420, HP: 69);
             Hattus.HatInfo.SetObstructions(true, true, false);
             Hattus.HatInfo.SetRenderOffsets(new Vector2(4f, 7f), new Vector2(5f, 5f), new Vector2(5f, 5f), new Vector2(4f, 7f));
 
-            Weapon = ModItem.AddItem("The Free Weapon", "When all you have is a bent metal rod, every problem looks like an alien crab.", "Items/DropAppearance/Claymore", 420);
+            Weapon = ModItem.AddItem("The Free Weapon 2.0", "When all you have is a bent metal rod, every problem looks like an alien crab.", "Claymore", 420, this);
             Weapon.AddItemCategories(ItemCategories.Weapon);
             Weapon.AddWeaponInfo("Claymore", (int)WeaponCategory.TwoHanded, false);
             Weapon.WeaponInfo.SetStats(ATK: 75, ASPD: -10, Crit: 10);
+            Weapon.WeaponInfo.AddSpecialEffect((int)SpecialEffect._Unique_BladeOfEchoes_Cursed);
 
+            WeaponOne = ModItem.AddItem("The Free Weapon", "When all you have is a bent metal rod, every problem looks like an alien crab.", "IronSword", 420, this);
+            WeaponOne.AddItemCategories(ItemCategories.Weapon);
+            WeaponOne.AddWeaponInfo("IronSword", (int)WeaponCategory.OneHanded, false);
+            WeaponOne.WeaponInfo.SetStats(ATK: 75, ASPD: -10, Crit: 10);
+            WeaponOne.WeaponInfo.AddSpecialEffect((int)SpecialEffect._Unique_LightningGlove_StaticTouch);
 
             Console.WriteLine("Custom Content Loaded!");
         }
@@ -88,10 +95,11 @@ namespace SoG.ChaosMod
             if (!grant)
             {
                 grant = true;
-
+                alex.SpawnOn(LocalGame, LocalPlayer);
                 GordonFreeman.SpawnOn(LocalGame, LocalPlayer);
                 InstaRepair.SpawnOn(LocalGame, LocalPlayer);
                 Weapon.SpawnOn(LocalGame, LocalPlayer);
+                WeaponOne.SpawnOn(LocalGame, LocalPlayer);
                 Hattus.SpawnOn(LocalGame, LocalPlayer);
             }
 
