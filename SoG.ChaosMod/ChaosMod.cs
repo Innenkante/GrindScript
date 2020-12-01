@@ -80,7 +80,7 @@ namespace SoG.ChaosMod
             Weapon.WeaponInfo.SetStats(ATK: 75, ASPD: -10, Crit: 10);
             Weapon.WeaponInfo.AddSpecialEffect((int)SpecialEffect._Unique_BladeOfEchoes_Cursed);
 
-            WeaponOne = ModItem.AddItem("The Free Weapon", "When all you have is a bent metal rod, every problem looks like an alien crab.", "IronSword", 420, this);
+            WeaponOne = ModItem.AddItem("The Free Weapon", "When all you have is a bent metal rod, every problem looks like an alien crab.", "Crowbar", 420, this);
             WeaponOne.AddItemCategories(ItemCategories.Weapon);
             WeaponOne.AddWeaponInfo("IronSword", (int)WeaponCategory.OneHanded, false);
             WeaponOne.WeaponInfo.SetStats(ATK: 75, ASPD: -10, Crit: 10);

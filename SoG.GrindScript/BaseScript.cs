@@ -11,9 +11,6 @@ namespace SoG.GrindScript
 {
     public partial class BaseScript
     {
-        // Collection of important data for mods and the mod loader
-        internal static List<ModItem> CustomItems = new List<ModItem>();
-
         private readonly dynamic _game;
 
         protected ContentManager ModContent;

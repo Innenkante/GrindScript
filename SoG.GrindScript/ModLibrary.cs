@@ -10,51 +10,59 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace SoG.GrindScript
 {
+
+	// TO DO: Decide on what fields should be "internal" and which not
+
     public static class ModLibrary
-    {
-        public static string VanillaName = "SecretsOfGrindea";
+	{
+		#region "Owning" Dictionaries for Mod Content (items, etc.)
 
-        public const bool UseModContentManagers = true;
+		internal static readonly List<ModItem> CustomItems = new List<ModItem>(); // Stores item descriptions and is also used to track which ItemTypes enum values are used to implement custom items
 
-        public static Dictionary<string, ContentManager> ModContentManagers = new Dictionary<string, ContentManager>();
+		internal static readonly List<int> CustomEquipmentEffects = new List<int>(); // Tracks which SpecialEffect enum values are used to implement custom effects
 
-        public static Dictionary<int, string> ItemModDictionary = new Dictionary<int, string>();
+		#endregion
 
-        public static ContentManager GetModContent(BaseScript mod)
+		#region "Non-Owning" Helper dictionaries, references, etc.
+
+		internal static readonly Dictionary<int, string> ItemModDictionary = new Dictionary<int, string>(); // Used to tell which custom item was added by which mod
+
+		internal static readonly Dictionary<string, int> RegisteredItems = new Dictionary<string, int>(); // Correlates one string to one item ID - utility for modders
+
+		internal static readonly Dictionary<string, int> RegisteredEquipmentEffects = new Dictionary<string, int>(); // Correlates one string to one special effect ID - utility for modders
+
+		internal static readonly Dictionary<string, ContentManager> ModContentManagers = new Dictionary<string, ContentManager>(); // Keeps a reference to each mod's Content Manager
+
+		#endregion
+
+		#region Helper values and properties for enum real estate
+
+		internal const int ItemTypesStart = 400000;
+
+		internal static int ItemTypesNext { get => ItemTypesStart + CustomItems.Count; }
+
+		internal const int SpecialEffectsStart = 200;
+
+		internal static int SpecialEffectsNext { get => SpecialEffectsStart + CustomEquipmentEffects.Count; }
+
+		#endregion
+
+		#region Utility Functions
+
+		public static ContentManager GetItemModContent(int type)
+		{
+			return ModContentManagers[ItemModDictionary[type]];
+		}
+
+		public static string PrefixResource(string mod, string resource)
         {
-            return ModContentManagers[mod.GetType().Name];
+            return mod + "/" + resource;
         }
 
-        public static ContentManager GetModContent(string modName)
+        public static string PrefixResource(int item, string resource)
         {
-            return ModContentManagers[modName];
+            return ItemModDictionary[item] + "/" + resource;
         }
-
-        public static string PrefixResourceWithMod(string resource, BaseScript mod)
-        {
-            return mod.GetType().Name + "/" + resource;
-        }
-
-        public static string PrefixResourceWithItemMod(string resource, int type)
-        {
-            return GetItemModName(type) + "/" + resource;
-        }
-
-        public static void AddItemToMod(int type, BaseScript mod)
-        {
-            ItemModDictionary.Add(type, mod.GetType().Name);
-        }
-
-        public static string GetItemModName(int type)
-        {
-            return ItemModDictionary[type];
-        }
-
-        public static ContentManager GetItemModContent(int type)
-        {
-            return GetModContent(GetItemModName(type));
-        }
-
 
 		public static string GetModFromPrefixedResource(string prefixed)
 		{
@@ -69,7 +77,11 @@ namespace SoG.GrindScript
 			return prefixed.Substring(index + 1, prefixed.Length - index - 1);
 		}
 
-		private static bool OnOneHandedDictionaryFillPrefix(ref Dictionary<ushort, string> dict, string sWeaponName)
+        #endregion
+
+        #region Content Manager patches for Custom Items
+
+        private static bool OnOneHandedDictionaryFillPrefix(ref Dictionary<ushort, string> dict, string sWeaponName)
 		{
 			string mod = GetModFromPrefixedResource(sWeaponName);
 
@@ -197,10 +209,9 @@ namespace SoG.GrindScript
 			return false;
 		}
 
-		// May God have mercy on us all
-		// This is a prefix overwrite patch thingy - original is not supposed to run!
 		private static bool OnLoadBatchPrefix(ref Dictionary<ushort, string> dis, dynamic __instance)
 		{
+			// This is a prefix overwrite patch thingy - original is not supposed to run!
 			foreach (KeyValuePair<ushort, string> kvp in dis)
 			{
 				try
@@ -280,5 +291,7 @@ namespace SoG.GrindScript
 			__result = ret;
 			return false;
 		}
+
+		#endregion
 	}
 }

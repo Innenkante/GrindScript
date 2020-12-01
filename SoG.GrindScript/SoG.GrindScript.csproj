@@ -73,8 +73,7 @@
     <Compile Include="Enemy.cs" />
     <Compile Include="Enums.cs" />
     <Compile Include="LocalGame.cs" />
-    <Compile Include="ModCodex.cs" />
-    <Compile Include="ModContent.cs" />
+    <Compile Include="ModLibrary.cs" />
     <Compile Include="NativeInterface.cs" />
     <Compile Include="Player.cs" />
     <Compile Include="NPC.cs" />

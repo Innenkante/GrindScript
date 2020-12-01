@@ -14,8 +14,6 @@ namespace SoG.GrindScript
 {
     public class ModItem : ConvertedObject
     {
-        public const int BaseItemTypesPos = 400000;
-
         public ModEquipment EquipInfo { get; private set; }
 
         public ModFacegear FacegearInfo { get => EquipInfo as ModFacegear; }
@@ -45,7 +43,7 @@ namespace SoG.GrindScript
             => Enum.IsDefined(Utils.GetGameType("SoG.ItemCodex+ItemTypes"), IntType);
 
         public bool IsModItem
-            => !IsVanillaItem && IntType >= BaseItemTypesPos && IntType <= BaseItemTypesPos + BaseScript.CustomItems.Count;
+            => !IsVanillaItem && IntType >= ModLibrary.ItemTypesStart && IntType <= ModLibrary.ItemTypesStart + ModLibrary.CustomItems.Count;
 
         public ModItem(object originalObject) : base(originalObject)
         {
@@ -59,7 +57,7 @@ namespace SoG.GrindScript
 
         public static bool ValueIsModItem(int intType)
         {
-            return !ValueIsVanillaItem(intType) && intType >= BaseItemTypesPos && intType <= BaseItemTypesPos + BaseScript.CustomItems.Count;
+            return !ValueIsVanillaItem(intType) && intType >= ModLibrary.ItemTypesStart && intType <= ModLibrary.ItemTypesStart + ModLibrary.CustomItems.Count;
         }
 
         public void AddItemCategories(params ItemCategories[] categories)
@@ -143,9 +141,9 @@ namespace SoG.GrindScript
 
         public static ModItem AddItem(string name, string description, string resource, int value, BaseScript mod)
         {
-            ContentManager Content = ModLibrary.GetModContent(mod);
+            ContentManager Content = ModLibrary.ModContentManagers[mod.GetType().Name];
 
-            int newId = BaseScript.CustomItems.Count + 1;
+            int newId = ModLibrary.ItemTypesNext; // Was made absolute recently
             dynamic newItem = Utils.DefaultConstructObject("SoG.ItemDescription");
 
             string baseEntryName = name.Replace(" ", "");
@@ -159,18 +157,18 @@ namespace SoG.GrindScript
             newItem.sCategory = "";
             newItem.iInternalLevel = 1;
             newItem.iValue = value;
-            newItem.enType = Utils.GetEnumObject("SoG.ItemCodex+ItemTypes", BaseItemTypesPos + newId);
+            newItem.enType = Utils.GetEnumObject("SoG.ItemCodex+ItemTypes", newId);
 
             Utils.GetGameType("SoG.ItemCodex").GetPublicStaticField("denxLoadedDescriptions")[newItem.enType] = newItem;
 
-            var customItem = new ModItem(newItem) { RelativeID = newId };
+            var customItem = new ModItem(newItem) { RelativeID = newId - ModLibrary.ItemTypesStart };
 
             // The resource is prefixed with the mod. This is relevant for future use
-            customItem.ModResource = ModLibrary.PrefixResourceWithMod(resource, mod);
+            customItem.ModResource = ModLibrary.PrefixResource(resource, mod.GetType().Name);
             customItem.Resource = resource;
 
-            ModLibrary.AddItemToMod(customItem.IntType, mod);
-            BaseScript.CustomItems.Add(customItem);
+            ModLibrary.ItemModDictionary.Add(customItem.IntType, mod.GetType().Name);
+            ModLibrary.CustomItems.Add(customItem);
 
             Utils.WriteToConsole("Added item \"" + customItem.Name + "\":" + customItem.IntType, "CustomItem");
             return customItem;
@@ -320,7 +318,6 @@ namespace SoG.GrindScript
 
     public class ModEquipment : ConvertedObject
     {
-        public const int BaseSpecialEffectsPos = 200;
 
         public string ModResource { get; private set; }
 
@@ -328,7 +325,7 @@ namespace SoG.GrindScript
 
         public ModEquipment(object originalObject) : base(originalObject)
         {
-            ModResource = ModLibrary.PrefixResourceWithItemMod(Original.sResourceName, IntType);
+            ModResource = ModLibrary.PrefixResource(IntType, Original.sResourceName);
 
             Resource = Original.sResourceName;
 
@@ -397,7 +394,7 @@ namespace SoG.GrindScript
             int lmao = enType;
             try
             {
-                __result = BaseScript.CustomItems.Find(info => (int)info.IntType == lmao && info.EquipInfo.GetType() == typeof(ModEquipment)).EquipInfo.Original;
+                __result = ModLibrary.CustomItems.Find(info => (int)info.IntType == lmao && info.EquipInfo.GetType() == typeof(ModEquipment)).EquipInfo.Original;
             }
             catch(Exception e)
             {
@@ -461,7 +458,7 @@ namespace SoG.GrindScript
             int lmao = enType;
             try 
             {
-                __result = BaseScript.CustomItems.Find(info => (int)info.IntType == lmao && info.EquipInfo.GetType() == typeof(ModFacegear)).FacegearInfo.Original;
+                __result = ModLibrary.CustomItems.Find(info => (int)info.IntType == lmao && info.EquipInfo.GetType() == typeof(ModFacegear)).FacegearInfo.Original;
             }
             catch(Exception e)
             {
@@ -512,7 +509,7 @@ namespace SoG.GrindScript
             if (left != null) Original.xDefaultSet.av2RenderOffsets[3] = new Vector2(left.X, left.Y);
         }
 
-        public void AddAltSet(int enType)
+        public void AddAltSet(int enType, string resource)
         {
             dynamic enumType = Utils.GetEnumObject("SoG.ItemCodex+ItemTypes", enType);
             if (!Original.denxAlternateVisualSets.Contains(enumType))
@@ -521,8 +518,8 @@ namespace SoG.GrindScript
             }
 
             // Copy textures...
-            string sHatPath = "Sprites/Equipment/Facegear/" + Original.sResourceName + "/";
-            dynamic Content = Utils.GetTheGame().Content;
+            string sHatPath = "Sprites/Equipment/Hats/" + resource + "/";
+            dynamic Content = ModLibrary.GetItemModContent(IntType);
             dynamic xAlt = Original.denxAlternateVisualSets[enumType];
 
             string[] sDirs = { "Up", "Right", "Down", "Left" };
@@ -534,7 +531,8 @@ namespace SoG.GrindScript
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine("Exception for hat " + enType + "'s " + sDirs[i] + " texture: " + e.Message + " -> Setting to txNullTex");
+                    Utils.WriteToConsole("Exception raised for hat \"" + ModLibrary.CustomItems[IntType].Name + "\":" + IntType + ", texture " + sDirs[i] + ".", "CustomItem");
+                    Utils.WriteToConsole("Exception message: " + e.Message, "CustomItem");
                     xAlt.atxTextures[i] = Utils.GetGameType("SoG.RenderMaster").GetPublicStaticField("txNullTex");
                 }
                 xAlt.av2RenderOffsets[i] = new Vector2(0f, 0f);
@@ -608,7 +606,7 @@ namespace SoG.GrindScript
             int lmao = enType;
             try 
             {
-                __result = BaseScript.CustomItems.Find(info => (int)info.IntType == lmao && info.EquipInfo.GetType() == typeof(ModHat)).HatInfo.Original;
+                __result = ModLibrary.CustomItems.Find(info => (int)info.IntType == lmao && info.EquipInfo.GetType() == typeof(ModHat)).HatInfo.Original;
             }
             catch(Exception e)
             {
@@ -638,7 +636,7 @@ namespace SoG.GrindScript
             int lmao = enType;
             try
             {
-                __result = BaseScript.CustomItems.Find(info => (int)info.IntType == lmao && info.EquipInfo.GetType() == typeof(ModWeapon)).WeaponInfo.Original;
+                __result = ModLibrary.CustomItems.Find(info => (int)info.IntType == lmao && info.EquipInfo.GetType() == typeof(ModWeapon)).WeaponInfo.Original;
             }
             catch(Exception e)
             {
