@@ -24,7 +24,7 @@ namespace SoG.GrindScript
 
     public delegate void OnCustomContentLoadPrototype();
 
-
+    public delegate bool OnChatParseCommandPrototype(string command, string argList, int connection);
 
 
 

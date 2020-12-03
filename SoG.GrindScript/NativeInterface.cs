@@ -70,12 +70,13 @@ namespace SoG.GrindScript
             _loadedPlugins.ForEach(script => Callbacks.AddOnCustomContentLoad(script.OnCustomContentLoad));
             _loadedPlugins.ForEach(script => Callbacks.AddOnDrawCallback(script.OnDraw));
             _loadedPlugins.ForEach(script => Callbacks.AddOnPlayerTakeDamageCallback(script.OnPlayerDamaged));
-            _loadedPlugins.ForEach(script =>  Callbacks.AddOnPlayerKilledCallback(script.OnPlayerKilled));
+            _loadedPlugins.ForEach(script => Callbacks.AddOnPlayerKilledCallback(script.OnPlayerKilled));
             _loadedPlugins.ForEach(script => Callbacks.AddPostPlayerLevelUpCallback(script.PostPlayerLevelUp));
             _loadedPlugins.ForEach(script => Callbacks.AddOnEnemyDamagedCallback(script.OnEnemyDamaged));
             _loadedPlugins.ForEach(script => Callbacks.AddOnNPCDamagedCallback(script.OnNPCDamaged));
             _loadedPlugins.ForEach(script => Callbacks.AddOnNPCInteractionCallback(script.OnNPCInteraction));
             _loadedPlugins.ForEach(script => Callbacks.AddOnArcadiaLoadCallback(script.OnArcadiaLoad));
+            _loadedPlugins.ForEach(script => Callbacks.AddOnChatParseCallback(script.OnChatParseCommand));
 
             Callbacks.InitializeOnDrawCallbacks();
             Callbacks.InitializeOnPlayerTakeDamageCallbacks();
@@ -86,6 +87,7 @@ namespace SoG.GrindScript
             Callbacks.InitializeOnNPCInteractionCallbacks();
             Callbacks.InitializeOnArcadiaLoadCallbacks(); 
             Callbacks.InitializeOnCustomContentLoad();
+            Callbacks.InitializeOnChatParseCommandCallbacks();
 
             Callbacks.InitializeUniquePatches();
 

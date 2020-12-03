@@ -95,12 +95,14 @@ namespace SoG.ChaosMod
             if (!grant)
             {
                 grant = true;
+                /*
                 alex.SpawnOn(LocalGame, LocalPlayer);
                 GordonFreeman.SpawnOn(LocalGame, LocalPlayer);
                 InstaRepair.SpawnOn(LocalGame, LocalPlayer);
                 Weapon.SpawnOn(LocalGame, LocalPlayer);
                 WeaponOne.SpawnOn(LocalGame, LocalPlayer);
                 Hattus.SpawnOn(LocalGame, LocalPlayer);
+                */
             }
 
             return;
@@ -183,6 +185,22 @@ namespace SoG.ChaosMod
                     Dialogue.AddDialogueLineTo(LocalGame, "'If the quest is too hard to take..." + Environment.NewLine + "You are just too weak...'" + Environment.NewLine + "~5Head");
                 }
             }
+        }
+
+        public override bool OnChatParseCommand(string command, string argList, int connection)
+        {
+            switch (command)
+            {
+                case "gibitemsplox":
+                    alex.SpawnOn(LocalGame, LocalPlayer);
+                    GordonFreeman.SpawnOn(LocalGame, LocalPlayer);
+                    InstaRepair.SpawnOn(LocalGame, LocalPlayer);
+                    Weapon.SpawnOn(LocalGame, LocalPlayer);
+                    WeaponOne.SpawnOn(LocalGame, LocalPlayer);
+                    Hattus.SpawnOn(LocalGame, LocalPlayer);
+                    return false; // Do not check vanilla commands
+            }
+            return true; // Do check vanilla commands
         }
     }
 

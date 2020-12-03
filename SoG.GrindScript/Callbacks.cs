@@ -29,7 +29,7 @@ namespace SoG.GrindScript
 
 
         private static List<OnArcadiaLoadPrototype> _onArcadiaLoadCallbacks = new List<OnArcadiaLoadPrototype>();
-
+        private static List<OnChatParseCommandPrototype> _onChatParseCommandCallbacks = new List<OnChatParseCommandPrototype>();
 
         private static Harmony harmony = new Harmony("GrindScriptCallbackManager");
 
@@ -79,6 +79,11 @@ namespace SoG.GrindScript
         public static void AddOnCustomContentLoad(OnCustomContentLoadPrototype onCustomContentLoad)
         {
             _onCustomContentLoadCallbacks.Add(onCustomContentLoad);
+        }
+
+        public static void AddOnChatParseCallback(OnChatParseCommandPrototype onChatParseCommand)
+        {
+            _onChatParseCommandCallbacks.Add(onChatParseCommand);
         }
 
         #endregion
@@ -147,6 +152,44 @@ namespace SoG.GrindScript
             }
         }
 
+        private static bool OnChatParseCommandPrefix(string sMessage, int iConnection)
+        {
+            // Maybe a transpiler could do the job better, but I'm not familliar enough with the technique
+            // Consider this a TODO
+            try
+            {
+                // Original code
+                int iIndex = sMessage.IndexOf(' ');
+                bool bNoSecondPart = iIndex == -1;
+                if (iIndex == -1)
+                {
+                    iIndex = sMessage.Length;
+                }
+                string sFirst = sMessage.Substring(0, iIndex);
+                sMessage = sMessage.Substring(sMessage.IndexOf(' ') + 1);
+                if (bNoSecondPart)
+                {
+                    sMessage = "";
+                }
+                sFirst.ToLowerInvariant();
+                // End
+
+                bool vanillaExecution = true;
+                foreach (var onChatParseCommandCallback in _onChatParseCommandCallbacks)
+                {
+                    // If a mod callback returns false, the original function will not run
+                    // This means that vanilla commands won't run in tandem with mod commands for "false" return
+                    // Multiple mod commands with the same name will still run though...
+                    vanillaExecution &= onChatParseCommandCallback(sFirst, sMessage, iConnection);
+                }
+                return vanillaExecution;
+            }
+            catch (Exception e)
+            {
+                Ui.AddChatMessage("GrindScript: " + e.Message);
+            }
+            return true;
+        }
 
         #endregion
 
@@ -259,6 +302,22 @@ namespace SoG.GrindScript
             {
                 var prefix = typeof(Callbacks).GetTypeInfo().GetPrivateStaticMethod("OnArcadiaLoadPrefix");
                 var original = Utils.GetGameType("SoG.Game1").GetPublicInstanceMethod("_LevelLoading_DoStuff_Arcadia");
+
+                harmony.Patch(original, new HarmonyMethod(prefix));
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+        }
+
+        public static void InitializeOnChatParseCommandCallbacks()
+        {
+            try
+            {
+                var prefix = typeof(Callbacks).GetTypeInfo().GetPrivateStaticMethod("OnChatParseCommandPrefix");
+                var original = Utils.GetGameType("SoG.Game1").GetPublicInstanceMethod("_Chat_ParseCommand");
 
                 harmony.Patch(original, new HarmonyMethod(prefix));
             }

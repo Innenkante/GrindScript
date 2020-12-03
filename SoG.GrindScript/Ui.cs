@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Reflection;
+using HarmonyLib;
+using System.Runtime.InteropServices;
 
 namespace SoG.GrindScript
 {
@@ -59,12 +62,12 @@ namespace SoG.GrindScript
             }
         }
 
-        public static string GetMiscTextFrom(LocalGame game, string category, string entry)
+        public static string GetMiscText(string category, string entry)
         {
             try
             {
                 // try-catch addiction
-                return game.GetUnderlayingGame().xMiscTextGod_Default.dsxTextCollections[category].dsxTexts[entry];
+                return Utils.GetTheGame().xMiscTextGod_Default.dsxTextCollections[category].dsxTexts[entry];
             }
             catch (Exception e)
             {
@@ -72,6 +75,11 @@ namespace SoG.GrindScript
                 Console.WriteLine("Reason: " + e);
                 return "Yo, string not found!";
             }
+        }
+
+        public static void AddChatMessage(string message)
+        {
+            Utils.GetGameType("SoG.CAS").GetMethod("AddChatMessage", BindingFlags.Public | BindingFlags.Static).Invoke(null, new object[1] { message });
         }
     }
 }

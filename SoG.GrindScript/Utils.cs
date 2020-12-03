@@ -29,8 +29,6 @@ namespace SoG.GrindScript
 
         public static dynamic GetTheGame()
         {
-            // Since non-BaseScript code doesn't have access to LocalGame or whatever, this method is needed
-            // Ideally, shouldn't return null...
             return Utils.GetGameType("SoG.Program").GetMethod("GetTheGame")?.Invoke(null, null);
         }
 

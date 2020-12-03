@@ -9,6 +9,7 @@ using System.Xml.Schema;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
+using System.Reflection;
 
 namespace SoG.GrindScript
 {
@@ -83,8 +84,16 @@ namespace SoG.GrindScript
             // While the Player fix is coming, this should work for now
             dynamic playaa = game.GetUnderlayingGame().xLocalPlayer;
 
+            Vector2 randVect = (Vector2)Utils.GetGameType("SoG.Utility").GetMethod("RandomizeVector2Direction", BindingFlags.Public | BindingFlags.Static).Invoke(null, new object[1] { Utils.GetGameType("SoG.CAS").GetProperty("RandomInLogic", BindingFlags.Public | BindingFlags.Static).GetGetMethod().Invoke(null, null) });
+
             var function = Utils.GetGameType("SoG.Game1").GetDeclaredMethods("_EntityMaster_AddItem").First();
-            function.Invoke(game.GetUnderlayingGame(), new[] { IntType, playaa.xEntity.xTransform.v2Pos, playaa.xEntity.xRenderComponent.fVirtualHeight, playaa.xEntity.xCollisionComponent.ibitCurrentColliderLayer, Vector2.Zero });
+            function.Invoke(game.GetUnderlayingGame(), new[] { IntType, playaa.xEntity.xTransform.v2Pos, playaa.xEntity.xRenderComponent.fVirtualHeight, playaa.xEntity.xCollisionComponent.ibitCurrentColliderLayer, randVect });
+        }
+
+        public void SpawnAt(Vector2 v2Pos, float fVirtualHeight, int colliderLayer)
+        {
+            Vector2 v2Dir = (Vector2)Utils.GetGameType("SoG.Utility").GetMethod("RandomizeVector2Direction", BindingFlags.Public | BindingFlags.Static).Invoke(null, new object[1] { Utils.GetGameType("SoG.CAS").GetProperty("RandomInLogic", BindingFlags.Public | BindingFlags.Static).GetGetMethod().Invoke(null, null) });
+            SpawnAt(v2Pos, fVirtualHeight, colliderLayer, v2Dir);
         }
 
         public void SpawnAt(Vector2 v2Pos, float fVirtualHeight, int colliderLayer, Vector2 v2Dir)
@@ -323,6 +332,12 @@ namespace SoG.GrindScript
 
         public string Resource { get; private set; }
 
+        public int IntType
+        {
+            get => (int)_originalObject.enItemType;
+            set => _originalObject.enItemType = Utils.GetEnumObject("SoG.ItemCodex+ItemTypes", value);
+        }
+
         public ModEquipment(object originalObject) : base(originalObject)
         {
             ModResource = ModLibrary.PrefixResource(IntType, Original.sResourceName);
@@ -330,12 +345,6 @@ namespace SoG.GrindScript
             Resource = Original.sResourceName;
 
             Original.sResourceName = ModResource;
-        }
-
-        public int IntType
-        {
-            get => (int)_originalObject.enItemType;
-            set => _originalObject.enItemType = Utils.GetEnumObject("SoG.ItemCodex+ItemTypes", value);
         }
 
         public void SetStats(int HP = 0, int EP = 0, int ATK = 0, int MATK = 0, int DEF = 0, int ASPD = 0, int CSPD = 0, int Crit = 0, int CritDMG = 0, int ShldHP = 0, int EPRegen = 0, int ShldRegen = 0)
@@ -405,7 +414,14 @@ namespace SoG.GrindScript
             return false;
         }
 
-
+        private static int AddNewSpecialEffect()
+        {
+            // Used so that different mods don't fight over enum space
+            // Otherwise, it's overengineered af
+            int effect = ModLibrary.SpecialEffectsNext;
+            ModLibrary.SpecialEffectsCount++;
+            return effect;
+        }
     }
 
     public class ModFacegear : ModEquipment

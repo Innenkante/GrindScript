@@ -96,5 +96,11 @@ namespace SoG.GrindScript
         {
             return;
         }
+
+        public virtual bool OnChatParseCommand(string command, string argList, int connection)
+        {
+            // Connection param can usually be ignored
+            return true;
+        }
     }
 }

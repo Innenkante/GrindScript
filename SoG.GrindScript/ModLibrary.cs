@@ -19,8 +19,6 @@ namespace SoG.GrindScript
 
 		internal static readonly List<ModItem> CustomItems = new List<ModItem>(); // Stores item descriptions and is also used to track which ItemTypes enum values are used to implement custom items
 
-		internal static readonly List<int> CustomEquipmentEffects = new List<int>(); // Tracks which SpecialEffect enum values are used to implement custom effects
-
 		#endregion
 
 		#region "Non-Owning" Helper dictionaries, references, etc.
@@ -43,7 +41,9 @@ namespace SoG.GrindScript
 
 		internal const int SpecialEffectsStart = 200;
 
-		internal static int SpecialEffectsNext { get => SpecialEffectsStart + CustomEquipmentEffects.Count; }
+		internal static int SpecialEffectsCount = 0; 
+
+		internal static int SpecialEffectsNext { get => SpecialEffectsStart + SpecialEffectsCount; }
 
 		#endregion
 
