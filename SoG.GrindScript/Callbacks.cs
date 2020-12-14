@@ -26,6 +26,7 @@ namespace SoG.GrindScript
         private static List<OnNPCDamagedPrototype> _onNpcDamagedCallbacks = new List<OnNPCDamagedPrototype>();
         private static List<OnNPCInteractionPrototype> _onNpcInteractionCallbacks = new List<OnNPCInteractionPrototype>();
         private static List<OnCustomContentLoadPrototype> _onCustomContentLoadCallbacks = new List<OnCustomContentLoadPrototype>();
+        private static List<OnItemUsePrototype> _onItemUseCallbacks = new List<OnItemUsePrototype>();
 
 
         private static List<OnArcadiaLoadPrototype> _onArcadiaLoadCallbacks = new List<OnArcadiaLoadPrototype>();
@@ -44,7 +45,6 @@ namespace SoG.GrindScript
         {
             _onPlayerTakeDamageCalllbacks.Add(onPlayerTakeDamage);
         }
-
 
         public static void AddOnPlayerKilledCallback(OnPlayerKilledPrototype onPlayerKilled)
         {
@@ -84,6 +84,11 @@ namespace SoG.GrindScript
         public static void AddOnChatParseCallback(OnChatParseCommandPrototype onChatParseCommand)
         {
             _onChatParseCommandCallbacks.Add(onChatParseCommand);
+        }
+
+        public static void AddOnItemUseCallback(OnItemUsePrototype onItemUse)
+        {
+            _onItemUseCallbacks.Add(onItemUse);
         }
 
         #endregion
@@ -189,6 +194,18 @@ namespace SoG.GrindScript
                 Ui.AddChatMessage("GrindScript: " + e.Message);
             }
             return true;
+        }
+
+        private static void OnItemUsePrefix(int enItem, dynamic xView, ref bool bSend)
+        {
+            if (xView.xViewStats.bIsDead)
+            {
+                return;
+            }
+            foreach (var onItemUse in _onItemUseCallbacks)
+            {
+                onItemUse(enItem, xView, ref bSend);
+            }
         }
 
         #endregion
@@ -331,6 +348,21 @@ namespace SoG.GrindScript
         public static void InitializeOnCustomContentLoad()
         {
             _onCustomContentLoadCallbacks.ForEach(onLoad => onLoad());
+        }
+
+        public static void InitializeOnItemUseCallbacks()
+        {
+            try
+            {
+                var prefix = typeof(Callbacks).GetTypeInfo().GetPrivateStaticMethod("OnItemUsePrefix");
+                var original = Utils.GetGameType("SoG.Game1").GetDeclaredMethods("_Item_Use").ElementAt(1);
+                harmony.Patch(original, new HarmonyMethod(prefix));
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
         }
 
         public static void InitializeUniquePatches()

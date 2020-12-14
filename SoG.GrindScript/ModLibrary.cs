@@ -77,6 +77,36 @@ namespace SoG.GrindScript
 			return prefixed.Substring(index + 1, prefixed.Length - index - 1);
 		}
 
+		public static void AddItemAlias(string name, int type)
+		{
+			RegisteredItems.Add(name, type);
+		}
+
+		public static int ItemAliasValue(string name)
+		{
+			int intType;
+			if(!RegisteredItems.TryGetValue(name, out intType))
+			{
+				intType = -1;
+			}
+			return intType;
+		}
+
+		public static void AddItemEffectAlias(string name, int type)
+		{
+			RegisteredEquipmentEffects.Add(name, type);
+		}
+
+		public static int ItemEffectAliasValue(string name, int type)
+		{
+			int intType;
+			if (!RegisteredEquipmentEffects.TryGetValue(name, out intType))
+			{
+				intType = -1;
+			}
+			return intType;
+		}
+
         #endregion
 
         #region Content Manager patches for Custom Items

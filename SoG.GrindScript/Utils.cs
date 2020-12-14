@@ -64,6 +64,36 @@ namespace SoG.GrindScript
 
         public static dynamic ConstructObject(string typeFullName, params object[] args)
         {
+            // Method will attempt to autofill missing params with Type.Missing
+
+            // TODO: See behavior with "params" type parameter
+
+            // Get first default value constructor
+            try
+            {
+                var infos = Utils.GetGameType(typeFullName).GetConstructors().Where(x => x.GetParameters().Where(y => y.HasDefaultValue).Any());
+                int count = infos.Count();
+                if (count > 0)
+                {
+                    // Autocomplete with Type.Missing
+                    ConstructorInfo info = infos.First();
+                    // Go forwards, on the path of guts and glory
+                    object[] newArgs = new object[info.GetParameters().Length];
+                    args.CopyTo(newArgs, 0);
+                    for (int i = args.Length; i < newArgs.Length; i++)
+                    {
+                        newArgs[i] = Type.Missing;
+                    }
+
+                    return info.Invoke(newArgs);
+                }
+            }
+            catch
+            {
+                // Do NUFFIN'
+            }
+
+            // False alarm, happy ending
             return Activator.CreateInstance(GetGameType(typeFullName), args);
         }
     }

@@ -26,7 +26,7 @@ namespace SoG.GrindScript
 
     public delegate bool OnChatParseCommandPrototype(string command, string argList, int connection);
 
-
+    public delegate void OnItemUsePrototype(int enItem, dynamic xView, ref bool bSend);
 
 
 }

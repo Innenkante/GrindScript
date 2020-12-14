@@ -102,5 +102,10 @@ namespace SoG.GrindScript
             // Connection param can usually be ignored
             return true;
         }
+
+        public virtual void OnItemUse(int enItem, dynamic xView, ref bool bSend)
+        {
+            return;
+        }
     }
 }
