@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Xna.Framework.Content;
+using Microsoft.Xna.Framework.Graphics;
 
 namespace SoG.GrindScript
 {
@@ -27,74 +28,14 @@ namespace SoG.GrindScript
             Console.WriteLine("[" + who + "] - " + message);
         }
 
-        public static dynamic GetTheGame()
+        public static Game1 GetTheGame()
         {
-            return Utils.GetGameType("SoG.Program").GetMethod("GetTheGame")?.Invoke(null, null);
-        }
-
-        public static dynamic GetTheContent()
-        {
-            return GetTheGame().Content;
-        }
-
-        public static dynamic GetNullTex()
-        {
-            return Utils.GetGameType("SoG.RenderMaster").GetPublicStaticField("txNullTex");
-        }
-
-        public static dynamic GetLocalPlayer()
-        {
-            return Utils.GetTheGame().xLocalPlayer;
+            return (Game1)Utils.GetGameType("SoG.Program").GetMethod("GetTheGame")?.Invoke(null, null);
         }
 
         public static TypeInfo GetGameType(string name)
         {
             return _definedTypes.First(t => t.FullName == name);
-        }
-
-        public static dynamic GetEnumObject(string enumFullName, int value)
-        {
-            return Enum.ToObject(GetGameType(enumFullName), value);
-        }
-
-        public static dynamic DefaultConstructObject(string typeFullName)
-        {
-            return Activator.CreateInstance(GetGameType(typeFullName));
-        }
-
-        public static dynamic ConstructObject(string typeFullName, params object[] args)
-        {
-            // Method will attempt to autofill missing params with Type.Missing
-
-            // TODO: See behavior with "params" type parameter
-
-            // Get first default value constructor
-            try
-            {
-                var infos = Utils.GetGameType(typeFullName).GetConstructors().Where(x => x.GetParameters().Where(y => y.HasDefaultValue).Any());
-                int count = infos.Count();
-                if (count > 0)
-                {
-                    // Autocomplete with Type.Missing
-                    ConstructorInfo info = infos.First();
-                    // Go forwards, on the path of guts and glory
-                    object[] newArgs = new object[info.GetParameters().Length];
-                    args.CopyTo(newArgs, 0);
-                    for (int i = args.Length; i < newArgs.Length; i++)
-                    {
-                        newArgs[i] = Type.Missing;
-                    }
-
-                    return info.Invoke(newArgs);
-                }
-            }
-            catch
-            {
-                // Do NUFFIN'
-            }
-
-            // False alarm, happy ending
-            return Activator.CreateInstance(GetGameType(typeFullName), args);
         }
     }
 
@@ -139,9 +80,5 @@ namespace SoG.GrindScript
         {
             return t.GetField(field, BindingFlags.Public | BindingFlags.Static)?.GetValue(null);
         }
-
-
     }
-
-
 }

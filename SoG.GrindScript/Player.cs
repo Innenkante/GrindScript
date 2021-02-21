@@ -27,13 +27,13 @@ namespace SoG.GrindScript
         {
         }
 
-        public void AddItem(ItemTypes type, int amount)
+        public void AddItem(ItemCodex.ItemTypes type, int amount)
             => _originalObject.AddItem(type, amount);
 
-        public int GetItemAmount(ItemTypes type)
+        public int GetItemAmount(ItemCodex.ItemTypes type)
             => _originalObject.GetAmount(type);
 
-        public void SetItemAmount(ItemTypes type, int amount)
+        public void SetItemAmount(ItemCodex.ItemTypes type, int amount)
             => _originalObject.SetItemAmount(type, amount);
 
         public void AddMoney(int amount)
@@ -120,7 +120,7 @@ namespace SoG.GrindScript
             set { _originalObject.xViewStats.iTalentPoints = value; }
         }
 
-        public void SetSkillLevel(SpellTypes type, byte level)
+        public void SetSkillLevel(SpellCodex.SpellTypes type, byte level)
         {
             var spellTypes = Utils.GetGameType("SoG.SpellCodex").GetDeclaredNestedType("SpellTypes");
             var spellGameType = Enum.Parse(spellTypes, type.ToString());

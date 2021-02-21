@@ -63,10 +63,8 @@ namespace SoG.GrindScript
             return true;
         }
 
-        public static int Initialize(string argument)
+        private static void AddMods()
         {
-            LoadMods();
-
             _loadedPlugins.ForEach(script => Callbacks.AddOnCustomContentLoad(script.OnCustomContentLoad));
             _loadedPlugins.ForEach(script => Callbacks.AddOnDrawCallback(script.OnDraw));
             _loadedPlugins.ForEach(script => Callbacks.AddOnPlayerTakeDamageCallback(script.OnPlayerDamaged));
@@ -78,7 +76,10 @@ namespace SoG.GrindScript
             _loadedPlugins.ForEach(script => Callbacks.AddOnArcadiaLoadCallback(script.OnArcadiaLoad));
             _loadedPlugins.ForEach(script => Callbacks.AddOnChatParseCallback(script.OnChatParseCommand));
             _loadedPlugins.ForEach(script => Callbacks.AddOnItemUseCallback(script.OnItemUse));
+        }
 
+        private static void ApplyPatches()
+        {
             Callbacks.InitializeOnDrawCallbacks();
             Callbacks.InitializeOnPlayerTakeDamageCallbacks();
             Callbacks.InitializeOnPlayerKilledCallbacks();
@@ -86,17 +87,42 @@ namespace SoG.GrindScript
             Callbacks.InitializeOnEnemyTakeDamageCallbacks();
             Callbacks.InitializeOnNPCTakeDamageCallbacks();
             Callbacks.InitializeOnNPCInteractionCallbacks();
-            Callbacks.InitializeOnArcadiaLoadCallbacks(); 
+            Callbacks.InitializeOnArcadiaLoadCallbacks();
             Callbacks.InitializeOnCustomContentLoad();
             Callbacks.InitializeOnChatParseCommandCallbacks();
             Callbacks.InitializeOnItemUseCallbacks();
 
             Callbacks.InitializeUniquePatches();
+        }
 
+        public static int Initialize(string argument)
+        {
+            Console.WriteLine("Intializing");
+            
+            Utils.Initialize(AppDomain.CurrentDomain.GetAssemblies().First(a => a.GetName().Name == "Secrets Of Grindea"));
+
+            Callbacks.InitializeLoadPatch();
+
+            Console.WriteLine("Initialize Complete");
             return 1;
         }
 
+        public static void LoadGrindscript()
+        {
+            LoadMods();
 
+            AddMods();
+
+            ApplyPatches();
+
+            string sPreviousVersion = (string)Utils.GetGameType("SoG.Game1").GetDeclaredField("sVersion").GetValue(Utils.GetTheGame());
+
+            Utils.GetTheGame().sVersionNumberOnly += "-grindscript";
+            Utils.GetGameType("SoG.Game1").GetDeclaredField("sVersion").SetValue(Utils.GetTheGame(), sPreviousVersion + " w\\GrindScript");
+
+            Console.WriteLine("Version: " + Utils.GetGameType("SoG.Game1").GetDeclaredField("sVersion").GetValue(Utils.GetTheGame()));
+            Console.WriteLine("Version Number Only: " + Utils.GetTheGame().sVersionNumberOnly);
+        }
 
 
     }

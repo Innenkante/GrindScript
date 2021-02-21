@@ -25,19 +25,11 @@ namespace SoG.GrindScript
         {
             Utils.Initialize(AppDomain.CurrentDomain.GetAssemblies().First(a => a.GetName().Name == "Secrets Of Grindea"));
 
-            #region ModContent
-
-            string assetPath = "ModContent/" + this.GetType().Name;
-
-            ModContent = new ContentManager(Utils.GetTheGame().Content.ServiceProvider, assetPath);
-
-            ModLibrary.ModContentManagers.Add(this.GetType().Name, ModContent);
+            ModContent = new ContentManager(Utils.GetTheGame().Content.ServiceProvider, "ModContent/" + this.GetType().Name);
 
             Console.WriteLine(this.GetType().Name + " ContentManager path set as " + ModContent.RootDirectory);
 
-            #endregion
-
-            _game = Utils.GetGameType("SoG.Program").GetMethod("GetTheGame")?.Invoke(null, null);
+            _game = Utils.GetTheGame();
 
             LocalGame = new LocalGame(_game);
 
@@ -47,7 +39,7 @@ namespace SoG.GrindScript
             LocalPlayer = new Player(_game.xLocalPlayer);
         }
 
-        protected SpriteFont GetFont(FontType font)
+        protected SpriteFont GetFont(FontManager.FontType font)
         {
             return (SpriteFont)Utils.GetGameType("SoG.FontManager").GetMethod("GetFont")?.Invoke(null, new object[] { (int)font });
         }
@@ -103,7 +95,7 @@ namespace SoG.GrindScript
             return true;
         }
 
-        public virtual void OnItemUse(int enItem, dynamic xView, ref bool bSend)
+        public virtual void OnItemUse(ItemCodex.ItemTypes enItem, PlayerView xView, ref bool bSend)
         {
             return;
         }

@@ -129,7 +129,7 @@ namespace SoG.GrindScript
         {
             foreach (var onEnemyDamagedCallback in _onEnemyDamagedCallbacks)
             {
-                onEnemyDamagedCallback(new Enemy(xEnemy), ref iDamage, ref byType);
+                onEnemyDamagedCallback(xEnemy, ref iDamage, ref byType);
             }
         }
 
@@ -191,12 +191,12 @@ namespace SoG.GrindScript
             }
             catch (Exception e)
             {
-                Ui.AddChatMessage("GrindScript: " + e.Message);
+                CAS.AddChatMessage("GrindScript: " + e.Message);
             }
             return true;
         }
 
-        private static void OnItemUsePrefix(int enItem, dynamic xView, ref bool bSend)
+        private static void OnItemUsePrefix(ItemCodex.ItemTypes enItem, PlayerView xView, ref bool bSend)
         {
             if (xView.xViewStats.bIsDead)
             {
@@ -370,7 +370,7 @@ namespace SoG.GrindScript
             try
             {
                 // GetItemInstance prefix patch
-                var prefix = typeof(ModItem).GetTypeInfo().GetPrivateStaticMethod("OnGetItemInstancePrefix");
+                var prefix = typeof(ItemHelper).GetTypeInfo().GetPrivateStaticMethod("GetItemInstance_PrefixPatch");
                 var original = Utils.GetGameType("SoG.ItemCodex").GetMethod("GetItemInstance");
 
                 harmony.Patch(original, new HarmonyMethod(prefix));
@@ -387,67 +387,128 @@ namespace SoG.GrindScript
                 // (EquipmentCodex declares 4 functions, so I'm patching all 4 with the same function. Yeehaw.)
                 // (it should work the same, since the functions effectively act as separate storage mediums)
                 // (the patches just change the storage in question to a shared dictionary)
-                var prefix = typeof(ModEquipment).GetTypeInfo().GetPrivateStaticMethod("OnGetEquipmentInfoPrefix");
+                var prefix = typeof(ItemHelper).GetTypeInfo().GetPrivateStaticMethod("GetEquipmentInfo_PrefixPatch");
 
-                var original = Utils.GetGameType("SoG.EquipmentCodex").GetMethod("GetArmorInfo");
+                var original = typeof(EquipmentCodex).GetMethod("GetArmorInfo");
                 harmony.Patch(original, new HarmonyMethod(prefix));
 
-                original = Utils.GetGameType("SoG.EquipmentCodex").GetMethod("GetAccessoryInfo");
+                original = typeof(EquipmentCodex).GetMethod("GetAccessoryInfo");
                 harmony.Patch(original, new HarmonyMethod(prefix));
 
-                original = Utils.GetGameType("SoG.EquipmentCodex").GetMethod("GetShieldInfo");
+                original = typeof(EquipmentCodex).GetMethod("GetShieldInfo");
                 harmony.Patch(original, new HarmonyMethod(prefix));
 
-                original = Utils.GetGameType("SoG.EquipmentCodex").GetMethod("GetShoesInfo");
+                original = typeof(EquipmentCodex).GetMethod("GetShoesInfo");
                 harmony.Patch(original, new HarmonyMethod(prefix));
 
 
                 // Facegear Codex's GetHatInfo patch
-                prefix = typeof(ModFacegear).GetTypeInfo().GetPrivateStaticMethod("OnGetFacegearInfoPrefix");
+                prefix = typeof(ItemHelper).GetTypeInfo().GetPrivateStaticMethod("GetFacegearInfo_PrefixPatch");
 
-                original = Utils.GetGameType("SoG.FacegearCodex").GetMethod("GetHatInfo");
+                original = typeof(FacegearCodex).GetMethod("GetHatInfo");
                 harmony.Patch(original, new HarmonyMethod(prefix));
 
                 // Hat Codex's GetHatInfo patch
-                prefix = typeof(ModHat).GetTypeInfo().GetPrivateStaticMethod("OnGetHatInfoPrefix");
+                prefix = typeof(ItemHelper).GetTypeInfo().GetPrivateStaticMethod("GetHatInfo_PrefixPatch");
 
-                original = Utils.GetGameType("SoG.HatCodex").GetMethod("GetHatInfo");
+                original = typeof(HatCodex).GetMethod("GetHatInfo");
                 harmony.Patch(original, new HarmonyMethod(prefix));
 
                 // Weapon Codex's GetWeaponInfo patch
-                prefix = typeof(ModWeapon).GetTypeInfo().GetPrivateStaticMethod("OnGetWeaponInfoPrefix");
+                prefix = typeof(ItemHelper).GetTypeInfo().GetPrivateStaticMethod("GetWeaponInfo_PrefixPatch");
 
-                original = Utils.GetGameType("SoG.WeaponCodex").GetMethod("GetWeaponInfo");
+                original = typeof(WeaponCodex).GetMethod("GetWeaponInfo");
                 harmony.Patch(original, new HarmonyMethod(prefix));
 
-                // Item Content Manager related patches
-                prefix = typeof(ModLibrary).GetTypeInfo().GetPrivateStaticMethod("OnOneHandedDictionaryFillPrefix");
+                prefix = typeof(ItemHelper).GetTypeInfo().GetPrivateStaticMethod("LoadBatch_PrefixOverwrite");
 
-                original = Utils.GetGameType("WeaponAssets.WeaponAssetLoader").GetPrivateStaticMethod("OneHandedDictionaryFill");
+                original = typeof(WeaponAssets.WeaponContentManager).GetMethods(BindingFlags.NonPublic | BindingFlags.Instance).Where(item => item.Name == "LoadBatch").ElementAt(1);
                 harmony.Patch(original, new HarmonyMethod(prefix));
 
-                prefix = typeof(ModLibrary).GetTypeInfo().GetPrivateStaticMethod("OnTwoHandedDictionaryFillPrefix");
+                prefix = typeof(ItemHelper).GetTypeInfo().GetPrivateStaticMethod("_Animations_GetAnimationSet_PrefixOverwrite");
 
-                original = Utils.GetGameType("WeaponAssets.WeaponAssetLoader").GetPrivateStaticMethod("TwoHandedDictionaryFill");
+                original = typeof(Game1).GetMethods(BindingFlags.Public | BindingFlags.Instance).Where(item => item.Name == "_Animations_GetAnimationSet").ElementAt(1);
+                harmony.Patch(original, new HarmonyMethod(prefix));
+            
+                prefix = typeof(EnemyHelper).GetTypeInfo().GetPrivateStaticMethod("GetEnemyInstance_PrefixPatch");
+
+                original = typeof(EnemyCodex).GetMethod("GetEnemyInstance", BindingFlags.Public | BindingFlags.Static);
                 harmony.Patch(original, new HarmonyMethod(prefix));
 
-                prefix = typeof(ModLibrary).GetTypeInfo().GetPrivateStaticMethod("OnLoadBatchPrefix");
+                prefix = typeof(EnemyHelper).GetTypeInfo().GetPrivateStaticMethod("_Enemy_AdjustForDifficulty_PrefixPatch");
 
-                original = Utils.GetGameType("WeaponAssets.WeaponContentManager").GetMethods(BindingFlags.NonPublic | BindingFlags.Instance).Where(item => item.Name == "LoadBatch").ElementAt(1);
+                original = typeof(Game1).GetMethod("_Enemy_AdjustForDifficulty", BindingFlags.Public | BindingFlags.Instance);
                 harmony.Patch(original, new HarmonyMethod(prefix));
 
-                prefix = typeof(ModLibrary).GetTypeInfo().GetPrivateStaticMethod("On_Animations_GetAnimationSetPrefix");
+                prefix = typeof(EnemyHelper).GetTypeInfo().GetPrivateStaticMethod("_Enemy_MakeElite_PrefixPatch");
 
-                original = Utils.GetGameType("SoG.Game1").GetMethods(BindingFlags.Public | BindingFlags.Instance).Where(item => item.Name == "_Animations_GetAnimationSet").ElementAt(1);
+                original = typeof(Game1).GetMethod("_Enemy_MakeElite", BindingFlags.Public | BindingFlags.Instance);
                 harmony.Patch(original, new HarmonyMethod(prefix));
 
-                
+                prefix = typeof(DynEnvHelper).GetTypeInfo().GetPrivateStaticMethod("GetObjectInstance_PrefixPatch");
+
+                original = typeof(DynamicEnvironmentCodex).GetMethod("GetObjectInstance", BindingFlags.Public | BindingFlags.Static);
+                harmony.Patch(original, new HarmonyMethod(prefix));
             }
             catch(Exception e)
             {
                 Console.WriteLine(e);
                 throw;
             }
+        }
+
+        public static void InitializeLoadPatch()
+        {
+            try
+            {
+                // GetItemInstance prefix patch
+                //var postfix = typeof(NativeInterface).GetTypeInfo().GetMethod("LoadGrindscript");
+                var transpiler = typeof(Callbacks).GetTypeInfo().GetMethod("InitializeLoadPatch_Transpiler", BindingFlags.Public | BindingFlags.Static);
+                var original = Utils.GetGameType("SoG.Game1").GetMethod("LoadContent", BindingFlags.Instance | BindingFlags.NonPublic);
+
+                harmony.Patch(original, transpiler: new HarmonyMethod(transpiler));
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+        }
+
+        public static IEnumerable<CodeInstruction> InitializeLoadPatch_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
+        {
+            int iCodeIndex = -1;
+
+            MethodInfo xSearchMethod = Utils.GetGameType("SoG.Game1").GetMethod("_MainMenu_PopulateCharacterSelect", BindingFlags.Public | BindingFlags.Instance);
+
+            List<CodeInstruction> lciInstructions = new List<CodeInstruction>(instructions);
+            for(int i = 0; i < lciInstructions.Count; i++)
+            {
+                bool bMatch =
+                        lciInstructions[i].opcode == OpCodes.Call &&
+                        lciInstructions[i].opcode.OperandType == OperandType.InlineMethod &&
+                        ((MethodInfo)lciInstructions[i].operand) == xSearchMethod;
+
+                if (bMatch)
+                {
+                    Console.WriteLine("Load Patch transpiling before instruction: " + ((MethodInfo)lciInstructions[i].operand).Name);
+                    iCodeIndex = i - 1;
+                    break;
+                }
+            }
+            if(iCodeIndex == -1)
+            {
+                throw new Exception("InitializeLoadPatch_Transpiler failed!");
+            }
+
+            List<CodeInstruction> lciNewInstructions = new List<CodeInstruction>
+            {
+                new CodeInstruction(OpCodes.Call, typeof(NativeInterface).GetTypeInfo().GetMethod("LoadGrindscript"))
+            };
+
+            lciInstructions.InsertRange(iCodeIndex, lciNewInstructions);
+
+            return lciInstructions;
         }
 
         #endregion
