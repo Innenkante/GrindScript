@@ -26,10 +26,11 @@ namespace SoG.GrindScript
         private static List<OnNPCDamagedPrototype> _onNpcDamagedCallbacks = new List<OnNPCDamagedPrototype>();
         private static List<OnNPCInteractionPrototype> _onNpcInteractionCallbacks = new List<OnNPCInteractionPrototype>();
         private static List<OnCustomContentLoadPrototype> _onCustomContentLoadCallbacks = new List<OnCustomContentLoadPrototype>();
+        private static List<OnItemUsePrototype> _onItemUseCallbacks = new List<OnItemUsePrototype>();
 
 
         private static List<OnArcadiaLoadPrototype> _onArcadiaLoadCallbacks = new List<OnArcadiaLoadPrototype>();
-
+        private static List<OnChatParseCommandPrototype> _onChatParseCommandCallbacks = new List<OnChatParseCommandPrototype>();
 
         private static Harmony harmony = new Harmony("GrindScriptCallbackManager");
 
@@ -44,7 +45,6 @@ namespace SoG.GrindScript
         {
             _onPlayerTakeDamageCalllbacks.Add(onPlayerTakeDamage);
         }
-
 
         public static void AddOnPlayerKilledCallback(OnPlayerKilledPrototype onPlayerKilled)
         {
@@ -79,6 +79,16 @@ namespace SoG.GrindScript
         public static void AddOnCustomContentLoad(OnCustomContentLoadPrototype onCustomContentLoad)
         {
             _onCustomContentLoadCallbacks.Add(onCustomContentLoad);
+        }
+
+        public static void AddOnChatParseCallback(OnChatParseCommandPrototype onChatParseCommand)
+        {
+            _onChatParseCommandCallbacks.Add(onChatParseCommand);
+        }
+
+        public static void AddOnItemUseCallback(OnItemUsePrototype onItemUse)
+        {
+            _onItemUseCallbacks.Add(onItemUse);
         }
 
         #endregion
@@ -119,7 +129,7 @@ namespace SoG.GrindScript
         {
             foreach (var onEnemyDamagedCallback in _onEnemyDamagedCallbacks)
             {
-                onEnemyDamagedCallback(new Enemy(xEnemy), ref iDamage, ref byType);
+                onEnemyDamagedCallback(xEnemy, ref iDamage, ref byType);
             }
         }
 
@@ -147,6 +157,56 @@ namespace SoG.GrindScript
             }
         }
 
+        private static bool OnChatParseCommandPrefix(string sMessage, int iConnection)
+        {
+            // Maybe a transpiler could do the job better, but I'm not familliar enough with the technique
+            // Consider this a TODO
+            try
+            {
+                // Original code
+                int iIndex = sMessage.IndexOf(' ');
+                bool bNoSecondPart = iIndex == -1;
+                if (iIndex == -1)
+                {
+                    iIndex = sMessage.Length;
+                }
+                string sFirst = sMessage.Substring(0, iIndex);
+                sMessage = sMessage.Substring(sMessage.IndexOf(' ') + 1);
+                if (bNoSecondPart)
+                {
+                    sMessage = "";
+                }
+                sFirst.ToLowerInvariant();
+                // End
+
+                bool vanillaExecution = true;
+                foreach (var onChatParseCommandCallback in _onChatParseCommandCallbacks)
+                {
+                    // If a mod callback returns false, the original function will not run
+                    // This means that vanilla commands won't run in tandem with mod commands for "false" return
+                    // Multiple mod commands with the same name will still run though...
+                    vanillaExecution &= onChatParseCommandCallback(sFirst, sMessage, iConnection);
+                }
+                return vanillaExecution;
+            }
+            catch (Exception e)
+            {
+                CAS.AddChatMessage("GrindScript: " + e.Message);
+            }
+            return true;
+        }
+
+        private static void OnItemUsePrefix(ItemCodex.ItemTypes enItem, PlayerView xView, ref bool bSend)
+        {
+            if (xView.xViewStats.bIsDead)
+            {
+                return;
+            }
+            foreach (var onItemUse in _onItemUseCallbacks)
+            {
+                onItemUse(enItem, xView, ref bSend);
+            }
+        }
 
         #endregion
 
@@ -269,9 +329,40 @@ namespace SoG.GrindScript
             }
         }
 
+        public static void InitializeOnChatParseCommandCallbacks()
+        {
+            try
+            {
+                var prefix = typeof(Callbacks).GetTypeInfo().GetPrivateStaticMethod("OnChatParseCommandPrefix");
+                var original = Utils.GetGameType("SoG.Game1").GetPublicInstanceMethod("_Chat_ParseCommand");
+
+                harmony.Patch(original, new HarmonyMethod(prefix));
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+        }
+
         public static void InitializeOnCustomContentLoad()
         {
             _onCustomContentLoadCallbacks.ForEach(onLoad => onLoad());
+        }
+
+        public static void InitializeOnItemUseCallbacks()
+        {
+            try
+            {
+                var prefix = typeof(Callbacks).GetTypeInfo().GetPrivateStaticMethod("OnItemUsePrefix");
+                var original = Utils.GetGameType("SoG.Game1").GetDeclaredMethods("_Item_Use").ElementAt(1);
+                harmony.Patch(original, new HarmonyMethod(prefix));
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
         }
 
         public static void InitializeUniquePatches()
@@ -279,9 +370,84 @@ namespace SoG.GrindScript
             try
             {
                 // GetItemInstance prefix patch
-                var prefix = typeof(CustomItem).GetTypeInfo().GetPrivateStaticMethod("OnGetItemInstancePrefix");
+                var prefix = typeof(ItemHelper).GetTypeInfo().GetPrivateStaticMethod("GetItemInstance_PrefixPatch");
                 var original = Utils.GetGameType("SoG.ItemCodex").GetMethod("GetItemInstance");
 
+                harmony.Patch(original, new HarmonyMethod(prefix));
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+
+            try
+            {
+                // GetEquipmentInfo prefix patches
+                // (EquipmentCodex declares 4 functions, so I'm patching all 4 with the same function. Yeehaw.)
+                // (it should work the same, since the functions effectively act as separate storage mediums)
+                // (the patches just change the storage in question to a shared dictionary)
+                var prefix = typeof(ItemHelper).GetTypeInfo().GetPrivateStaticMethod("GetEquipmentInfo_PrefixPatch");
+
+                var original = typeof(EquipmentCodex).GetMethod("GetArmorInfo");
+                harmony.Patch(original, new HarmonyMethod(prefix));
+
+                original = typeof(EquipmentCodex).GetMethod("GetAccessoryInfo");
+                harmony.Patch(original, new HarmonyMethod(prefix));
+
+                original = typeof(EquipmentCodex).GetMethod("GetShieldInfo");
+                harmony.Patch(original, new HarmonyMethod(prefix));
+
+                original = typeof(EquipmentCodex).GetMethod("GetShoesInfo");
+                harmony.Patch(original, new HarmonyMethod(prefix));
+
+
+                // Facegear Codex's GetHatInfo patch
+                prefix = typeof(ItemHelper).GetTypeInfo().GetPrivateStaticMethod("GetFacegearInfo_PrefixPatch");
+
+                original = typeof(FacegearCodex).GetMethod("GetHatInfo");
+                harmony.Patch(original, new HarmonyMethod(prefix));
+
+                // Hat Codex's GetHatInfo patch
+                prefix = typeof(ItemHelper).GetTypeInfo().GetPrivateStaticMethod("GetHatInfo_PrefixPatch");
+
+                original = typeof(HatCodex).GetMethod("GetHatInfo");
+                harmony.Patch(original, new HarmonyMethod(prefix));
+
+                // Weapon Codex's GetWeaponInfo patch
+                prefix = typeof(ItemHelper).GetTypeInfo().GetPrivateStaticMethod("GetWeaponInfo_PrefixPatch");
+
+                original = typeof(WeaponCodex).GetMethod("GetWeaponInfo");
+                harmony.Patch(original, new HarmonyMethod(prefix));
+
+                prefix = typeof(ItemHelper).GetTypeInfo().GetPrivateStaticMethod("LoadBatch_PrefixOverwrite");
+
+                original = typeof(WeaponAssets.WeaponContentManager).GetMethods(BindingFlags.NonPublic | BindingFlags.Instance).Where(item => item.Name == "LoadBatch").ElementAt(1);
+                harmony.Patch(original, new HarmonyMethod(prefix));
+
+                prefix = typeof(ItemHelper).GetTypeInfo().GetPrivateStaticMethod("_Animations_GetAnimationSet_PrefixOverwrite");
+
+                original = typeof(Game1).GetMethods(BindingFlags.Public | BindingFlags.Instance).Where(item => item.Name == "_Animations_GetAnimationSet").ElementAt(1);
+                harmony.Patch(original, new HarmonyMethod(prefix));
+            
+                prefix = typeof(EnemyHelper).GetTypeInfo().GetPrivateStaticMethod("GetEnemyInstance_PrefixPatch");
+
+                original = typeof(EnemyCodex).GetMethod("GetEnemyInstance", BindingFlags.Public | BindingFlags.Static);
+                harmony.Patch(original, new HarmonyMethod(prefix));
+
+                prefix = typeof(EnemyHelper).GetTypeInfo().GetPrivateStaticMethod("_Enemy_AdjustForDifficulty_PrefixPatch");
+
+                original = typeof(Game1).GetMethod("_Enemy_AdjustForDifficulty", BindingFlags.Public | BindingFlags.Instance);
+                harmony.Patch(original, new HarmonyMethod(prefix));
+
+                prefix = typeof(EnemyHelper).GetTypeInfo().GetPrivateStaticMethod("_Enemy_MakeElite_PrefixPatch");
+
+                original = typeof(Game1).GetMethod("_Enemy_MakeElite", BindingFlags.Public | BindingFlags.Instance);
+                harmony.Patch(original, new HarmonyMethod(prefix));
+
+                prefix = typeof(DynEnvHelper).GetTypeInfo().GetPrivateStaticMethod("GetObjectInstance_PrefixPatch");
+
+                original = typeof(DynamicEnvironmentCodex).GetMethod("GetObjectInstance", BindingFlags.Public | BindingFlags.Static);
                 harmony.Patch(original, new HarmonyMethod(prefix));
             }
             catch(Exception e)
@@ -289,6 +455,60 @@ namespace SoG.GrindScript
                 Console.WriteLine(e);
                 throw;
             }
+        }
+
+        public static void InitializeLoadPatch()
+        {
+            try
+            {
+                // GetItemInstance prefix patch
+                //var postfix = typeof(NativeInterface).GetTypeInfo().GetMethod("LoadGrindscript");
+                var transpiler = typeof(Callbacks).GetTypeInfo().GetMethod("InitializeLoadPatch_Transpiler", BindingFlags.Public | BindingFlags.Static);
+                var original = Utils.GetGameType("SoG.Game1").GetMethod("LoadContent", BindingFlags.Instance | BindingFlags.NonPublic);
+
+                harmony.Patch(original, transpiler: new HarmonyMethod(transpiler));
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+        }
+
+        public static IEnumerable<CodeInstruction> InitializeLoadPatch_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
+        {
+            int iCodeIndex = -1;
+
+            MethodInfo xSearchMethod = Utils.GetGameType("SoG.Game1").GetMethod("_MainMenu_PopulateCharacterSelect", BindingFlags.Public | BindingFlags.Instance);
+
+            List<CodeInstruction> lciInstructions = new List<CodeInstruction>(instructions);
+            for(int i = 0; i < lciInstructions.Count; i++)
+            {
+                bool bMatch =
+                        lciInstructions[i].opcode == OpCodes.Call &&
+                        lciInstructions[i].opcode.OperandType == OperandType.InlineMethod &&
+                        ((MethodInfo)lciInstructions[i].operand) == xSearchMethod;
+
+                if (bMatch)
+                {
+                    Console.WriteLine("Load Patch transpiling before instruction: " + ((MethodInfo)lciInstructions[i].operand).Name);
+                    iCodeIndex = i - 1;
+                    break;
+                }
+            }
+            if(iCodeIndex == -1)
+            {
+                throw new Exception("InitializeLoadPatch_Transpiler failed!");
+            }
+
+            List<CodeInstruction> lciNewInstructions = new List<CodeInstruction>
+            {
+                new CodeInstruction(OpCodes.Call, typeof(NativeInterface).GetTypeInfo().GetMethod("LoadGrindscript"))
+            };
+
+            lciInstructions.InsertRange(iCodeIndex, lciNewInstructions);
+
+            return lciInstructions;
         }
 
         #endregion

@@ -4,6 +4,8 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Xna.Framework.Content;
+using Microsoft.Xna.Framework.Graphics;
 
 namespace SoG.GrindScript
 {
@@ -21,12 +23,20 @@ namespace SoG.GrindScript
 
         }
 
+        public static void WriteToConsole(string message, string who = "Debug")
+        {
+            Console.WriteLine("[" + who + "] - " + message);
+        }
+
+        public static Game1 GetTheGame()
+        {
+            return (Game1)Utils.GetGameType("SoG.Program").GetMethod("GetTheGame")?.Invoke(null, null);
+        }
+
         public static TypeInfo GetGameType(string name)
         {
             return _definedTypes.First(t => t.FullName == name);
         }
-
-
     }
 
     static class TypeExtension
@@ -70,9 +80,5 @@ namespace SoG.GrindScript
         {
             return t.GetField(field, BindingFlags.Public | BindingFlags.Static)?.GetValue(null);
         }
-
-
     }
-
-
 }

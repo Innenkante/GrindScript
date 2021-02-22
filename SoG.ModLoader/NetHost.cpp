@@ -1,4 +1,5 @@
 #include "pch.h"
+#include "Debug.h"
 #include "NetHost.h"
 
 
@@ -19,6 +20,7 @@ void NetHost::StartCLR()
 	DWORD result = 0;
 	clrRuntimeHost->ExecuteInDefaultAppDomain(L"GrindScript.dll", L"SoG.GrindScript.NativeInterface", L"Initialize", L"Test", &result);
 
+	Debug::Info("Started NativeInterface::Initialize");
 }
 
 //void NetHost::LoadMods(std::string path)

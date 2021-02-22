@@ -40,9 +40,9 @@ namespace SoG.GrindScript
 
     public class SingleKillQuest : Quest
     {
-        public EnemyTypes EnemyToKill { get; }
+        public EnemyCodex.EnemyTypes EnemyToKill { get; }
 
-        public SingleKillQuest(string name, string summary, int level, Action<Player> reward, EnemyTypes enemyToKill) : base(name, summary, level, reward)
+        public SingleKillQuest(string name, string summary, int level, Action<Player> reward, EnemyCodex.EnemyTypes enemyToKill) : base(name, summary, level, reward)
         {
             EnemyToKill = enemyToKill;
         }
@@ -50,9 +50,9 @@ namespace SoG.GrindScript
 
     public class MultipleKillQuest : Quest
     {
-        public EnemyTypes EnemiesToKill { get; }
+        public EnemyCodex.EnemyTypes EnemiesToKill { get; }
 
-        public MultipleKillQuest(string name, string summary, int level, Action<Player> reward, EnemyTypes enemiesToKill) : base(name, summary, level, reward)
+        public MultipleKillQuest(string name, string summary, int level, Action<Player> reward, EnemyCodex.EnemyTypes enemiesToKill) : base(name, summary, level, reward)
         {
             EnemiesToKill = enemiesToKill;
         }

@@ -4,15 +4,16 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 
 namespace SoG.GrindScript
 {
     public partial class BaseScript
     {
-        internal static List<CustomItem> CustomItems = new List<CustomItem>();
-
         private readonly dynamic _game;
+
+        protected ContentManager ModContent;
 
         public LocalGame LocalGame { get; }
 
@@ -24,7 +25,11 @@ namespace SoG.GrindScript
         {
             Utils.Initialize(AppDomain.CurrentDomain.GetAssemblies().First(a => a.GetName().Name == "Secrets Of Grindea"));
 
-            _game = Utils.GetGameType("SoG.Program").GetMethod("GetTheGame")?.Invoke(null, null);
+            ModContent = new ContentManager(Utils.GetTheGame().Content.ServiceProvider, "ModContent/" + this.GetType().Name);
+
+            Console.WriteLine(this.GetType().Name + " ContentManager path set as " + ModContent.RootDirectory);
+
+            _game = Utils.GetTheGame();
 
             LocalGame = new LocalGame(_game);
 
@@ -34,11 +39,10 @@ namespace SoG.GrindScript
             LocalPlayer = new Player(_game.xLocalPlayer);
         }
 
-        protected SpriteFont GetFont(FontType font)
+        protected SpriteFont GetFont(FontManager.FontType font)
         {
             return (SpriteFont)Utils.GetGameType("SoG.FontManager").GetMethod("GetFont")?.Invoke(null, new object[] { (int)font });
         }
-
 
         public virtual void OnDraw()
         {
@@ -81,6 +85,17 @@ namespace SoG.GrindScript
         }
 
         public virtual void OnCustomContentLoad()
+        {
+            return;
+        }
+
+        public virtual bool OnChatParseCommand(string command, string argList, int connection)
+        {
+            // Connection param can usually be ignored
+            return true;
+        }
+
+        public virtual void OnItemUse(ItemCodex.ItemTypes enItem, PlayerView xView, ref bool bSend)
         {
             return;
         }

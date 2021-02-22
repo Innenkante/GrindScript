@@ -30,9 +30,9 @@ namespace SoG.GrindScript
             set => _originalObject.bLookAtPlayerAtInteraction = value;
         }
 
-        public NPCTypes GetNPCType()
+        public NPCCodex.NPCTypes GetNPCType()
         {
-            return Enum.Parse(typeof(NPCTypes), _originalObject.enType.ToString());
+            return Enum.Parse(typeof(NPCCodex.NPCTypes), _originalObject.enType.ToString());
         }
 
         public NPC(object originalType) : base(originalType)
@@ -41,7 +41,7 @@ namespace SoG.GrindScript
         }
 
         
-        public static NPC AddNPCTo(LocalGame localGame, NPCTypes npcType, Vector2 position)
+        public static NPC AddNPCTo(LocalGame localGame, NPCCodex.NPCTypes npcType, Vector2 position)
         {
 
             var game = localGame.GetUnderlayingGame();

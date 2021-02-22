@@ -115,6 +115,6 @@
     <Error Condition="!Exists('..\packages\Costura.Fody.4.1.0\build\Costura.Fody.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Costura.Fody.4.1.0\build\Costura.Fody.props'))" />
   </Target>
   <PropertyGroup>
-    <PostBuildEvent>copy /y  "$(TargetPath)" "G:\Steam\steamapps\common\SecretsOfGrindea"</PostBuildEvent>
+    <PostBuildEvent>copy /y  "$(TargetPath)" "C:\Program Files (x86)\Steam\steamapps\common\SecretsOfGrindea"</PostBuildEvent>
   </PropertyGroup>
 </Project>

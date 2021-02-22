@@ -54,6 +54,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>C:\Windows\Microsoft.NET\assembly\GAC_32\Microsoft.Xna.Framework.Xact\v4.0_4.0.0.0__842cf8be1de50553\Microsoft.Xna.Framework.Xact.dll</HintPath>
     </Reference>
+    <Reference Include="Secrets Of Grindea">
+      <HintPath>..\..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\SecretsOfGrindea\Secrets Of Grindea.exe</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Runtime.InteropServices.RuntimeInformation" />
@@ -65,15 +68,17 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CustomItem.cs" />
+    <Compile Include="AnimationPrototype.cs" />
+    <Compile Include="DynEnvHelper.cs" />
+    <Compile Include="ItemHelper.cs" />
     <Compile Include="Delegates.cs" />
     <Compile Include="BaseScript.cs" />
     <Compile Include="Callbacks.cs" />
     <Compile Include="Dialogue.cs" />
-    <Compile Include="Enemy.cs" />
     <Compile Include="Enums.cs" />
     <Compile Include="LocalGame.cs" />
-    <Compile Include="ModCodex.cs" />
+    <Compile Include="EnemyHelper.cs" />
+    <Compile Include="ModLibrary.cs" />
     <Compile Include="NativeInterface.cs" />
     <Compile Include="Player.cs" />
     <Compile Include="NPC.cs" />
@@ -87,6 +92,6 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>copy /y  "$(TargetPath)" "E:\Steam\steamapps\common\SecretsOfGrindea"</PostBuildEvent>
+    <PostBuildEvent>copy /y  "$(TargetPath)" "C:\Program Files (x86)\Steam\steamapps\common\SecretsOfGrindea"</PostBuildEvent>
   </PropertyGroup>
 </Project>
