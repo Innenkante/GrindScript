@@ -27,8 +27,9 @@ To get the mod loader running on your local machine, perform these steps:
    - ModLauncher.exe
    - ModLoader.dll
 4. Add any desired mods (eg. `ChaosMod.dll`) to the `Mods` directory. This should be in the same directory as the `Secrets of Grindea.exe` file. (If the directory does not yet exist, create it.)
-5. Run the game.
-6. Run `ModLauncher.exe`, select `LOAD`, and enjoy your mods! 😃
+5. Add any asset folders in the `ModContent` directory (for example: `ModContent\ItemExampleMod\<assets>`).
+6. Run the game.
+7. Run `ModLauncher.exe`, select `LOAD`, and enjoy your mods! 😃
 
 ## Creating Your Own Mod
 
@@ -38,7 +39,7 @@ To start making your own mod, perform theses steps:
 2. Create a New `Project` as a `Class Library (.NET Framework)`. (To find this option more quickly, you can use the search bar or filter under C# and Windows.)
    - Naming convention: `SoG.<MOD_NAME>`.
 3. Add any necessary references.
-   - You'll need a reference to `SoG.GrindScript`.
+   - You'll need a reference to `SoG.GrindScript` and the `Secrets Of Grindea` executable.
    - You'll likely need references to `Microsoft.Xna.Framework` and `Microsoft.Xna.Framework.Graphics`.
 4. Apply your changes to the project and then `build` it.
    - Removing the `There was a mismatch between the processor architecture...` warning (harmless). (UNRESOLVED)
