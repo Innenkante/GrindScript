@@ -1,0 +1,133 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{8B7405AD-3C39-4647-AB62-6FCC42068880}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>SoG.Modding</RootNamespace>
+    <AssemblyName>GrindScript</AssemblyName>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\..\BuildAPI\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <PlatformTarget>x86</PlatformTarget>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\..\BuildAPI\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <PlatformTarget>x86</PlatformTarget>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="0Harmony, Version=2.0.4.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Lib.Harmony.2.0.4\lib\net472\0Harmony.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Xna.Framework, Version=4.0.0.0, Culture=neutral, PublicKeyToken=842cf8be1de50553, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>C:\Windows\Microsoft.NET\assembly\GAC_32\Microsoft.Xna.Framework\v4.0_4.0.0.0__842cf8be1de50553\Microsoft.Xna.Framework.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Microsoft.Xna.Framework.Game, Version=4.0.0.0, Culture=neutral, PublicKeyToken=842cf8be1de50553, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>C:\Windows\Microsoft.NET\assembly\GAC_32\Microsoft.Xna.Framework.Game\v4.0_4.0.0.0__842cf8be1de50553\Microsoft.Xna.Framework.Game.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Microsoft.Xna.Framework.Graphics, Version=4.0.0.0, Culture=neutral, PublicKeyToken=842cf8be1de50553, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>C:\Windows\Microsoft.NET\assembly\GAC_32\Microsoft.Xna.Framework.Graphics\v4.0_4.0.0.0__842cf8be1de50553\Microsoft.Xna.Framework.Graphics.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Microsoft.Xna.Framework.Xact, Version=4.0.0.0, Culture=neutral, PublicKeyToken=842cf8be1de50553, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>C:\Windows\Microsoft.NET\assembly\GAC_32\Microsoft.Xna.Framework.Xact\v4.0_4.0.0.0__842cf8be1de50553\Microsoft.Xna.Framework.Xact.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Secrets Of Grindea, Version=1.0.0.0, Culture=neutral, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\VanillaDependencies\Secrets Of Grindea.exe</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Runtime.InteropServices.RuntimeInformation" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="API\Configs\EnemyConfig.cs" />
+    <Compile Include="API\Configs\QuestConfig.cs" />
+    <Compile Include="API\Configs\TreatCurseConfig.cs" />
+    <Compile Include="API\BaseScript.Enemies.cs" />
+    <Compile Include="API\BaseScript.Items.cs" />
+    <Compile Include="API\Configs\LevelConfig.cs" />
+    <Compile Include="API\BaseScript.Levels.cs" />
+    <Compile Include="API\BaseScript.Commands.cs" />
+    <Compile Include="API\Configs\PerkConfig.cs" />
+    <Compile Include="API\BaseScript.Arcade.cs" />
+    <Compile Include="API\BaseScript.Quests.cs" />
+    <Compile Include="Core\Globals.cs" />
+    <Compile Include="Core\GSCommands.cs" />
+    <Compile Include="Core\IDRange.cs" />
+    <Compile Include="Core\ModRegistry.cs" />
+    <Compile Include="Extensions\AnimationExtension.cs" />
+    <Compile Include="API\Game1Extension.cs" />
+    <Compile Include="Extensions\IDExtension.cs" />
+    <Compile Include="Extensions\LevelExtension.cs" />
+    <Compile Include="Extensions\RoguelikeExtension.cs" />
+    <Compile Include="API\Configs\AudioConfig.cs" />
+    <Compile Include="Core\LibraryEntries.cs" />
+    <Compile Include="GlobalSuppressions.cs" />
+    <Compile Include="Extensions\ItemExtension.cs" />
+    <Compile Include="API\Configs\ItemConfig.cs" />
+    <Compile Include="Launcher.cs" />
+    <Compile Include="Patches\Game1Patches.cs" />
+    <Compile Include="Patches\HelperCallbacks.cs" />
+    <Compile Include="Patches\MiscPatches.cs" />
+    <Compile Include="Patches\SoundSystemPatches.cs" />
+    <Compile Include="Utils\ConsoleLogger.cs" />
+    <Compile Include="Core\Delegates.cs" />
+    <Compile Include="API\BaseScript.cs" />
+    <Compile Include="Core\Enums.cs" />
+    <Compile Include="Core\GrindScript.cs" />
+    <Compile Include="Core\IDHolder.cs" />
+    <Compile Include="Core\Libraries.cs" />
+    <Compile Include="API\BaseScript.Audio.cs" />
+    <Compile Include="Core\ModSaving.cs" />
+    <Compile Include="Utils\ILogger.cs" />
+    <Compile Include="Utils\NetTools.cs" />
+    <Compile Include="Utils\PatchTools.cs" />
+    <Compile Include="Extensions\TypeExtension.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Utils\Tools.cs" />
+    <Compile Include="Patches\TCMenuWorker.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>
+    </PostBuildEvent>
+  </PropertyGroup>
+</Project>
