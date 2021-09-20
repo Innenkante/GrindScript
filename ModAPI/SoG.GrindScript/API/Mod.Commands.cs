@@ -5,11 +5,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using SoG.Modding.Core;
-using SoG.Modding.Utils;
+using SoG.Modding.ModUtils;
 
 namespace SoG.Modding.API
 {
-    public abstract partial class BaseScript
+    public abstract partial class Mod
     {
         /// <summary>
         /// Helper method for setting up multiple commands.
@@ -42,7 +42,7 @@ namespace SoG.Modding.API
                 throw new ArgumentException("Provided command contains whitespace.");
             }
 
-            BaseScript mod = ModAPI.Registry.LoadContext;
+            Mod mod = Registry.LoadContext;
 
             if (mod == null)
             {
@@ -50,13 +50,7 @@ namespace SoG.Modding.API
                 return;
             }
 
-            string name = mod.GetType().Name;
-
-            ModAPI.Registry.Library.Commands.TryGetValue(name, out var parsers);
-
-            Debug.Assert(parser != null, "Mod command parser table does not exist!");
-
-            parsers[command] = parser;
+            ModCommands[command] = parser;
         }
     }
 }

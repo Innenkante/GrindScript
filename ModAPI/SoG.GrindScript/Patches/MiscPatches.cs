@@ -14,228 +14,18 @@ using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using SoG.Modding.Core;
 using SoG.Modding.Extensions;
-using SoG.Modding.Utils;
+using SoG.Modding.ModUtils;
 
 namespace SoG.Modding.Patches
 {
     using CodeList = System.Collections.Generic.IEnumerable<HarmonyLib.CodeInstruction>;
 
     /// <summary>
-    /// Contains patches for miscellaneous patches.
-    /// Remark: If you see a class with a ton of patches, 
-    /// it should be moved to its own patch collection class.
+    /// Contains miscellaneous patches.
     /// </summary>
-
     [HarmonyPatch]
     internal static class MiscPatches
     {
-        /// <summary>
-        /// Inserts custom curses in the Curse shop menu.
-        /// </summary>
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(ShopMenu.TreatCurseMenu), "FillCurseList")]
-        internal static void PostFillCurseList(ShopMenu.TreatCurseMenu __instance)
-        {
-            foreach (var kvp in Globals.API.Registry.Library.Curses)
-            {
-                if (!kvp.Value.Config.IsTreat)
-                    __instance.lenTreatCursesAvailable.Add(kvp.Value.GameID);
-            }
-        }
-
-        /// <summary>
-        /// Inserts custom curses in the Treat shop menu.
-        /// </summary>
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(ShopMenu.TreatCurseMenu), "FillTreatList")]
-        internal static void PostFillTreatList(ShopMenu.TreatCurseMenu __instance)
-        {
-            foreach (var kvp in Globals.API.Registry.Library.Curses)
-            {
-                if (kvp.Value.Config.IsTreat)
-                    __instance.lenTreatCursesAvailable.Add(kvp.Value.GameID);
-            }
-        }
-
-
-        /// <summary>
-        /// Inserts custom perks in the Perk shop menu.
-        /// </summary>
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(RogueLikeMode.PerkInfo), "Init")]
-        internal static void PostPerkListInit()
-        {
-            foreach (var perk in Globals.API.Registry.Library.Perks.Values)
-                RogueLikeMode.PerkInfo.lxAllPerks.Add(new RogueLikeMode.PerkInfo(perk.GameID, perk.Config.EssenceCost, perk.TextEntry));
-        }
-
-        [HarmonyPrefix]
-        [HarmonyPatch(typeof(ItemCodex), "GetItemDescription")]
-        internal static bool OnGetItemDescription(ref ItemDescription __result, ItemCodex.ItemTypes enType)
-        {
-            if (!enType.IsFromMod())
-                return true;
-
-            ModItemEntry entry = Globals.API.Registry.Library.Items[enType];
-            __result = entry.ItemData;
-            Tools.TryLoadTex(entry.Config.IconPath, entry.Config.Manager, out __result.txDisplayImage);
-
-            return false;
-        }
-
-        [HarmonyPrefix]
-        [HarmonyPatch(typeof(ItemCodex), "GetItemInstance")]
-        internal static bool OnGetItemInstance(ref Item __result, ItemCodex.ItemTypes enType)
-        {
-            if (!enType.IsFromMod())
-                return true;
-
-            ModItemEntry entry = Globals.API.Registry.Library.Items[enType];
-            string trueShadowTex = entry.Config.ShadowPath != "" ? entry.Config.ShadowPath : "Items/DropAppearance/hartass02";
-            ItemDescription xDesc = entry.ItemData;
-
-            __result = new Item()
-            {
-                enType = enType,
-                sFullName = xDesc.sFullName,
-                bGiveToServer = xDesc.lenCategory.Contains(ItemCodex.ItemCategories.GrantToServer)
-            };
-
-            Tools.TryLoadTex(entry.Config.IconPath, entry.Config.Manager, out __result.xRenderComponent.txTexture);
-            Tools.TryLoadTex(trueShadowTex, entry.Config.Manager, out __result.xRenderComponent.txShadowTexture);
-
-            __result.xCollisionComponent.xMovementCollider = new SphereCollider(10f, Vector2.Zero, __result.xTransform, 1f, __result) { bCollideWithFlat = true };
-
-            return false;
-        }
-
-        [HarmonyPrefix]
-        [HarmonyPatch(typeof(EquipmentCodex), "GetArmorInfo")]
-        internal static bool OnGetEquipmentInfo_0(ref EquipmentInfo __result, ItemCodex.ItemTypes enType)
-        {
-            if (!enType.IsFromMod())
-                return true;
-
-            __result = Globals.API.Registry.Library.Items[enType].EquipData;
-
-            return false;
-        }
-
-        [HarmonyPrefix]
-        [HarmonyPatch(typeof(EquipmentCodex), "GetAccessoryInfo")]
-        internal static bool OnGetEquipmentInfo_1(ref EquipmentInfo __result, ItemCodex.ItemTypes enType) => OnGetEquipmentInfo_0(ref __result, enType);
-
-        [HarmonyPrefix]
-        [HarmonyPatch(typeof(EquipmentCodex), "GetShieldInfo")]
-        internal static bool OnGetEquipmentInfo_2(ref EquipmentInfo __result, ItemCodex.ItemTypes enType) => OnGetEquipmentInfo_0(ref __result, enType);
-
-        [HarmonyPrefix]
-        [HarmonyPatch(typeof(EquipmentCodex), "GetShoesInfo")]
-        internal static bool OnGetEquipmentInfo_3(ref EquipmentInfo __result, ItemCodex.ItemTypes enType) => OnGetEquipmentInfo_0(ref __result, enType);
-
-        [HarmonyPrefix]
-        [HarmonyPatch(typeof(FacegearCodex), "GetHatInfo")]
-        internal static bool OnGetFacegearInfo(ref FacegearInfo __result, ItemCodex.ItemTypes enType)
-        {
-            if (!enType.IsFromMod())
-                return true;
-
-            ModItemEntry entry = Globals.API.Registry.Library.Items[enType];
-            ContentManager manager = entry.Config.Manager;
-            string path = entry.Config.EquipResourcePath;
-
-            __result = entry.EquipData as FacegearInfo;
-
-            Tools.TryLoadTex(Path.Combine(path, "Up"), manager, out __result.atxTextures[0]);
-            Tools.TryLoadTex(Path.Combine(path, "Right"), manager, out __result.atxTextures[1]);
-            Tools.TryLoadTex(Path.Combine(path, "Down"), manager, out __result.atxTextures[2]);
-            Tools.TryLoadTex(Path.Combine(path, "Left"), manager, out __result.atxTextures[3]);
-
-            return false;
-        }
-
-        [HarmonyPrefix]
-        [HarmonyPatch(typeof(HatCodex), "GetHatInfo")]
-        internal static bool OnGetHatInfo(ref HatInfo __result, ItemCodex.ItemTypes enType)
-        {
-            if (!enType.IsFromMod())
-                return true;
-
-            ModItemEntry entry = Globals.API.Registry.Library.Items[enType];
-            ContentManager manager = entry.Config.Manager;
-            string path = entry.Config.EquipResourcePath;
-
-            __result = entry.EquipData as HatInfo;
-
-            Tools.TryLoadTex(Path.Combine(path, "Up"), manager, out __result.xDefaultSet.atxTextures[0]);
-            Tools.TryLoadTex(Path.Combine(path, "Right"), manager, out __result.xDefaultSet.atxTextures[1]);
-            Tools.TryLoadTex(Path.Combine(path, "Down"), manager, out __result.xDefaultSet.atxTextures[2]);
-            Tools.TryLoadTex(Path.Combine(path, "Left"), manager, out __result.xDefaultSet.atxTextures[3]);
-
-            foreach (var kvp in __result.denxAlternateVisualSets)
-            {
-                string altPath = Path.Combine(path, entry.HatAltSetResourcePaths[kvp.Key]);
-
-                Tools.TryLoadTex(Path.Combine(altPath, "Up"), manager, out kvp.Value.atxTextures[0]);
-                Tools.TryLoadTex(Path.Combine(altPath, "Right"), manager, out kvp.Value.atxTextures[1]);
-                Tools.TryLoadTex(Path.Combine(altPath, "Down"), manager, out kvp.Value.atxTextures[2]);
-                Tools.TryLoadTex(Path.Combine(altPath, "Left"), manager, out kvp.Value.atxTextures[3]);
-            }
-
-            return false;
-        }
-
-        [HarmonyPrefix]
-        [HarmonyPatch(typeof(WeaponCodex), "GetWeaponInfo")]
-        internal static bool OnGetWeaponInfo(ref WeaponInfo __result, ItemCodex.ItemTypes enType)
-        {
-            if (!enType.IsFromMod())
-                return true;
-
-            __result = Globals.API.Registry.Library.Items[enType].EquipData as WeaponInfo;
-
-            return false;
-        }
-
-        [HarmonyPrefix]
-        [HarmonyPatch(typeof(WeaponAssets.WeaponContentManager), "LoadBatch", new Type[] { typeof(Dictionary<ushort, string>) })]
-        internal static bool OnLoadBatch(ref Dictionary<ushort, string> dis, WeaponAssets.WeaponContentManager __instance)
-        {
-            ItemCodex.ItemTypes type = __instance.enType;
-
-            if (!type.IsFromMod())
-                return true;
-
-            ModItemEntry entry = Globals.API.Registry.Library.Items[type];
-            ContentManager manager = entry.Config.Manager;
-            bool oneHanded = (entry.EquipData as WeaponInfo).enWeaponCategory == WeaponInfo.WeaponCategory.OneHanded;
-
-            if (manager != null)
-                __instance.contWeaponContent.RootDirectory = manager.RootDirectory;
-
-            foreach (KeyValuePair<ushort, string> kvp in dis)
-            {
-                string resourcePath = Globals.API.Registry.Library.Items[type].Config.EquipResourcePath;
-                string texPath = kvp.Value.Replace($"Weapons/{resourcePath}/", "");
-
-                if (oneHanded)
-                {
-                    texPath = texPath.Replace("Sprites/Heroes/OneHanded/", resourcePath + "/");
-                    texPath = texPath.Replace("Sprites/Heroes/Charge/OneHand/", resourcePath + "/1HCharge/");
-                }
-                else
-                {
-                    texPath = texPath.Replace("Sprites/Heroes/TwoHanded/", resourcePath + "/");
-                    texPath = texPath.Replace("Sprites/Heroes/Charge/TwoHand/", resourcePath + "/2HCharge/");
-                }
-
-                Tools.TryLoadTex(texPath, __instance.contWeaponContent, out Texture2D tex);
-                __instance.ditxWeaponTextures.Add(kvp.Key, tex);
-            }
-
-            return false;
-        }
-
         [HarmonyPrefix]
         [HarmonyPatch(typeof(LevelBlueprint), "GetBlueprint")]
         internal static bool OnGetLevelBlueprint(ref LevelBlueprint __result, Level.ZoneEnum enZoneToGet)
@@ -247,7 +37,7 @@ namespace SoG.Modding.Patches
 
             bprint.CheckForConsistency();
 
-            ModLevelEntry entry = Globals.API.Registry.Library.Levels[enZoneToGet];
+            ModLevelEntry entry = Globals.API.Loader.Library.Levels[enZoneToGet];
 
             try
             {
@@ -285,7 +75,6 @@ namespace SoG.Modding.Patches
             return false;
         }
 
-
         [HarmonyPrefix]
         [HarmonyPatch(typeof(EnemyCodex), "GetEnemyDescription")]
         internal static bool OnGetEnemyDescription(ref EnemyDescription __result, EnemyCodex.EnemyTypes enType)
@@ -293,7 +82,7 @@ namespace SoG.Modding.Patches
             if (!enType.IsFromMod())
                 return true;
 
-            __result = Globals.API.Registry.Library.Enemies[enType].EnemyData;
+            __result = Globals.API.Loader.Library.Enemies[enType].EnemyData;
 
             return false;
         }
@@ -308,17 +97,17 @@ namespace SoG.Modding.Patches
         {
             // Assert to check if underlying method hasn't shifted heavily
             OpCode op = OpCodes.Nop;
-            Debug.Assert(PatchTools.TryILAt(code, 20, out op) && op == OpCodes.Ldstr, "GetEnemyInstance transpiler is invalid!");
+            Debug.Assert(PatchUtils.TryILAt(code, 20, out op) && op == OpCodes.Ldstr, "GetEnemyInstance transpiler is invalid!");
 
             var insert = new CodeInstruction[]
             {
                 new CodeInstruction(OpCodes.Ldarg_0),
                 new CodeInstruction(OpCodes.Ldarg_1),
-                new CodeInstruction(OpCodes.Call, typeof(HelperCallbacks).GetPrivateStaticMethod(nameof(HelperCallbacks.InGetEnemyInstance))),
+                new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(HelperCallbacks), nameof(HelperCallbacks.InGetEnemyInstance))),
                 new CodeInstruction(OpCodes.Stloc_0) // Store returned enemy
             };
 
-            return PatchTools.InsertAt(code, insert, 20 + 2);
+            return PatchUtils.InsertAt(code, insert, 20 + 2);
         }
 
         [HarmonyPrefix]
@@ -330,7 +119,7 @@ namespace SoG.Modding.Patches
                 return true;
             }
 
-            __result = Globals.API.Registry.Library.Enemies[enEnemy].Config.CardIllustrationPath;
+            __result = Globals.API.Loader.Library.Enemies[enEnemy].Config.CardIllustrationPath;
 
             return false;
         }
@@ -344,7 +133,7 @@ namespace SoG.Modding.Patches
                 return true;
             }
 
-            __result = Globals.API.Registry.Library.Enemies[enType].Config.DefaultAnimation?.Invoke(Content);
+            __result = Globals.API.Loader.Library.Enemies[enType].Config.DefaultAnimation?.Invoke(Content);
 
             if (__result == null)
             {
@@ -363,7 +152,7 @@ namespace SoG.Modding.Patches
                 return true;
             }
 
-            __result = Globals.API.Registry.Library.Enemies[enType].Config.DisplayIcon?.Invoke(Content);
+            __result = Globals.API.Loader.Library.Enemies[enType].Config.DisplayIcon?.Invoke(Content);
 
             if (__result == null)
             {
@@ -382,7 +171,7 @@ namespace SoG.Modding.Patches
                 return true;
             }
 
-            __result = Globals.API.Registry.Library.Enemies[enType].Config.DisplayBackground?.Invoke(Content);
+            __result = Globals.API.Loader.Library.Enemies[enType].Config.DisplayBackground?.Invoke(Content);
 
             if (__result == null)
             {
@@ -401,7 +190,7 @@ namespace SoG.Modding.Patches
                 return true;
             }
 
-            __result = Globals.API.Registry.Library.Quests[p_enID].QuestData;
+            __result = Globals.API.Loader.Library.Quests[p_enID].QuestData;
 
             return false;
         }
@@ -415,9 +204,92 @@ namespace SoG.Modding.Patches
                 return;
             }
 
-            Globals.API.Registry.Library.Quests[p_enID].Config.Constructor?.Invoke(__result);
+            Globals.API.Loader.Library.Quests[p_enID].Config.Constructor?.Invoke(__result);
 
-            __result.xReward = Globals.API.Registry.Library.Quests[p_enID].QuestData.xReward;
+            __result.xReward = Globals.API.Loader.Library.Quests[p_enID].QuestData.xReward;
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(SpellCodex), nameof(SpellCodex.GetSpellInstance), typeof(SpellCodex.SpellTypes), typeof(int), typeof(Level.WorldRegion))]
+        internal static void PostGetSpellInstance(ref ISpellInstance __result, SpellCodex.SpellTypes enType, int iPowerLevel, Level.WorldRegion enOverrideRegion)
+        {
+            if (!enType.IsFromMod())
+                return;
+
+            __result = Globals.API.Loader.Library.Spells[enType].Config.Builder(iPowerLevel, enOverrideRegion);
+
+            if (__result.xRenderComponent == null)
+            {
+                __result.xRenderComponent = new AnimatedRenderComponent(__result);
+                __result.xRenderComponent.xTransform = __result.xTransform;
+            }
+
+            __result.xRenderComponent.xOwnerObject = __result;
+
+            if (__result.xRenderComponent is AnimatedRenderComponent arc && arc.dixAnimations.Count == 0)
+            {
+                arc.dixAnimations.Add(0, new Animation(0, 0, RenderMaster.txNullTex, new Vector2(8f, 6f), 4, 1, 17, 32, 0, 0, 6, Animation.LoopSettings.Looping, Animation.CancelOptions.IgnoreIfPlaying, true, true));
+            }
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(SpellCodex), nameof(SpellCodex.IsEPBlocking))]
+        internal static void PostIsEPBlocking(SpellCodex.SpellTypes enType, ref bool __result)
+        {
+            if (!enType.IsFromMod())
+                return;
+
+            __result = false;
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(SpellCodex), nameof(SpellCodex.IsHidden))]
+        internal static void PostIsHidden(SpellCodex.SpellTypes enType, ref bool __result)
+        {
+            if (!enType.IsFromMod())
+                return;
+
+            __result = false;
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(SpellCodex), nameof(SpellCodex.IsMagicSkill))]
+        internal static void PostIsMagicSkill(SpellCodex.SpellTypes enType, ref bool __result)
+        {
+            if (!enType.IsFromMod())
+                return;
+
+            __result = Globals.API.Loader.Library.Spells[enType].Config.IsMagicSkill;
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(SpellCodex), nameof(SpellCodex.IsMeleeSkill))]
+        internal static void PostIsMeleeSkill(SpellCodex.SpellTypes enType, ref bool __result)
+        {
+            if (!enType.IsFromMod())
+                return;
+
+            __result = Globals.API.Loader.Library.Spells[enType].Config.IsMeleeSkill;
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(SpellCodex), nameof(SpellCodex.IsUtilitySkill))]
+        internal static void PostIsUtilitySkill(SpellCodex.SpellTypes enType, ref bool __result)
+        {
+            if (!enType.IsFromMod())
+                return;
+
+            __result = Globals.API.Loader.Library.Spells[enType].Config.IsUtilitySkill;
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(SpellCodex), nameof(SpellCodex.IsTalent))]
+        internal static void PostIsTalent(SpellCodex.SpellTypes enType, ref bool __result)
+        {
+            if (!enType.IsFromMod())
+                return;
+
+            __result = false;
         }
     }
 }

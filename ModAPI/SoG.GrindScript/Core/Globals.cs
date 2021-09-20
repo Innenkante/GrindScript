@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using SoG.Modding.Utils;
+using SoG.Modding.ModUtils;
 using SoG.Modding.API;
 
 namespace SoG.Modding.Core
@@ -24,13 +24,9 @@ namespace SoG.Modding.Core
         /// </summary>
         internal static ILogger Logger { get; set; }
 
-        private static GrindScript _API = null;
+        private static ModCore _API = null;
 
-        /// <summary>
-        /// The default GrindScript instance.
-        /// This should only be used inside static contexts.
-        /// </summary>
-        internal static GrindScript API
+        internal static ModCore API
         {
             get
             {
@@ -39,13 +35,13 @@ namespace SoG.Modding.Core
             set
             {
                 _API = value;
-                Library = _API.Registry.Library;
-                LoadedMods = _API.Registry.LoadedMods;
+                Library = _API.Loader.Library;
+                Mods = _API.Loader.Mods;
             }
         }
 
-        internal static GlobalLibrary Library { get; private set; }
+        internal static ModLibrary Library { get; private set; }
 
-        internal static List<BaseScript> LoadedMods { get; private set; }
+        internal static List<Mod> Mods { get; private set; }
     }
 }

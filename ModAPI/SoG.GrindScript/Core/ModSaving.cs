@@ -32,9 +32,9 @@ namespace SoG.Modding.Core
 
         public const string SaveFileExtension = ".gs";
 
-        private ModRegistry _mods;
+        private ModLoader _mods;
 
-        public ModSaving(ModRegistry mods)
+        internal ModSaving(ModLoader mods)
         {
             _mods = mods;
         }
@@ -110,11 +110,11 @@ namespace SoG.Modding.Core
             if (fileIsEmpty)
                 return;
 
-            ItemCodex.ItemTypes itemShuffleIndex = IDRange.ItemIDEnd;
-            RogueLikeMode.Perks perkShuffleIndex = IDRange.PerkIDEnd;
-            RogueLikeMode.TreatsCurses curseShuffleIndex = IDRange.CurseIDEnd;
-            EnemyCodex.EnemyTypes enemyShuffleIndex = IDRange.EnemyIDEnd;
-            QuestCodex.QuestID questShuffleIndex = IDRange.QuestIDEnd;
+            ItemCodex.ItemTypes itemShuffleIndex = ID.ItemIDEnd;
+            RogueLikeMode.Perks perkShuffleIndex = ID.PerkIDEnd;
+            RogueLikeMode.TreatsCurses curseShuffleIndex = ID.CurseIDEnd;
+            EnemyCodex.EnemyTypes enemyShuffleIndex = ID.EnemyIDEnd;
+            QuestCodex.QuestID questShuffleIndex = ID.QuestIDEnd;
 
             int previousVersion = file.ReadInt32();
 
@@ -133,7 +133,7 @@ namespace SoG.Modding.Core
 
                 int blockCount = file.ReadInt32();
 
-                BaseScript mod = _mods.LoadedMods.FirstOrDefault(x => x.Name == modName);
+                Mod mod = _mods.Mods.FirstOrDefault(x => x.Name == modName);
 
                 if (mod == null)
                 {
@@ -141,7 +141,7 @@ namespace SoG.Modding.Core
                     skipLoading = true;
                 }
 
-                ModLibrary library = mod?.Library;
+                ModLibrary library = mod != null ? _mods.Library.GetLibraryOfMod(mod) : null;
 
                 while (blockCount-- > 0)
                 {
@@ -202,14 +202,14 @@ namespace SoG.Modding.Core
 
             file.Write(Version);
 
-            file.Write(_mods.LoadedMods.Count);
-            foreach (BaseScript mod in _mods.LoadedMods)
+            file.Write(_mods.Mods.Count);
+            foreach (Mod mod in _mods.Mods)
             {
                 file.Write(mod.Name);
 
                 file.Write(blockSet.Count);
 
-                ModLibrary library = mod.Library;
+                ModLibrary library = _mods.Library.GetLibraryOfMod(mod);
 
                 foreach (ModDataBlock blockType in blockSet)
                 {

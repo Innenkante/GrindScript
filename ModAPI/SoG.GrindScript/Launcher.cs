@@ -1,6 +1,7 @@
 ﻿using SoG.Modding.Core;
-using SoG.Modding.Utils;
+using SoG.Modding.ModUtils;
 using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,19 +9,36 @@ using System.Threading.Tasks;
 
 namespace SoG.Modding
 {
+    /// <summary>
+    /// Provides the Launch method, used to start GrindScript.
+    /// </summary>
     public static class Launcher
     {
         private static bool launched = false;
 
+        public static DateTime LaunchTime { get; private set; }
+
+        /// <summary>
+        /// Launches GrindScript.
+        /// </summary>
         public static void Launch()
         {
             if (!launched)
             {
                 launched = true;
 
-                Globals.Logger = new ConsoleLogger(LogLevels.Debug, "GrindScript");
+                var time = LaunchTime = DateTime.Now;
 
-                Globals.API = new GrindScript();
+                Globals.Logger = new ConsoleLogger(LogLevels.Debug, "GrindScript")
+                {
+                    SourceColor = ConsoleColor.Yellow,
+                    NextLogger = new FileLogger(LogLevels.Debug, "GrindScript")
+                    {
+                        FilePath = Path.Combine("Logs", $"ConsoleLog_{time.Year}.{time.Month}.{time.Day}_{time.Hour}.{time.Minute}.{time.Second}.txt")
+                    }
+                };
+
+                Globals.API = new ModCore();
                 Globals.API.Setup();
             }
         }

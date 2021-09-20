@@ -7,18 +7,21 @@ using System.Threading.Tasks;
 using System.IO;
 using SoG.Modding.Core;
 using System.Diagnostics;
-using SoG.Modding.Utils;
+using SoG.Modding.ModUtils;
 using SoG.Modding.API.Configs;
 
 namespace SoG.Modding.API
 {
-    public abstract partial class BaseScript
+    public abstract partial class Mod
     {
+        /// <summary>
+        /// Creates a new world region, and returns its ID.
+        /// </summary>
         public Level.WorldRegion CreateWorldRegion()
         {
             var VanillaContent = Globals.Game.Content;
 
-            var gameID = ModAPI.Registry.ID.WorldIDNext++;
+            var gameID = Registry.ID.WorldIDNext++;
 
             Globals.Game.xLevelMaster.denxRegionContent.Add(gameID, new ContentManager(VanillaContent.ServiceProvider, VanillaContent.RootDirectory));
 
@@ -26,8 +29,7 @@ namespace SoG.Modding.API
         }
 
         /// <summary>
-        /// Creates a new level from the given LevlConfig.
-        /// Config must not be null.
+        /// Creates a new level from the given LevelConfig.
         /// </summary>
         public Level.ZoneEnum CreateLevel(LevelConfig config)
         {
@@ -36,7 +38,7 @@ namespace SoG.Modding.API
                 throw new ArgumentNullException(nameof(config));
             }
 
-            BaseScript mod = ModAPI.Registry.LoadContext;
+            Mod mod = Registry.LoadContext;
 
             if (mod == null)
             {
@@ -44,9 +46,9 @@ namespace SoG.Modding.API
                 return Level.ZoneEnum.None;
             }
 
-            Level.ZoneEnum gameID = ModAPI.Registry.ID.LevelIDNext++;
+            Level.ZoneEnum gameID = Registry.ID.LevelIDNext++;
 
-            ModAPI.Registry.Library.Levels[gameID] = new ModLevelEntry(mod, gameID)
+            Registry.Library.Levels[gameID] = new ModLevelEntry(mod, gameID, config.ModID)
             {
                 Config = config.DeepCopy()
             };

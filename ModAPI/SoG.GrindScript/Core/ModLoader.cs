@@ -1,7 +1,7 @@
 ﻿using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Content;
 using SoG.Modding.API;
-using SoG.Modding.Utils;
+using SoG.Modding.ModUtils;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -9,34 +9,27 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using SoG.Modding.CoreScript;
 
 namespace SoG.Modding.Core
 {
-    public class ModRegistry
+    internal class ModLoader
     {
-        private GrindScript _modAPI;
+        internal Mod LoadContext { get; private set; }
 
-        internal ModRegistry(GrindScript modAPI)
-        {
-            _modAPI = modAPI;
-            Library.Commands[GSCommands.APIName] = GSCommands.GetCommands();
-        }
+        internal List<Mod> Mods { get; } = new List<Mod>();
 
-        internal BaseScript LoadContext { get; private set; }
+        internal ModLibrary Library { get; } = new ModLibrary();
 
-        internal List<BaseScript> LoadedMods { get; } = new List<BaseScript>();
-
-        internal GlobalLibrary Library { get; } = new GlobalLibrary();
-
-        internal IDHolder ID { get; } = new IDHolder();
+        internal ID ID { get; } = new ID();
 
         /// <summary>
         /// Sets the given mod as the current load context, and calls the given method.
         /// GrindScript uses this method when calling each mod's LoadContent() method.
         /// </summary>
-        internal void CallWithContext(BaseScript mod, Action<BaseScript> call)
+        internal void CallWithContext(Mod mod, Action<Mod> call)
         {
-            BaseScript previous = LoadContext;
+            Mod previous = LoadContext;
             LoadContext = mod;
 
             try
@@ -52,25 +45,41 @@ namespace SoG.Modding.Core
         /// <summary>
         /// Loads all mods found in the "/Mods" directory
         /// </summary>
-        internal void LoadMods(List<string> ignoredMods)
+        internal void LoadMods(List<string> ignoredMods, GrindScript coreMod)
         {
-            var dir = Path.GetFullPath(Directory.GetCurrentDirectory() + "\\Mods");
+            Mods.Clear();
+
+            Mods.Add(coreMod);
+            SetupMod(coreMod);
+
+            var currentDir = Directory.GetCurrentDirectory();
+
+            var dir = Path.Combine(currentDir, "Mods");
+
+            List<string> fullPathIgnored = ignoredMods.Select(x => Path.Combine(dir, x)).ToList();
 
             var candidates = Directory.GetFiles(dir)
                 .Where(x => x.EndsWith(".dll"))
                 .ToList();
 
             var selected = candidates
-                .Where(x => !ignoredMods.Contains(x))
+                .Where(x => !fullPathIgnored.Contains(x))
                 .ToList();
 
             int ignoreCount = candidates.Count - selected.Count;
 
-            Globals.Logger.Info($"Loading {candidates.Count} mods (ignored {ignoreCount} mods from ignore list)...");
+            Globals.Logger.Info($"Loading {selected.Count} mods (ignored {ignoreCount} mods from ignore list)...");
 
-            foreach (var file in candidates)
+            foreach (var file in selected)
             {
                 LoadMod(file);
+            }
+
+            Mods.Sort((x, y) => string.Compare(x.Name, y.Name));
+
+            for (int i = 0; i < Mods.Count; i++)
+            {
+                Mods[i].ModIndex = i;
             }
         }
 
@@ -79,80 +88,66 @@ namespace SoG.Modding.Core
         /// </summary>
         private void LoadMod(string path)
         {
-            Globals.Logger.Info("Loading mod " + Tools.ShortenModPaths(path));
+            Globals.Logger.Info("Loading mod " + Utils.ShortenModPaths(path));
 
             try
             {
-                Type type = Assembly.LoadFile(path).GetTypes().First(t => t.BaseType == typeof(BaseScript));
-                BaseScript mod = type.GetConstructor(Type.EmptyTypes).Invoke(new object[0]) as BaseScript;
+                Assembly assembly = Assembly.LoadFile(path);
+                Type type = assembly.DefinedTypes.First(t => t.BaseType == typeof(Mod));
+                Mod mod = Activator.CreateInstance(type) as Mod;
 
-                mod.ModAPI = _modAPI;
-                mod.Logger.LogLevel = _modAPI.Logger.LogLevel;
+                SetupMod(mod);
 
-                mod.Content = new ContentManager(_modAPI.Game.Content.ServiceProvider, _modAPI.Game.Content.RootDirectory);
-
-                Library.Audio.Add(mod.LoadOrder, new ModAudioEntry(mod, mod.LoadOrder));
-                Library.Commands[mod.GetType().Name] = new Dictionary<string, CommandParser>();
-
-                mod.LoadOrder = LoadedMods.Count;
-                LoadedMods.Add(mod);
-
-                Globals.Logger.Info($"ModPath set as {mod.AssetPath}");
+                Mods.Add(mod);
             }
             catch (BadImageFormatException) { /* Ignore non-managed DLLs */ }
             catch (Exception e)
             {
-                Globals.Logger.Error($"Failed to load mod {Tools.ShortenModPaths(path)}. Exception message: {Tools.ShortenModPaths(e.Message)}");
+                Globals.Logger.Error($"Failed to load mod {Utils.ShortenModPaths(path)}. Exception message: {Utils.ShortenModPaths(e.Message)}");
             }
         }
 
-
-        /// <summary>
-        /// Gets the ID of the effect that has the given cue name. <para/>
-        /// This ID can be used to play effects with methods such as <see cref="SoundSystem.PlayCue"/>.
-        /// </summary>
-
-        public string GetEffectID(BaseScript owner, string cueName)
+        private void SetupMod(Mod mod)
         {
-            if (owner == null)
-            {
-                Globals.Logger.Warn("Can't get sound ID due to owner being null!");
-                return "";
-            }
-            return GetEffectID(owner.LoadOrder, cueName);
+            mod.Registry = this;
+            mod.Logger.LogLevel = Globals.Logger.LogLevel;
+
+            mod.Content = new ContentManager(Globals.Game.Content.ServiceProvider, Globals.Game.Content.RootDirectory);
         }
 
         /// <summary>
         /// Gets the ID of the effect that has the given cue name. <para/>
-        /// This ID can be used to play effects with methods such as <see cref="SoundSystem.PlayCue"/>.
+        /// This ID can be used to play effects with methods such as SoundSystem.PlayCue.
         /// </summary>
 
-        public string GetEffectID(int audioEntryID, string cueName)
+        public string GetEffectID(Mod owner, string cueName)
         {
-            var effects = Library.Audio[audioEntryID].EffectNames;
-            foreach (var kvp in effects)
+            var effects = owner.Audio.IndexedEffectCues;
+
+            for (int i = 0; i < effects.Count; i++)
             {
-                if (kvp.Value == cueName)
+                if (effects[i] == cueName)
                 {
-                    return $"GS_{audioEntryID}_S{kvp.Key}";
+                    return $"GS_{owner.ModIndex}_S{i}";
                 }
             }
+
             return "";
         }
 
         /// <summary>
-        /// Gets the ID of the music that has the given cue name. <para/>
-        /// This ID can be used to play effects with <see cref="SoundSystem.PlaySong"/>.
+        /// Gets the ID of the effect that has the given cue name. <para/>
+        /// This ID can be used to play effects with methods such as SoundSystem.PlayCue.
         /// </summary>
 
-        public string GetMusicID(BaseScript owner, string cueName)
+        public string GetEffectID(int modIndex, string cueName)
         {
-            if (owner == null)
+            if (modIndex < 0 || modIndex >= Mods.Count)
             {
-                Globals.Logger.Warn("Can't get sound ID due to owner being null!");
+                Globals.Logger.Warn("Sound ID is invalid!");
                 return "";
             }
-            return GetMusicID(owner.LoadOrder, cueName);
+            return GetEffectID(Mods[modIndex], cueName);
         }
 
         /// <summary>
@@ -160,15 +155,32 @@ namespace SoG.Modding.Core
         /// This ID can be used to play effects with <see cref="SoundSystem.PlaySong"/>.
         /// </summary>
 
-        public string GetMusicID(int audioEntryID, string cueName)
+        public string GetMusicID(Mod owner, string cueName)
         {
-            var music = Library.Audio[audioEntryID].MusicNames;
-            foreach (var kvp in music)
+            var music = owner.Audio.IndexedMusicCues;
+
+            for (int i = 0; i < music.Count; i++)
             {
-                if (kvp.Value == cueName)
-                    return $"GS_{audioEntryID}_M{kvp.Key}";
+                if (music[i] == cueName)
+                    return $"GS_{owner.ModIndex}_M{i}";
             }
+
             return "";
+        }
+
+        /// <summary>
+        /// Gets the ID of the music that has the given cue name. <para/>
+        /// This ID can be used to play effects with <see cref="SoundSystem.PlaySong"/>.
+        /// </summary>
+
+        public string GetMusicID(int modIndex, string cueName)
+        {
+            if (modIndex < 0 || modIndex >= Mods.Count)
+            {
+                Globals.Logger.Warn("Music ID is invalid!");
+                return "";
+            }
+            return GetMusicID(Mods[modIndex], cueName);
         }
 
         /// <summary>
@@ -177,10 +189,10 @@ namespace SoG.Modding.Core
 
         public string GetCueName(string GSID)
         {
-            if (!Tools.SplitAudioID(GSID, out int entryID, out bool isMusic, out int cueID))
+            if (!Utils.SplitAudioID(GSID, out int entryID, out bool isMusic, out int cueID))
                 return "";
-            ModAudioEntry entry = Library.Audio[entryID];
-            return isMusic ? entry.MusicNames[cueID] : entry.EffectNames[cueID];
+            var entry = Mods[entryID].Audio;
+            return isMusic ? entry.IndexedMusicCues[cueID] : entry.IndexedEffectCues[cueID];
         }
 
         /// <summary>
@@ -189,12 +201,12 @@ namespace SoG.Modding.Core
 
         public Cue GetEffectCue(string audioID)
         {
-            bool success = Tools.SplitAudioID(audioID, out int entryID, out bool isMusic, out int cueID);
+            bool success = Utils.SplitAudioID(audioID, out int entryID, out bool isMusic, out int cueID);
             if (!(success && !isMusic))
                 return null;
 
-            var entry = Library.Audio[entryID];
-            return entry.EffectsSB.GetCue(entry.EffectNames[cueID]);
+            var entry = Mods[entryID].Audio;
+            return entry.EffectsSB.GetCue(entry.IndexedEffectCues[cueID]);
         }
 
         /// <summary>
@@ -203,11 +215,11 @@ namespace SoG.Modding.Core
 
         public SoundBank GetEffectSoundBank(string audioID)
         {
-            bool success = Tools.SplitAudioID(audioID, out int entryID, out bool isMusic, out _);
+            bool success = Utils.SplitAudioID(audioID, out int entryID, out bool isMusic, out _);
             if (!(success && !isMusic))
                 return null;
 
-            var entry = Library.Audio[entryID];
+            var entry = Mods[entryID].Audio;
 
             if (entry == null)
                 return null;
@@ -221,11 +233,11 @@ namespace SoG.Modding.Core
 
         public WaveBank GetEffectWaveBank(string audioID)
         {
-            bool success = Tools.SplitAudioID(audioID, out int entryID, out bool isMusic, out _);
+            bool success = Utils.SplitAudioID(audioID, out int entryID, out bool isMusic, out _);
             if (!(success && !isMusic))
                 return null;
 
-            return Library.Audio[entryID]?.EffectsWB;
+            return Mods[entryID].Audio?.EffectsWB;
         }
 
         /// <summary>
@@ -234,11 +246,11 @@ namespace SoG.Modding.Core
 
         public SoundBank GetMusicSoundBank(string audioID)
         {
-            bool success = Tools.SplitAudioID(audioID, out int entryID, out bool isMusic, out _);
+            bool success = Utils.SplitAudioID(audioID, out int entryID, out bool isMusic, out _);
             if (!(success && isMusic))
                 return null;
 
-            return Library.Audio[entryID]?.MusicSB;
+            return Mods[entryID].Audio?.MusicSB;
         }
 
         /// <summary>
@@ -247,19 +259,16 @@ namespace SoG.Modding.Core
 
         public string GetMusicWaveBank(string audioID)
         {
-            bool success = Tools.SplitAudioID(audioID, out int entryID, out bool isMusic, out int cueID);
+            bool success = Utils.SplitAudioID(audioID, out int entryID, out bool isMusic, out int cueID);
             if (!(success && isMusic))
                 return null;
 
-            var entry = Library.Audio[entryID];
+            var entry = Mods[entryID].Audio;
 
-            if (!entry.MusicNames.TryGetValue(cueID, out string cueName))
+            if (cueID < 0 || cueID > entry.IndexedMusicBanks.Count)
                 return null;
 
-            if (!entry.MusicBankNames.TryGetValue(cueName, out string bank))
-                return null;
-
-            return bank;
+            return entry.IndexedMusicBanks[cueID];
         }
 
         /// <summary>
@@ -272,9 +281,9 @@ namespace SoG.Modding.Core
             if (bank == "UniversalMusic")
                 return true;
 
-            foreach (var kvp in Library.Audio)
+            foreach (var mod in Mods)
             {
-                if (kvp.Value.Owner.GetType().Name == bank)
+                if (mod.Name == bank)
                     return true;
             }
 
@@ -291,9 +300,9 @@ namespace SoG.Modding.Core
             if (bank == null)
                 return false;
 
-            foreach (var kvp in Library.Audio)
+            foreach (var mod in Mods)
             {
-                if (kvp.Value.UniversalWB == bank)
+                if (mod.Audio.UniversalWB == bank)
                     return true;
             }
 

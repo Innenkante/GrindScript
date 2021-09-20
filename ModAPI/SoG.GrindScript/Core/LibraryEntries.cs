@@ -4,6 +4,7 @@ using SoG.Modding.API;
 using SoG.Modding.API.Configs;
 using System;
 using System.Collections.Generic;
+using Quests;
 
 namespace SoG.Modding.Core
 {
@@ -13,7 +14,7 @@ namespace SoG.Modding.Core
     /// </summary>
     interface IEntry<IDType> where IDType : struct
     {
-        BaseScript Owner { get; }
+        Mod Owner { get; }
 
         IDType GameID { get; }
 
@@ -26,21 +27,21 @@ namespace SoG.Modding.Core
     /// </summary>
     internal class ModItemEntry : IEntry<ItemCodex.ItemTypes>
     {
-        public BaseScript Owner { get; set; }
+        public Mod Owner { get; set; }
 
         public ItemCodex.ItemTypes GameID { get; set; }
 
         public string ModID { get; set; }
 
-        public ItemConfig Config;
+        public ItemConfig Config { get; set; }
 
-        public ItemDescription ItemData;
+        public ItemDescription ItemData { get; set; }
 
-        public EquipmentInfo EquipData; // May be null or a subtype
+        public EquipmentInfo EquipData { get; set; } // May be null or a subtype
 
-        public Dictionary<ItemCodex.ItemTypes, string> HatAltSetResourcePaths;
+        public Dictionary<ItemCodex.ItemTypes, string> HatAltSetResourcePaths { get; set; }
 
-        public ModItemEntry(BaseScript owner, ItemCodex.ItemTypes gameID, string modID)
+        public ModItemEntry(Mod owner, ItemCodex.ItemTypes gameID, string modID)
         {
             Owner = owner;
             GameID = gameID;
@@ -49,53 +50,23 @@ namespace SoG.Modding.Core
     }
 
     /// <summary>
-    /// Stores modded audio for a mod - an entry is created for each mod upon its creation,
-    /// and initialized by the mod if needed.
-    /// </summary>
-    internal class ModAudioEntry
-    {
-        public BaseScript Owner { get; set; }
-
-        public int GameID { get; set; }
-
-        public bool IsReady = false;
-
-        public SoundBank EffectsSB; // "<Mod>Effects.xsb"
-
-        public WaveBank EffectsWB; // "<Mod>Music.xwb"
-
-        public SoundBank MusicSB; //"<Mod>Music.xsb"
-
-        public WaveBank UniversalWB; // "<Mod>.xwb", never unloaded
-
-        public Dictionary<int, string> EffectNames = new Dictionary<int, string>();
-
-        public Dictionary<int, string> MusicNames = new Dictionary<int, string>();
-
-        public Dictionary<string, string> MusicBankNames = new Dictionary<string, string>();
-
-        public ModAudioEntry(BaseScript owner, int audioID)
-        {
-            Owner = owner;
-            GameID = audioID;
-        }
-    }
-    
-    /// <summary>
     /// Represents a modded level in the ModLibrary.
     /// </summary>
-    internal class ModLevelEntry
+    internal class ModLevelEntry : IEntry<Level.ZoneEnum>
     {
-        public BaseScript Owner { get; set; }
+        public Mod Owner { get; set; }
 
         public Level.ZoneEnum GameID { get; set; }
 
-        public LevelConfig Config;
+        public string ModID { get; set; }
 
-        public ModLevelEntry(BaseScript owner, Level.ZoneEnum gameID)
+        public LevelConfig Config { get; set; }
+
+        public ModLevelEntry(Mod owner, Level.ZoneEnum gameID, string modID)
         {
             Owner = owner;
             GameID = gameID;
+            ModID = modID;
         }
     }
 
@@ -105,19 +76,19 @@ namespace SoG.Modding.Core
     /// </summary>
     internal class ModCurseEntry : IEntry<RogueLikeMode.TreatsCurses>
     {
-        public BaseScript Owner { get; set; }
+        public Mod Owner { get; set; }
 
         public RogueLikeMode.TreatsCurses GameID { get; set; }
 
         public string ModID { get; set; }
 
-        public TreatCurseConfig Config;
+        public TreatCurseConfig Config { get; set; }
 
-        public string NameHandle = "";
+        public string NameHandle { get; set; } = "";
 
-        public string DescriptionHandle = "";
+        public string DescriptionHandle { get; set; } = "";
 
-        public ModCurseEntry(BaseScript owner, RogueLikeMode.TreatsCurses gameID, string modID)
+        public ModCurseEntry(Mod owner, RogueLikeMode.TreatsCurses gameID, string modID)
         {
             Owner = owner;
             GameID = gameID;
@@ -130,17 +101,17 @@ namespace SoG.Modding.Core
     /// </summary>
     internal class ModPerkEntry : IEntry<RogueLikeMode.Perks>
     {
-        public BaseScript Owner { get; set; }
+        public Mod Owner { get; set; }
 
         public RogueLikeMode.Perks GameID { get; set; }
 
         public string ModID { get; set; }
 
-        public PerkConfig Config;
+        public PerkConfig Config { get; set; }
 
-        public string TextEntry;
+        public string TextEntry { get; set; }
 
-        public ModPerkEntry(BaseScript owner, RogueLikeMode.Perks gameID, string modID)
+        public ModPerkEntry(Mod owner, RogueLikeMode.Perks gameID, string modID)
         {
             Owner = owner;
             GameID = gameID;
@@ -150,17 +121,17 @@ namespace SoG.Modding.Core
 
     internal class ModEnemyEntry : IEntry<EnemyCodex.EnemyTypes>
     {
-        public BaseScript Owner { get; set; }
+        public Mod Owner { get; set; }
 
         public EnemyCodex.EnemyTypes GameID { get; set; }
 
         public string ModID { get; set; }
 
-        public EnemyConfig Config;
+        public EnemyConfig Config { get; set; }
 
-        public EnemyDescription EnemyData;
+        public EnemyDescription EnemyData { get; set; }
 
-        public ModEnemyEntry(BaseScript owner, EnemyCodex.EnemyTypes gameID, string modID)
+        public ModEnemyEntry(Mod owner, EnemyCodex.EnemyTypes gameID, string modID)
         {
             Owner = owner;
             GameID = gameID;
@@ -168,19 +139,37 @@ namespace SoG.Modding.Core
         }
     }
 
-    internal class ModQuestEntry : IEntry<Quests.QuestCodex.QuestID>
+    internal class ModQuestEntry : IEntry<QuestCodex.QuestID>
     {
-        public BaseScript Owner { get; set; }
+        public Mod Owner { get; set; }
 
         public Quests.QuestCodex.QuestID GameID { get; set; }
 
         public string ModID { get; set; }
 
-        public QuestConfig Config;
+        public QuestConfig Config { get; set; }
 
-        public Quests.QuestDescription QuestData;
+        public Quests.QuestDescription QuestData { get; set; }
 
-        public ModQuestEntry(BaseScript owner, Quests.QuestCodex.QuestID gameID, string modID)
+        public ModQuestEntry(Mod owner, Quests.QuestCodex.QuestID gameID, string modID)
+        {
+            Owner = owner;
+            GameID = gameID;
+            ModID = modID;
+        }
+    }
+
+    internal class ModSpellEntry : IEntry<SpellCodex.SpellTypes>
+    {
+        public Mod Owner { get; set; }
+
+        public SpellCodex.SpellTypes GameID { get; set; }
+
+        public string ModID { get; set; }
+
+        public SpellConfig Config { get; set; }
+
+        public ModSpellEntry(Mod owner, SpellCodex.SpellTypes gameID, string modID)
         {
             Owner = owner;
             GameID = gameID;

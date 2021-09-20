@@ -9,12 +9,14 @@ using System.Threading.Tasks;
 using HarmonyLib;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
+using SoG.Modding.API;
 using SoG.Modding.Core;
 using SoG.Modding.Extensions;
-using SoG.Modding.Utils;
+using SoG.Modding.ModUtils;
 
 namespace SoG.Modding.Patches
 {
+    using static SoG.Modding.API.Mod;
     using CodeList = System.Collections.Generic.IEnumerable<HarmonyLib.CodeInstruction>;
 
     /// <summary>
@@ -57,7 +59,7 @@ namespace SoG.Modding.Patches
                 new CodeInstruction(OpCodes.Nop).WithLabels(skipVanillaBank)
             };
 
-            return PatchTools.InsertAroundMethod(code, target, insertBefore, insertAfter, missingPopIsOk: true);
+            return PatchUtils.InsertAroundMethod(code, target, insertBefore, insertAfter, missingPopIsOk: true);
         }
 
         [HarmonyTranspiler]
@@ -93,7 +95,7 @@ namespace SoG.Modding.Patches
                 new CodeInstruction(OpCodes.Nop).WithLabels(skipVanillaBank)
             };
 
-            return PatchTools.InsertAroundMethod(code, target, insertBefore, insertAfter, missingPopIsOk: true);
+            return PatchUtils.InsertAroundMethod(code, target, insertBefore, insertAfter, missingPopIsOk: true);
         }
 
         [HarmonyTranspiler]
@@ -145,7 +147,7 @@ namespace SoG.Modding.Patches
                 new CodeInstruction(OpCodes.Nop).WithLabels(skipVanillaBank)
             };
 
-            return PatchTools.InsertAroundMethod(code, target, insertBefore, insertAfter, missingPopIsOk: true);
+            return PatchUtils.InsertAroundMethod(code, target, insertBefore, insertAfter, missingPopIsOk: true);
         }
 
         [HarmonyTranspiler]
@@ -183,15 +185,15 @@ namespace SoG.Modding.Patches
             };
 
             // Patch both methods
-            code = PatchTools.InsertAroundMethod(code, target, insertBefore, insertAfter, methodIndex: 1, missingPopIsOk: true);
-            return PatchTools.InsertAroundMethod(code, target, insertBefore, insertAfter, missingPopIsOk: true);
+            code = PatchUtils.InsertAroundMethod(code, target, insertBefore, insertAfter, methodIndex: 1, missingPopIsOk: true);
+            return PatchUtils.InsertAroundMethod(code, target, insertBefore, insertAfter, missingPopIsOk: true);
         }
 
         [HarmonyPrefix]
         [HarmonyPatch(typeof(SoundSystem), "PlaySong")]
         internal static void OnPlaySong(ref string sSongName, bool bFadeIn)
         {
-            var redirects = Globals.API.Registry.Library.VanillaMusicRedirects;
+            var redirects = Globals.API.Loader.Library.VanillaMusicRedirects;
             string audioIDToUse = sSongName;
 
             if (!audioIDToUse.StartsWith("GS_") && redirects.ContainsKey(audioIDToUse))
@@ -219,18 +221,18 @@ namespace SoG.Modding.Patches
             var universalMusic = soundType.GetField("universalMusicWaveBank", flag).GetValue(soundSystem) as WaveBank;
             var audioEngine = soundType.GetField("audioEngine", flag).GetValue(soundSystem) as AudioEngine;
 
-            bool currentIsModded = Tools.SplitAudioID(sSongName, out int entryID, out bool isMusic, out int cueID);
+            bool currentIsModded = Utils.SplitAudioID(sSongName, out int entryID, out bool isMusic, out int cueID);
 
             if (currentIsModded && !isMusic)
                 Globals.Logger.Warn($"Trying to play modded audio as music, but the audio isn't music! ID: {sSongName}");
 
-            ModAudioEntry entry = currentIsModded ? Globals.API.Registry.Library.Audio[entryID] : null;
-            string cueName = currentIsModded ? entry.MusicNames[cueID] : sSongName;
-            string nextBankName = currentIsModded ? entry.MusicBankNames[cueName] : dssSongRegionMap[sSongName];
+            Mod mod = currentIsModded ? Globals.API.Loader.Mods[entryID] : null;
+            ModAudio entry = currentIsModded ? mod.Audio : null;
+            string nextBankName = currentIsModded ? entry.IndexedMusicBanks[cueID] : dssSongRegionMap[sSongName];
 
             WaveBank currentMusicBank = f_musicWaveBank.GetValue(soundSystem) as WaveBank;
 
-            if (Globals.API.Registry.IsUniversalMusicBank(nextBankName))
+            if (Globals.API.Loader.IsUniversalMusicBank(nextBankName))
             {
                 if (currentIsModded && entry.UniversalWB == null)
                 {
@@ -238,14 +240,14 @@ namespace SoG.Modding.Patches
                     return false;
                 }
 
-                if (currentMusicBank != null && !Globals.API.Registry.IsUniversalMusicBank(currentMusicBank))
+                if (currentMusicBank != null && !Globals.API.Loader.IsUniversalMusicBank(currentMusicBank))
                     soundSystem.SetStandbyBank(soundSystem.sCurrentMusicWaveBank, currentMusicBank);
 
                 f_musicWaveBank.SetValue(soundSystem, currentIsModded ? entry.UniversalWB : universalMusic);
             }
             else if (soundSystem.sCurrentMusicWaveBank != nextBankName)
             {
-                if (currentMusicBank != null && !Globals.API.Registry.IsUniversalMusicBank(currentMusicBank) && !currentMusicBank.IsDisposed)
+                if (currentMusicBank != null && !Globals.API.Loader.IsUniversalMusicBank(currentMusicBank) && !currentMusicBank.IsDisposed)
                     soundSystem.SetStandbyBank(soundSystem.sCurrentMusicWaveBank, currentMusicBank);
 
                 soundSystem.sCurrentMusicWaveBank = nextBankName;
@@ -257,16 +259,17 @@ namespace SoG.Modding.Patches
                 }
                 else
                 {
-                    string root = Path.Combine(Globals.Game.Content.RootDirectory, currentIsModded ? entry.Owner.AssetPath : "");
+                    string root = Path.Combine(Globals.Game.Content.RootDirectory, currentIsModded ? mod.AssetPath : "");
 
                     f_loadedMusicWaveBank.SetValue(soundSystem, new WaveBank(audioEngine, Path.Combine(root, "Sound", $"{nextBankName}.xwb")));
                     f_musicWaveBank.SetValue(soundSystem, null);
                 }
                 soundSystem.xMusicVolumeMods.iMusicCueRetries = 0;
                 soundSystem.xMusicVolumeMods.sSongInWait = sSongName;
-                soundType.GetPrivateInstanceMethod("CheckStandbyBanks").Invoke(soundSystem, new object[] { nextBankName });
+                
+                AccessTools.Method(soundType, "CheckStandbyBanks").Invoke(soundSystem, new object[] { nextBankName });
             }
-            else if (Globals.API.Registry.IsUniversalMusicBank(currentMusicBank))
+            else if (Globals.API.Loader.IsUniversalMusicBank(currentMusicBank))
             {
                 if (dsxStandbyWaveBanks.ContainsKey(soundSystem.sCurrentMusicWaveBank))
                 {
@@ -275,7 +278,7 @@ namespace SoG.Modding.Patches
                     return false;
                 }
 
-                string root = Path.Combine(Globals.Game.Content.RootDirectory, currentIsModded ? entry.Owner.AssetPath : "");
+                string root = Path.Combine(Globals.Game.Content.RootDirectory, currentIsModded ? mod.AssetPath : "");
                 string bankToUse = currentIsModded ? nextBankName : soundSystem.sCurrentMusicWaveBank;
 
                 f_loadedMusicWaveBank.SetValue(soundSystem, new WaveBank(audioEngine, Path.Combine(root, "Sound", bankToUse + ".xwb")));

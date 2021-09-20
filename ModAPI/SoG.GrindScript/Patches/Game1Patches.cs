@@ -13,7 +13,7 @@ using Microsoft.Xna.Framework.Graphics;
 using SoG.Modding.API;
 using SoG.Modding.Core;
 using SoG.Modding.Extensions;
-using SoG.Modding.Utils;
+using SoG.Modding.ModUtils;
 
 namespace SoG.Modding.Patches
 {
@@ -26,7 +26,6 @@ namespace SoG.Modding.Patches
     [HarmonyPatch(typeof(Game1))]
     internal static class Game1Patches
     {
-
         /// <summary>
         /// Starts the API, which loads mods and their content.
         /// </summary>
@@ -53,13 +52,13 @@ namespace SoG.Modding.Patches
                 new CodeInstruction(OpCodes.Ldloc_S, 2),
                 new CodeInstruction(OpCodes.Ldarg_S, 1),
                 new CodeInstruction(OpCodes.Ldarg_S, 2),
-                new CodeInstruction(OpCodes.Call, typeof(HelperCallbacks).GetPrivateStaticMethod(nameof(HelperCallbacks.InChatParseCommand))),
+                new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(HelperCallbacks), nameof(HelperCallbacks.InChatParseCommand))),
                 new CodeInstruction(OpCodes.Brfalse, afterRet),
                 new CodeInstruction(OpCodes.Ret),
                 new CodeInstruction(OpCodes.Nop).WithLabels(afterRet)
             };
 
-            return PatchTools.InsertAfterMethod(code, target, insert);
+            return PatchUtils.InsertAfterMethod(code, target, insert);
         }
 
         /// <summary>
@@ -73,7 +72,7 @@ namespace SoG.Modding.Patches
 
             __result = new PlayerAnimationTextureSet() { bWeaponOnTop = bWeaponOnTop };
 
-            Tools.TryLoadTex($"Sprites/Heroes/{sAnimation}/{sDirection}", VanillaContent, out __result.txBase);
+            Utils.TryLoadTex($"Sprites/Heroes/{sAnimation}/{sDirection}", VanillaContent, out __result.txBase);
 
             string resource = xPlayerView.xEquipment.DisplayShield?.sResourceName ?? "";
             if (bWithShield && resource != "")
@@ -83,11 +82,11 @@ namespace SoG.Modding.Patches
 
                 if (modItem)
                 {
-                    Tools.TryLoadTex($"{resource}/{sAnimation}/{sDirection}", Globals.API.Registry.Library.Items[enType].Config.Manager, out __result.txShield);
+                    Utils.TryLoadTex($"{resource}/{sAnimation}/{sDirection}", Globals.API.Loader.Library.Items[enType].Config.Manager, out __result.txShield);
                 }
                 else
                 {
-                    Tools.TryLoadTex($"Sprites/Heroes/{sAnimation}/Shields/{resource}/{sDirection}", VanillaContent, out __result.txShield);
+                    Utils.TryLoadTex($"Sprites/Heroes/{sAnimation}/Shields/{resource}/{sDirection}", VanillaContent, out __result.txShield);
                 }
             }
 
@@ -107,9 +106,9 @@ namespace SoG.Modding.Patches
             if (!enPerk.IsFromMod())
                 return true;
 
-            string path = Globals.API.Registry.Library.Perks[enPerk].Config.TexturePath;
+            string path = Globals.API.Loader.Library.Perks[enPerk].Config.TexturePath;
 
-            Tools.TryLoadTex(path, Globals.Game.Content, out __result);
+            Utils.TryLoadTex(path, Globals.Game.Content, out __result);
 
             return false;
         }
@@ -124,9 +123,9 @@ namespace SoG.Modding.Patches
             if (!enTreat.IsFromMod())
                 return true;
 
-            string path = Globals.API.Registry.Library.Curses[enTreat].Config.TexturePath;
+            string path = Globals.API.Loader.Library.Curses[enTreat].Config.TexturePath;
 
-            Tools.TryLoadTex(path, Globals.Game.Content, out __result);
+            Utils.TryLoadTex(path, Globals.Game.Content, out __result);
 
             return false;
         }
@@ -146,7 +145,7 @@ namespace SoG.Modding.Patches
                 return true;
             }
 
-            var entry = Globals.API.Registry.Library.Curses[enTreatCurse];
+            var entry = Globals.API.Loader.Library.Curses[enTreatCurse];
 
             sNameHandle = entry.NameHandle;
             sDescriptionHandle = entry.DescriptionHandle;
@@ -166,7 +165,7 @@ namespace SoG.Modding.Patches
             foreach (var perk in len)
             {
                 if (perk.IsFromMod())
-                    Globals.API.Registry.Library.Perks[perk].Config.RunStartActivator?.Invoke(xView);
+                    Globals.API.Loader.Library.Perks[perk].Config.RunStartActivator?.Invoke(xView);
             }
         }
 
@@ -200,7 +199,7 @@ namespace SoG.Modding.Patches
                 }
 
                 backupPath = $"{appData}Backups/" + $"{player.sSaveableName}_{player.xJournalInfo.iCollectorID}{iFileSlot}/";
-                Tools.TryCreateDirectory(backupPath);
+                Utils.TryCreateDirectory(backupPath);
 
                 File.Copy(chrFile, backupPath + $"auto{carousel}.cha{ext}", overwrite: true);
 
@@ -255,7 +254,7 @@ namespace SoG.Modding.Patches
                 }
 
                 backupPath = $"{appData}Backups/" + $"{player.sSaveableName}_{player.xJournalInfo.iCollectorID}{iFileSlot}/";
-                Tools.TryCreateDirectory(backupPath);
+                Utils.TryCreateDirectory(backupPath);
             }
 
             using (BinaryWriter bw = new BinaryWriter(new FileStream($"{wldFile}.temp", FileMode.Create, FileAccess.Write)))
@@ -372,10 +371,10 @@ namespace SoG.Modding.Patches
 
             var insert = new CodeInstruction[]
             {
-                new CodeInstruction(OpCodes.Call, typeof(HelperCallbacks).GetPrivateStaticMethod(nameof(HelperCallbacks.InContentLoad)))
+                new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(HelperCallbacks), nameof(HelperCallbacks.InContentLoad)))
             };
 
-            return PatchTools.InsertAfterMethod(code, target, insert);
+            return PatchUtils.InsertAfterMethod(code, target, insert);
         }
 
         /// <summary>
@@ -391,10 +390,18 @@ namespace SoG.Modding.Patches
             {
                 new CodeInstruction(OpCodes.Ldarg_S, 1),
                 new CodeInstruction(OpCodes.Ldarg_S, 2),
-                new CodeInstruction(OpCodes.Call, typeof(HelperCallbacks).GetPrivateStaticMethod(nameof(HelperCallbacks.InLevelLoadDoStuff)))
+                new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(HelperCallbacks), nameof(HelperCallbacks.InLevelLoadDoStuff)))
             };
 
-            return PatchTools.InsertBeforeMethod(code, target, insert);
+            return PatchUtils.InsertBeforeMethod(code, target, insert);
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch("_Level_Load")]
+        internal static void PostLevelLoad(LevelBlueprint xBP, bool bStaticOnly)
+        {
+            foreach (Mod mod in Globals.API.Loader.Mods)
+                mod.PostLevelLoad(xBP.enZone, xBP.enRegion, bStaticOnly);
         }
 
         /// <summary>
@@ -411,11 +418,11 @@ namespace SoG.Modding.Patches
 
             // Assert to check if underlying method hasn't shifted heavily
             OpCode op = OpCodes.Nop;
-            Debug.Assert(PatchTools.TryILAt(code, 457, out op) && op == OpCodes.Ldarg_0, ErrorMessage);
-            Debug.Assert(PatchTools.TryILAt(code, 451, out op) && op == OpCodes.Ldarg_0, ErrorMessage);
-            Debug.Assert(PatchTools.TryILAt(code, 105, out op) && op == OpCodes.Ldc_I4_5, ErrorMessage);
-            Debug.Assert(PatchTools.TryILAt(code, 94, out op) && op == OpCodes.Ldc_I4_5, ErrorMessage);
-            Debug.Assert(PatchTools.TryILAt(code, 70, out op) && op == OpCodes.Ldc_I4_0, ErrorMessage);
+            Debug.Assert(PatchUtils.TryILAt(code, 457, out op) && op == OpCodes.Ldarg_0, ErrorMessage);
+            Debug.Assert(PatchUtils.TryILAt(code, 451, out op) && op == OpCodes.Ldarg_0, ErrorMessage);
+            Debug.Assert(PatchUtils.TryILAt(code, 105, out op) && op == OpCodes.Ldc_I4_5, ErrorMessage);
+            Debug.Assert(PatchUtils.TryILAt(code, 94, out op) && op == OpCodes.Ldc_I4_5, ErrorMessage);
+            Debug.Assert(PatchUtils.TryILAt(code, 70, out op) && op == OpCodes.Ldc_I4_0, ErrorMessage);
 
             LocalBuilder start = gen.DeclareLocal(typeof(int));
             LocalBuilder end = gen.DeclareLocal(typeof(int));
@@ -460,34 +467,26 @@ namespace SoG.Modding.Patches
             // to avoid accounting for previous inserts / removes
 
             // Inserts the DrawScroller method after the for
-            code = PatchTools.InsertAt(code, thirdInsert, 457);
+            code = PatchUtils.InsertAt(code, thirdInsert, 457);
 
             // Replaces the for's condition with i < end
-            code = PatchTools.ReplaceAt(code, 5, secondInsert, 451);
+            code = PatchUtils.ReplaceAt(code, 5, secondInsert, 451);
 
             // Inserts an offset for vector.X, vector.Y expressions
-            code = PatchTools.InsertAt(code, offsetInsert, 105);
-            code = PatchTools.InsertAt(code, offsetInsert, 94);
+            code = PatchUtils.InsertAt(code, offsetInsert, 105);
+            code = PatchUtils.InsertAt(code, offsetInsert, 94);
 
             // Initializes local fields, calls some TCMenuWorker methods, replaces the for's init with i = start
-            code = PatchTools.ReplaceAt(code, 1, firstInsert, 70);
+            code = PatchUtils.ReplaceAt(code, 1, firstInsert, 70);
 
             return code;
-        }
-        
-        [HarmonyPrefix]
-        [HarmonyPatch(typeof(Game1), "FinalDraw")]
-        internal static void OnFinalDraw()
-        {
-            foreach (BaseScript mod in Globals.API.Registry.LoadedMods)
-                mod.OnDrawBegin();
         }
         
         [HarmonyPrefix]
         [HarmonyPatch(typeof(Game1), "_Player_TakeDamage")]
         internal static void OnPlayerTakeDamage(PlayerView xView, ref int iInDamage, ref byte byType)
         {
-            foreach (BaseScript mod in Globals.API.Registry.LoadedMods)
+            foreach (Mod mod in Globals.API.Loader.Mods)
                 mod.OnPlayerDamaged(xView, ref iInDamage, ref byType);
         }
 
@@ -495,7 +494,7 @@ namespace SoG.Modding.Patches
         [HarmonyPatch(typeof(Game1), "_Player_KillPlayer", new Type[] { typeof(PlayerView), typeof(bool), typeof(bool) })]
         internal static void OnPlayerKilled(PlayerView xView)
         {
-            foreach (BaseScript mod in Globals.API.Registry.LoadedMods)
+            foreach (Mod mod in Globals.API.Loader.Mods)
                 mod.OnPlayerKilled(xView);
         }
 
@@ -503,7 +502,7 @@ namespace SoG.Modding.Patches
         [HarmonyPatch(typeof(Game1), "_Player_ApplyLvUpBonus")]
         internal static void PostPlayerLevelUp(PlayerView xView)
         {
-            foreach (BaseScript mod in Globals.API.Registry.LoadedMods)
+            foreach (Mod mod in Globals.API.Loader.Mods)
                 mod.PostPlayerLevelUp(xView);
         }
 
@@ -511,7 +510,7 @@ namespace SoG.Modding.Patches
         [HarmonyPatch(typeof(Game1), "_Enemy_TakeDamage")]
         internal static void OnEnemyTakeDamage(Enemy xEnemy, ref int iDamage, ref byte byType)
         {
-            foreach (BaseScript mod in Globals.API.Registry.LoadedMods)
+            foreach (Mod mod in Globals.API.Loader.Mods)
                 mod.OnEnemyDamaged(xEnemy, ref iDamage, ref byType);
         }
 
@@ -519,7 +518,7 @@ namespace SoG.Modding.Patches
         [HarmonyPatch(typeof(Game1), "_NPC_TakeDamage")]
         internal static void OnNPCTakeDamage(NPC xEnemy, ref int iDamage, ref byte byType)
         {
-            foreach (BaseScript mod in Globals.API.Registry.LoadedMods)
+            foreach (Mod mod in Globals.API.Loader.Mods)
                 mod.OnNPCDamaged(xEnemy, ref iDamage, ref byType);
         }
 
@@ -527,7 +526,7 @@ namespace SoG.Modding.Patches
         [HarmonyPatch(typeof(Game1), "_NPC_Interact")]
         internal static void OnNPCInteraction(PlayerView xView, NPC xNPC)
         {
-            foreach (BaseScript mod in Globals.API.Registry.LoadedMods)
+            foreach (Mod mod in Globals.API.Loader.Mods)
                 mod.OnNPCInteraction(xNPC);
         }
 
@@ -535,7 +534,7 @@ namespace SoG.Modding.Patches
         [HarmonyPatch("_LevelLoading_DoStuff_Arcadia")]
         internal static void OnArcadiaLoad()
         {
-            foreach (BaseScript mod in Globals.API.Registry.LoadedMods)
+            foreach (Mod mod in Globals.API.Loader.Mods)
                 mod.OnArcadiaLoad();
 
             // Just in case it didn't get set before; submitting modded runs is not a good idea
@@ -548,7 +547,7 @@ namespace SoG.Modding.Patches
         {
             if (xView.xViewStats.bIsDead)
                 return;
-            foreach (BaseScript mod in Globals.API.Registry.LoadedMods)
+            foreach (Mod mod in Globals.API.Loader.Mods)
                 mod.OnItemUse(enItem, xView, ref bSend);
         }
 
@@ -556,15 +555,15 @@ namespace SoG.Modding.Patches
         [HarmonyPatch("_LevelLoading_DoStuff_ArcadeModeRoom")]
         internal static void PostArcadeRoomStart()
         {
-            foreach (BaseScript mod in Globals.API.Registry.LoadedMods)
-                mod.PostArcadeRoomStart(Globals.Game.xGameSessionData.xRogueLikeSession);
+            foreach (Mod mod in Globals.API.Loader.Mods)
+                mod.PostArcadeRoomStart();
         }
 
         [HarmonyPostfix]
         [HarmonyPatch("_Skill_ActivateSkill")]
         internal static void PostSpellActivation(PlayerView xView, ISpellActivation xact, SpellCodex.SpellTypes enType, int iBoostState)
         {
-            foreach (BaseScript mod in Globals.API.Registry.LoadedMods)
+            foreach (Mod mod in Globals.API.Loader.Mods)
                 mod.PostSpellActivation(xView, xact, enType, iBoostState);
         }
 
@@ -575,7 +574,7 @@ namespace SoG.Modding.Patches
             if (!xEn.enType.IsFromMod())
                 return;
 
-            Globals.API.Registry.Library.Enemies[xEn.enType].Config.DifficultyScaler?.Invoke(xEn);
+            Globals.API.Loader.Library.Enemies[xEn.enType].Config.DifficultyScaler?.Invoke(xEn);
         }
 
         [HarmonyTranspiler]
@@ -597,21 +596,21 @@ namespace SoG.Modding.Patches
 
             // Assert to check if underlying method hasn't shifted heavily
             OpCode op = OpCodes.Nop;
-            Debug.Assert(PatchTools.TryILAt(codeList, 11511, out op) && op == OpCodes.Ldloc_1, "Enemy_MakeElite transpiler is invalid!");
+            Debug.Assert(PatchUtils.TryILAt(codeList, 11511, out op) && op == OpCodes.Ldloc_1, "Enemy_MakeElite transpiler is invalid!");
 
             var insert = new CodeInstruction[]
             {
                 new CodeInstruction(OpCodes.Ldloc_1).WithLabels(codeList[11511].labels.ToArray()),
                 new CodeInstruction(OpCodes.Brtrue, skipBranch),
                 new CodeInstruction(OpCodes.Ldarg_1),
-                new CodeInstruction(OpCodes.Call, typeof(HelperCallbacks).GetPrivateStaticMethod(nameof(HelperCallbacks.InEnemyMakeElite))),
+                new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(HelperCallbacks), nameof(HelperCallbacks.InEnemyMakeElite))),
                 new CodeInstruction(OpCodes.Stloc_1), // Store elite status in bRet
                 new CodeInstruction(OpCodes.Nop).WithLabels(skipBranch)
             };
 
             codeList[11511].labels.Clear(); // Shifts labels to account for insertion
 
-            return PatchTools.InsertAt(code, insert, 11511);
+            return PatchUtils.InsertAt(code, insert, 11511);
         }
 
         /// <summary>
@@ -654,9 +653,9 @@ namespace SoG.Modding.Patches
             }
 
             msg.Append("=== GrindScript Info ===").AppendLine();
-            msg.Append("Mod List => " + Globals.API.Registry.LoadedMods.Count + " mods").AppendLine();
+            msg.Append("Mod List => " + Globals.API.Loader.Mods.Count + " mods").AppendLine();
 
-            foreach (BaseScript mod in Globals.API.Registry.LoadedMods)
+            foreach (Mod mod in Globals.API.Loader.Mods)
             {
                 msg.Append("  " + mod.ToString()).AppendLine();
             }
@@ -677,7 +676,97 @@ namespace SoG.Modding.Patches
                 writer?.Close();
             }
 
+            PostGameExit();
+
             return false;
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Game1), "OnExiting")]
+        internal static void PostGameExit()
+        {
+            (Globals.Logger?.NextLogger as FileLogger)?.FlushToDisk();
+
+            foreach (Mod mod in Globals.API.Loader.Mods)
+            {
+                (mod.Logger?.NextLogger as FileLogger)?.FlushToDisk();
+            }
+        }
+
+        [HarmonyTranspiler]
+        [HarmonyPatch(typeof(Game1), "_Network_ParseClientMessage")]
+        internal static CodeList NetworkParseClientMessageTranspiler(CodeList code, ILGenerator gen)
+        {
+            List<CodeInstruction> codeList = code.ToList();
+
+            int position = -1;
+
+            for (int index = 0; index + 2 < codeList.Count; index++)
+            {
+                bool found =
+                    codeList[index].opcode == OpCodes.Leave_S &&
+                    codeList[index + 1].opcode == OpCodes.Ldc_I4_1 &&
+                    codeList[index + 2].opcode == OpCodes.Ret;
+
+                if (found)
+                {
+                    position = index + 1;
+                    break;
+                }
+            }
+
+            var insert = new CodeInstruction[]
+            {
+                new CodeInstruction(OpCodes.Ldarg_1).WithLabels(codeList[position].labels.ToArray()),
+                new CodeInstruction(OpCodes.Ldloc_3),
+                new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(HelperCallbacks), nameof(HelperCallbacks.InNetworkParseClientMessage))),
+            };
+
+            codeList[position].labels.Clear(); // Shifts labels to account for insertion
+
+            return PatchUtils.InsertAt(codeList, insert, position);
+        }
+
+        [HarmonyTranspiler]
+        [HarmonyPatch(typeof(Game1), "_Network_ParseServerMessage")]
+        internal static CodeList NetworkParseServerMessageTranspiler(CodeList code, ILGenerator gen)
+        {
+            List<CodeInstruction> codeList = code.ToList();
+
+            int position = -1;
+
+            for (int index = 0; index + 2 < codeList.Count; index++)
+            {
+                bool found =
+                    codeList[index].opcode == OpCodes.Leave_S &&
+                    codeList[index + 1].opcode == OpCodes.Ldc_I4_1 &&
+                    codeList[index + 2].opcode == OpCodes.Ret;
+
+                if (found)
+                {
+                    position = index + 1;
+                    break;
+                }
+            }
+
+            var insert = new CodeInstruction[]
+            {
+                new CodeInstruction(OpCodes.Ldarg_1).WithLabels(codeList[position].labels.ToArray()),
+                new CodeInstruction(OpCodes.Ldloc_1),
+                new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(HelperCallbacks), nameof(HelperCallbacks.InNetworkParseServerMessage))),
+            };
+
+            codeList[position].labels.Clear(); // Shifts labels to account for insertion
+
+            return PatchUtils.InsertAt(codeList, insert, position);
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Game1), "_Enemy_HandleDeath")]
+        internal static void PostEnemyHandleDeath(Enemy xEnemy, AttackPhase xAttackPhaseThatHit)
+        {
+            foreach (Mod mod in Globals.API.Loader.Mods)
+                mod.PostEnemyKilled(xEnemy, xAttackPhaseThatHit);
         }
     }
 }

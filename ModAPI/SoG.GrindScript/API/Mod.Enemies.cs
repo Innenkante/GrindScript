@@ -5,11 +5,11 @@ using System.Text;
 using System.Threading.Tasks;
 using SoG.Modding.Core;
 using SoG.Modding.API.Configs;
-using SoG.Modding.Utils;
+using SoG.Modding.ModUtils;
 
 namespace SoG.Modding.API
 {
-    public abstract partial class BaseScript
+    public abstract partial class Mod
     {
         public EnemyCodex.EnemyTypes CreateEnemy(EnemyConfig config)
         {
@@ -23,7 +23,7 @@ namespace SoG.Modding.API
                 throw new ArgumentException("config's Constructor must not be null!");
             }
 
-            BaseScript mod = ModAPI.Registry.LoadContext;
+            Mod mod = Registry.LoadContext;
 
             if (mod == null)
             {
@@ -31,13 +31,13 @@ namespace SoG.Modding.API
                 return EnemyCodex.EnemyTypes.Null;
             }
 
-            if (mod.Library.Enemies.Values.Any(x => x.ModID == config.ModID))
+            if (GetLibrary().Enemies.Values.Any(x => x.ModID == config.ModID))
             {
                 Globals.Logger.Error($"An enemy with the ModID {config.ModID} already exists.", source: nameof(CreateEnemy));
                 return EnemyCodex.EnemyTypes.Null;
             }
 
-            EnemyCodex.EnemyTypes gameID = ModAPI.Registry.ID.EnemyIDNext++;
+            EnemyCodex.EnemyTypes gameID = Registry.ID.EnemyIDNext++;
 
             EnemyDescription enemyData = new EnemyDescription(gameID, config.Category, $"{gameID}_Name", config.Level, config.BaseHealth)
             {
@@ -59,8 +59,7 @@ namespace SoG.Modding.API
                 EnemyData = enemyData
             };
 
-            ModAPI.Registry.Library.Enemies[gameID] = entry;
-            mod.Library.Enemies[gameID] = entry;
+            Registry.Library.Enemies[gameID] = entry;
             
             config.LootTable.ForEach(x => enemyData.lxLootTable.Add(new DropChance((int)(1000 * x.Chance), x.Item)));
 

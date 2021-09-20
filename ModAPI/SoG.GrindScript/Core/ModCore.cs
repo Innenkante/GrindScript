@@ -7,23 +7,22 @@ using System.Reflection;
 using Microsoft.Xna.Framework.Graphics;
 using SoG.Modding.API;
 using SoG.Modding.Extensions;
-using SoG.Modding.Utils;
+using SoG.Modding.ModUtils;
 using Microsoft.Xna.Framework.Content;
 using SoG.Modding.Patches;
 using System.Diagnostics;
+using SoG.Modding.CoreScript;
 
 namespace SoG.Modding.Core
 {
     /// <summary>
-    /// Contains the modding tools provided by the API.
+    /// Provides access to the objects used for modding, and some miscellaneous functionality.
     /// </summary>
-    public class GrindScript
+    public class ModCore
     {
         private Harmony _harmony;
 
         private int _launchState = 0;
-
-        internal Texture2D ErrorTexture { get; private set; }
 
         internal ILogger Logger { get; }
 
@@ -31,14 +30,18 @@ namespace SoG.Modding.Core
 
         internal ModSaving Saving { get; private set; }
 
-        internal ModRegistry Registry { get; private set; }
+        internal ModLoader Loader { get; private set; }
 
-        internal GrindScript()
+        internal GrindScript CoreMod { get; private set; }
+
+        internal ModCore()
         {
             Logger = Globals.Logger;
 
-            Registry = new ModRegistry(this);
-            Saving = new ModSaving(Registry);
+            Loader = new ModLoader();
+            Saving = new ModSaving(Loader);
+
+            CoreMod = new GrindScript();
 
             Logger.Debug("GrindScript instantiated!");
         }
@@ -52,15 +55,13 @@ namespace SoG.Modding.Core
 
             ReadConfig();
 
-            Logger.Info("Setting up Grindscript...");
-
             if (AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name == "Secrets Of Grindea") == null)
             {
                 throw new InvalidOperationException("Couldn't find Secrets of Grindea.exe in current AppDomain!");
             }
 
-            Tools.TryCreateDirectory("Mods");
-            Tools.TryCreateDirectory("Content/ModContent");
+            Utils.TryCreateDirectory("Mods");
+            Utils.TryCreateDirectory("Content/ModContent");
 
             _harmony = new Harmony("GrindScriptPatcher");
 
@@ -68,7 +69,7 @@ namespace SoG.Modding.Core
 
             try
             {
-                _harmony.PatchAll(typeof(GrindScript).Assembly);
+                _harmony.PatchAll(typeof(ModCore).Assembly);
             }
             catch
             {
@@ -86,8 +87,6 @@ namespace SoG.Modding.Core
 
             _launchState = 2;
 
-            Logger.Info("Setting up Secrets of Grindea..."); 
-
             Assembly gameAssembly = AppDomain.CurrentDomain.GetAssemblies().First(a => a.GetName().Name == "Secrets Of Grindea");
 
             Game = (Game1)gameAssembly.GetType("SoG.Program").GetField("game").GetValue(null);
@@ -98,23 +97,16 @@ namespace SoG.Modding.Core
 
             Globals.Game = Game;
 
-            if (!Tools.TryLoadTex("Content/ModContent/GrindScript/NullTexGS", Game.Content, out Texture2D errorTexture))
-            {
-                errorTexture = RenderMaster.txNullTex;
-            }
-
-            ErrorTexture = errorTexture;
-
             List<string> ignoredMods = ReadIgnoredMods();
 
-            Registry.LoadMods(ignoredMods);
+            Loader.LoadMods(ignoredMods, CoreMod);
         }
 
         private List<string> ReadIgnoredMods()
         {
             List<string> ignoredMods = new List<string>();
 
-            var dir = Path.GetFullPath(Directory.GetCurrentDirectory() + "\\Mods");
+            var dir = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "Mods"));
 
             const string IgnoredModsName = "IgnoredMods.txt";
             string listPath = Path.Combine(dir, IgnoredModsName);
@@ -145,7 +137,7 @@ namespace SoG.Modding.Core
                 string mod;
                 while ((mod = reader.ReadLine()) != null)
                 {
-                    if (!mod.TrimStart().StartsWith("#"))
+                    if (!string.IsNullOrWhiteSpace(mod) && !mod.TrimStart().StartsWith("#"))
                     {
                         ignoredMods.Add(mod);
                     }

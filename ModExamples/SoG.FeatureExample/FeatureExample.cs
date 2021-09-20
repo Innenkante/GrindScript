@@ -1,26 +1,23 @@
 ﻿using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
+using SoG.Modding.API;
+using SoG.Modding.API.Configs;
+using SoG.Modding.Core;
+using SoG.Modding.Extensions;
+using SoG.Modding.ModUtils;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using SoG.Modding.Core;
-using SoG.Modding.API;
-using SoG.Modding.Extensions;
-using SoG.Modding.Utils;
-using SoG.Modding.API.Configs;
-using System.Linq;
 
 namespace SoG.FeatureExample
 {
-    using LoopSettings = Animation.LoopSettings;
+    using Quests;
     using CancelOptions = Animation.CancelOptions;
     using Criteria = AnimInsCriteria.Criteria;
     using EventType = AnimInsEvent.EventType;
-    using Quests;
+    using LoopSettings = Animation.LoopSettings;
 
-    public class FeatureExample: BaseScript
+    public class FeatureExample: Mod
     {
-        bool drewStuff = false;
         int levelUpsSoFar = 0;
 
         ItemCodex.ItemTypes modOneHandedWeapon = ItemCodex.ItemTypes.Null;
@@ -45,7 +42,7 @@ namespace SoG.FeatureExample
         string audioClash = "";
         string audioDeafSilence = "";
 
-        public override void LoadContent()
+        public override void Load()
         {
             Logger.Info("Loading FeatureExample mod....");
             try
@@ -63,6 +60,8 @@ namespace SoG.FeatureExample
                 SetupEnemies();
 
                 SetupQuests();
+
+                SetupNetworking();
             }
             catch(Exception e)
             {
@@ -70,14 +69,6 @@ namespace SoG.FeatureExample
                 return;
             }
             Logger.Info("Loaded Successfully!");
-        }
-
-        public override void OnDrawBegin()
-        {
-            if (drewStuff) return;
-            drewStuff = true;
-            Logger.Info("OnDraw() called!");
-            Logger.Info("Won't bother outputting any extra draws due to 60 draws / second!");
         }
 
         public override void OnPlayerDamaged(PlayerView view, ref int damage, ref byte type)
@@ -292,28 +283,13 @@ namespace SoG.FeatureExample
         {
             Logger.Info("Building sounds...");
 
-            CreateAudio(new AudioConfig().AddMusicForRegion("FeatureExample", "Intro", "Clash", "DeafSilence").AddMusicForRegion("FeatureExampleStuff", "Ripped", "Destiny"));
+            CreateAudio(new AudioConfig().AddMusic("FeatureExample", "Intro", "Clash", "DeafSilence").AddMusic("FeatureExampleStuff", "Ripped", "Destiny"));
 
             audioIntro = GetMusicID("Intro");
             audioDestiny = GetMusicID("Destiny");
             audioRipped = GetMusicID("Ripped");
             audioClash = GetMusicID("Clash");
             audioDeafSilence = GetMusicID("DeafSilence");
-
-            // Uncomment this if you want to see more redirect behavior
-            /*
-            Logger.Info("Testing sound redirects...");
-
-            ModAPI.AudioAPI.RedirectVanillaMusic("BossBattle01", "BishopBattle"); // Redirect is invalid
-            ModAPI.AudioAPI.RedirectVanillaMusic("BossBattle01", "GS_1337_M1337"); // Redirect is invalid
-            ModAPI.AudioAPI.RedirectVanillaMusic("GS_1337_M1337", audioClash); // Vanilla is invalid
-
-            ModAPI.AudioAPI.RedirectVanillaMusic("BossBattle01", audioClash); // Sets a redirect
-            ModAPI.AudioAPI.RedirectVanillaMusic("BossBattle01", audioRipped); // Overrides the redirect
-            ModAPI.AudioAPI.RedirectVanillaMusic("BossBattle01", ""); // Clears the redirect
-
-            Logger.Info("Redirect tests done!");
-            */
 
             RedirectVanillaMusic("BossBattle01", audioClash);
             RedirectVanillaMusic("BishopBattle", audioRipped);
@@ -330,9 +306,9 @@ namespace SoG.FeatureExample
                 ["GiveItems"] = (argList, _) =>
                 {
                     string[] args = argList.Split(' ');
-                    if (NetTools.IsLocalOrServer)
+                    if (NetUtils.IsLocal)
                     {
-                        PlayerView localPlayer = ModAPI.Game.xLocalPlayer;
+                        PlayerView localPlayer = Globals.Game.xLocalPlayer;
                         CAS.AddChatMessage("Dropping Items!");
                         modShield.SpawnItem(localPlayer);
                         modAccessory.SpawnItem(localPlayer);
@@ -360,13 +336,13 @@ namespace SoG.FeatureExample
                     };
 
                     if (music.TryGetValue(args[0], out string ID))
-                        ModAPI.Game.xSoundSystem.PlaySong(ID, true);
+                        Globals.Game.xSoundSystem.PlaySong(ID, true);
                     else CAS.AddChatMessage("Unknown mod music!");
                 },
 
                 ["TellIDs"] = (argList, _) =>
                 {
-                    Inventory inv = ModAPI.Game.xLocalPlayer.xInventory;
+                    Inventory inv = Globals.Game.xLocalPlayer.xInventory;
                     CAS.AddChatMessage("Shield:" + (int)modShield + ", count: " + inv.GetAmount(modShield));
                     CAS.AddChatMessage("Accessory:" + (int)modAccessory + ", count: " + inv.GetAmount(modAccessory));
                     CAS.AddChatMessage("Hat:" + (int)modHat + ", count: " + inv.GetAmount(modHat));
@@ -377,7 +353,7 @@ namespace SoG.FeatureExample
 
                 ["GibCraft"] = (argList, _) =>
                 {
-                    PlayerView localPlayer = ModAPI.Game.xLocalPlayer;
+                    PlayerView localPlayer = Globals.Game.xLocalPlayer;
                     CAS.AddChatMessage("Dropping Items!");
 
                     int amount = 10;
@@ -390,13 +366,13 @@ namespace SoG.FeatureExample
 
                 ["Yeet"] = (argList, _) =>
                 {
-                    ModAPI.Game._Level_PrepareSwitchAuto(LevelBlueprint.GetBlueprint(modLevel), 0);
+                    Globals.Game._Level_PrepareSwitchAuto(LevelBlueprint.GetBlueprint(modLevel), 0);
                 },
 
                 ["SpawnModSlime"] = (_1, _2) =>
                 {
-                    PlayerView localPlayer = ModAPI.Game.xLocalPlayer;
-                    ModAPI.Game._EntityMaster_AddEnemy(modSlime, localPlayer.xEntity.xTransform.v2Pos + Utility.RandomizeVector2Direction(new Random()) * 100);
+                    PlayerView localPlayer = Globals.Game.xLocalPlayer;
+                    Globals.Game._EntityMaster_AddEnemy(modSlime, localPlayer.xEntity.xTransform.v2Pos + Utility.RandomizeVector2Direction(new Random()) * 100);
 
                     CAS.AddChatMessage("Spawned Mod Slime near you!");
                 },
@@ -405,7 +381,19 @@ namespace SoG.FeatureExample
                 {
                     Globals.Game.EXT_ForgetQuest(modQuest);
                     Globals.Game.EXT_AddQuest(modQuest);
-                }
+                },
+
+                ["SendPacket"] = (argList, _2) => 
+                {
+                    Action<BinaryWriter> data = (writer) =>
+                    {
+                        writer.Write("Lmao message");
+                    };
+
+                    // Only one of these will run at a time, depending on role!
+                    SendToAllClients(0, data);
+                    SendToServer(0, data);
+                },
             };
 
             CreateCommands(parsers);
@@ -417,7 +405,7 @@ namespace SoG.FeatureExample
         {
             Logger.Info("Setting up levels...");
 
-            LevelConfig cfg = new LevelConfig()
+            LevelConfig cfg = new LevelConfig("_Mod_Level001")
             {
                 WorldRegion = Level.WorldRegion.PillarMountains,
                 Builder = CaveLevelStuff.Build,
@@ -625,6 +613,27 @@ namespace SoG.FeatureExample
             };
 
             modQuest = CreateQuest(basicQuest);
+        }
+
+        void SetupNetworking()
+        {
+            ModPacket pinger = new ModPacket()
+            {
+                ParseOnClient = (BinaryReader x) =>
+                {
+                    string message = x.ReadString();
+                    CAS.AddChatMessage("Mod Message from Server: " + message);
+                },
+                ParseOnServer = (BinaryReader x, long connectionID) =>
+                {
+                    PlayerView view = Globals.Game.dixPlayers[connectionID];
+
+                    string message = x.ReadString();
+                    CAS.AddChatMessage($"Mod Message from Client {view.sNetworkNickname}: " + message);
+                }
+            };
+
+            AddPacket(0, pinger);
         }
     }
 }

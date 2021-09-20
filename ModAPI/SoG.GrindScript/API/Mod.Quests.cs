@@ -5,14 +5,17 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using SoG.Modding.Extensions;
+using Quests;
+using SoG.Modding.API.Configs;
 
 namespace SoG.Modding.API
 {
-    using Quests;
-    using SoG.Modding.API.Configs;
-
-    public abstract partial class BaseScript
+    public abstract partial class Mod
     {
+        /// <summary>
+        /// Creates a new quest from the given QuestConfig.
+        /// The quest must have a reward defined for it to be valid.
+        /// </summary>
         public QuestCodex.QuestID CreateQuest(QuestConfig config)
         {
             if (config == null)
@@ -25,7 +28,7 @@ namespace SoG.Modding.API
                 throw new ArgumentException("config's Reward must not be null!");
             }
 
-            BaseScript mod = ModAPI.Registry.LoadContext;
+            Mod mod = Registry.LoadContext;
 
             if (mod == null)
             {
@@ -33,15 +36,15 @@ namespace SoG.Modding.API
                 return QuestCodex.QuestID.None;
             }
 
-            QuestCodex.QuestID gameID = ModAPI.Registry.ID.QuestIDNext++;
+            QuestCodex.QuestID gameID = Registry.ID.QuestIDNext++;
 
             // TODO: Write remaining quest creation code, plus patches
 
             QuestDescription questData = new QuestDescription()
             {
-                sQuestNameReference = $"Quest_{config.ModID}_Name",
-                sSummaryReference = $"Quest_{config.ModID}_Summary",
-                sDescriptionReference = $"Quest_{config.ModID}_Description",
+                sQuestNameReference = $"Quest_{(int)gameID}_Name",
+                sSummaryReference = $"Quest_{(int)gameID}_Summary",
+                sDescriptionReference = $"Quest_{(int)gameID}_Description",
                 iIntendedLevel = config.RecommendedPlayerLevel,
                 enType = config.Type,
                 xReward = config.Reward
@@ -53,8 +56,7 @@ namespace SoG.Modding.API
                 QuestData = questData
             };
 
-            ModAPI.Registry.Library.Quests[gameID] = entry;
-            mod.Library.Quests[gameID] = entry;
+            Registry.Library.Quests[gameID] = entry;
 
             Globals.Game.EXT_AddMiscText("Quests", questData.sQuestNameReference, config.Name);
             Globals.Game.EXT_AddMiscText("Quests", questData.sSummaryReference, config.Summary);
@@ -65,7 +67,7 @@ namespace SoG.Modding.API
 
         public Objective_SpecialObjective.UniqueID CreateSpecialObjective()
         {
-            return ModAPI.Registry.ID.SpecialObjectiveIDNext++;
+            return Registry.ID.SpecialObjectiveIDNext++;
         }
     }
 }

@@ -6,15 +6,13 @@ using System.Reflection.Emit;
 using CodeEnumerable = System.Collections.Generic.IEnumerable<HarmonyLib.CodeInstruction>;
 using System.IO;
 
-namespace SoG.Modding.Utils
+namespace SoG.Modding.ModUtils
 {
     /// <summary>
-    /// Provides various helper methods for transpiling the game.
-    /// Throughout the code, CodeList is a shortcut for IEnumerable of CodeInstructions.
+    /// Provides helper methods for transpiling IL lists.
     /// </summary>
-    public static class PatchTools
+    public static class PatchUtils
     {
-        // How the stack changes based on a StackBehavior (in terms of objects)
         private static readonly Dictionary<StackBehaviour, int> __stackDeltas = new Dictionary<StackBehaviour, int>
         {
             { StackBehaviour.Pop0, 0 },
@@ -49,14 +47,15 @@ namespace SoG.Modding.Utils
         };
 
         /// <summary>
-        /// Transpiles the given instruction set by inserting code instructions after the target method. <para/>
-        /// If there are multiple calls of the target method, you can specify which one to insert after using methodIndex (zero-indexed). <para/>
-        /// If the target method has a return value that is being used by subsquent code, you can specify ignoreLackOfPop = true to force the insertion.
-        /// This is useful if you also use other insertions to create a ternary operator. <para/>
+        /// Inserts IL instructions after the target method call (zero-indexed). <para/>
+        /// If the method returns an object, either the first IL instruction inserted must be OpCodes.Pop, or usesReturnValue must be true.
         /// </summary>
-        /// <returns> The modified code, with new instructions inserted as described. </returns>
-        /// <exception cref="Exception"> Thrown if the transpile fails due to the described incompatibilities. </exception>
-        public static CodeEnumerable InsertAfterMethod(CodeEnumerable code, MethodInfo target, CodeEnumerable insert, int methodIndex = 0, bool missingPopIsOk = false, ConsoleLogger log = null)
+        /// <returns> The original code with the IL instructions inserted. </returns>
+        /// <exception cref="InvalidOperationException"> 
+        /// Thrown if the method was not found, or if it returns a value, 
+        /// the first IL instruction is not OpCodes.Pop, and usesReturnValue is false.
+        /// </exception>
+        public static CodeEnumerable InsertAfterMethod(CodeEnumerable code, MethodInfo target, CodeEnumerable insert, int methodIndex = 0, bool usesReturnValue = false)
         {
             int counter = methodIndex + 1;
             var noReturnValue = target.ReturnType == typeof(void);
@@ -71,29 +70,36 @@ namespace SoG.Modding.Utils
                 }
                 else if (stage == 1)
                 {
-                    if (!(ins.opcode == OpCodes.Pop || noReturnValue || missingPopIsOk)) 
-                        throw new Exception("Transpile failed: insert target has return value that is being used!");
+                    if (!(ins.opcode == OpCodes.Pop || noReturnValue || usesReturnValue))
+                    {
+                        throw new InvalidOperationException($"The method returns a value, but {nameof(usesReturnValue)} is false, and no OpCodes.Pop was found.");
+                    }
 
                     stage = 2;
 
                     if (ins.opcode == OpCodes.Pop) 
                         yield return ins;
+
                     foreach (CodeInstruction newIns in insert) 
                         yield return newIns;
+
                     if (ins.opcode == OpCodes.Pop)
                         continue;
                 }
                 yield return ins;
             }
-            if (stage != 2) throw new Exception("Transpile failed: couldn't find target!");
+
+            if (stage != 2)
+            {
+                throw new InvalidOperationException("Could not find the target method call.");
+            }
         }
 
         /// <summary> 
-        /// Transpiles the given instruction set by inserting code instructions before the target method. <para/>
-        /// If there are multiple calls of the target method, you can specify which one to insert before of using methodIndex (zero-indexed). <para/>
+        /// Inserts IL instructions after the target method call (zero-indexed).
         /// </summary>
-        /// <returns> The modified code, with new instructions inserted as described. </returns>
-        /// <exception cref="Exception"> Thrown if the transpile fails due to failing to find the target method, or if a suitable insertion point wasn't spotted. </exception>
+        /// <returns> The original code with the IL instructions inserted.  </returns>
+        /// <exception cref="Exception"> Thrown if the method was not found. </exception>
         public static CodeEnumerable InsertBeforeMethod(CodeEnumerable code, MethodInfo target, CodeEnumerable insert, int methodIndex = 0, ConsoleLogger log = null)
         {
             List<CodeInstruction> codeStore = new List<CodeInstruction>();
@@ -103,18 +109,33 @@ namespace SoG.Modding.Utils
 
             foreach (CodeInstruction ins in code)
             {
-                if (stage == 0 && ins.Calls(target) && --counter == 0) 
+                if (stage == 0 && ins.Calls(target) && --counter == 0)
+                {
                     stage = 1;
-                if (stage == 0) codeStore.Add(ins);
-                else leftoverCode.Add(ins);
-            }
-            if (stage != 1) throw new Exception("Transpile failed: couldn't find target!");
+                }
 
+                if (stage == 0)
+                {
+                    codeStore.Add(ins);
+                }
+                else
+                {
+                    leftoverCode.Add(ins);
+                }
+            }
+
+            if (stage != 1)
+            {
+                throw new InvalidOperationException("Could not find the target method call.");
+            }
             
             int insertIndex = codeStore.Count;
             int stackDelta = -1 * target.GetParameters().Length;
+
             if ((target.CallingConvention & CallingConventions.HasThis) == CallingConventions.HasThis)
-                stackDelta -= 1; // Account for "this"
+            {
+                stackDelta -= 1;
+            }
 
             if (stackDelta != 0) 
             {
@@ -129,12 +150,18 @@ namespace SoG.Modding.Utils
                         break;
                     }
                     if (stackDelta > 0)
-                        throw new Exception("Transpile failed: stackDelta has positive value!");
+                        throw new InvalidOperationException("Instructions preceding the method have an invalid state.");
                 }
             }
-            else stage = 2;
+            else
+            {
+                stage = 2;
+            }
+
             if (stage != 2)
-                throw new Exception("Transpile failed: couldn't calculate position before method!");
+            {
+                throw new InvalidOperationException("Could not calculate insert position.");
+            }
 
             for (int index = 0; index < codeStore.Count; index++)
             {
@@ -157,16 +184,16 @@ namespace SoG.Modding.Utils
         }
 
         /// <summary>
-        /// Calls InsertAfterMethod and InsertBeforeMethod, in that order.
+        /// Calls InsertAfterMethod and InsertBeforeMethod, in that order, with the given arguments.
         /// </summary>
-        public static CodeEnumerable InsertAroundMethod(CodeEnumerable code, MethodInfo target, CodeEnumerable before, CodeEnumerable after, int methodIndex = 0, bool missingPopIsOk = false, ConsoleLogger log = null)
+        public static CodeEnumerable InsertAroundMethod(CodeEnumerable code, MethodInfo target, CodeEnumerable before, CodeEnumerable after, int methodIndex = 0, bool missingPopIsOk = false)
         {
-            code = InsertAfterMethod(code, target, after, methodIndex, missingPopIsOk, log);
-            return InsertBeforeMethod(code, target, before, methodIndex, log);
+            code = InsertAfterMethod(code, target, after, methodIndex, missingPopIsOk);
+            return InsertBeforeMethod(code, target, before, methodIndex);
         }
 
         /// <summary>
-        /// Adds the specified list of IL code, before the instruction at the given offset.
+        /// Adds IL instructions in the code section, before the given offset.
         /// </summary>
         public static CodeEnumerable InsertAt(CodeEnumerable code, CodeEnumerable insert, int offset)
         {
@@ -184,7 +211,7 @@ namespace SoG.Modding.Utils
         }
 
         /// <summary>
-        /// Removes the specified number of IL instructions, starting with the instruction at the given offset.
+        /// Removes IL instructions in the code section, starting with the instruction at the given offset.
         /// </summary>
         public static CodeEnumerable RemoveAt(CodeEnumerable code, int toDelete, int offset)
         {
@@ -197,7 +224,7 @@ namespace SoG.Modding.Utils
         }
 
         /// <summary>
-        /// Calls RemoveAt, followed by InsertAt, effectively replacing the removed code with the inserted one.
+        /// Calls RemoveAt and InsertAt, in that order, replacing the deleted instructions with new ones.
         /// </summary>
         public static CodeEnumerable ReplaceAt(CodeEnumerable code, int toDelete, CodeEnumerable toInsert, int offset)
         {
@@ -215,9 +242,11 @@ namespace SoG.Modding.Utils
             {
                 if (offset-- > 0)
                     continue;
+
                 op = ins.opcode;
                 return true;
             }
+
             op = OpCodes.Nop;
             return false;
         }

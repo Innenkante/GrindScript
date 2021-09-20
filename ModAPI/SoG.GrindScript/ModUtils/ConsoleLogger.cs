@@ -2,9 +2,9 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using static SoG.Modding.Utils.ILogger;
+using static SoG.Modding.ModUtils.ILogger;
 
-namespace SoG.Modding.Utils
+namespace SoG.Modding.ModUtils
 {
     /// <summary>
     /// A simple class for logging information to the console.
@@ -28,8 +28,14 @@ namespace SoG.Modding.Utils
             set => _logLevel = LogLevels.Trace > value ? LogLevels.Trace : (LogLevels.None < value ? LogLevels.None : value);
         }
 
-        public ConsoleColor SourceColor = ConsoleColor.Blue;
-        public string DefaultSource = "";
+        /// <summary>
+        /// The next logger in the chain. Logging methods will also be called for the next logger, if not null.
+        /// </summary>
+        public ILogger NextLogger { get; set; } = null;
+
+        public ConsoleColor SourceColor { get; set; } = ConsoleColor.Blue;
+
+        public string DefaultSource { get; set; } = "";
 
         public ConsoleLogger() { }
 
@@ -50,8 +56,13 @@ namespace SoG.Modding.Utils
         /// </summary>
         public void Log(LogLevels level, string msg, string source = "")
         {
-            if (level < _logLevel || _logLevel == LogLevels.None) return;
+            if (level < _logLevel || _logLevel == LogLevels.None)
+            {
+                return;
+            }
+
             string sourceToUse = source != "" ? source : DefaultSource;
+
             lock (this)
             {
                 var bgColor = Console.BackgroundColor;
@@ -87,31 +98,43 @@ namespace SoG.Modding.Utils
         public void Trace(string msg, string source = "")
         {
             Log(LogLevels.Trace, msg, source);
+
+            NextLogger?.Trace(msg, source);
         }
 
         public void Debug(string msg, string source = "")
         {
             Log(LogLevels.Debug, msg, source);
+
+            NextLogger?.Debug(msg, source);
         }
 
         public void Info(string msg, string source = "")
         {
             Log(LogLevels.Info, msg, source);
+
+            NextLogger?.Info(msg, source);
         }
 
         public void Warn(string msg, string source = "")
         {
             Log(LogLevels.Warn, msg, source);
+
+            NextLogger?.Warn(msg, source);
         }
 
         public void Error(string msg, string source = "")
         {
             Log(LogLevels.Error, msg, source);
+
+            NextLogger?.Error(msg, source);
         }
 
         public void Fatal(string msg, string source = "")
         {
             Log(LogLevels.Fatal, msg, source);
+
+            NextLogger?.Fatal(msg, source);
         }
 
         private void WriteSpace(int howMany = 1)

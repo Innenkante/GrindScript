@@ -9,6 +9,13 @@ namespace SoG.Modding.API.Configs
 {
     public class LevelConfig
     {
+        public LevelConfig(string uniqueID)
+        {
+            ModID = uniqueID;
+        }
+
+        public string ModID { get; set; }
+
         /// <summary> 
         /// Called when the game prepares a level switch.
         /// It receives a <see cref="LevelBlueprint"/> as an argument, and it should add to it the information needed for the level.

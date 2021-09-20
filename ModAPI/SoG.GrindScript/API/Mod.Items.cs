@@ -5,12 +5,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using SoG.Modding.Core;
-using SoG.Modding.Utils;
+using SoG.Modding.ModUtils;
 using SoG.Modding.API.Configs;
 
 namespace SoG.Modding.API
 {
-    public abstract partial class BaseScript
+    public abstract partial class Mod
     {
         /// <summary> 
         /// Creates an item for each of the ItemConfigs provided. 
@@ -33,7 +33,7 @@ namespace SoG.Modding.API
                 throw new ArgumentNullException(nameof(config));
             }
 
-            BaseScript mod = ModAPI.Registry.LoadContext;
+            Mod mod = Registry.LoadContext;
 
             if (mod == null)
             {
@@ -41,21 +41,20 @@ namespace SoG.Modding.API
                 return ItemCodex.ItemTypes.Null;
             }
 
-            if (mod.Library.Items.Values.Any(x => x.ModID == config.ModID))
+            if (GetLibrary().Items.Values.Any(x => x.ModID == config.ModID))
             {
                 Globals.Logger.Error($"An item with the ModID {config.ModID} already exists.", source: nameof(CreateItem));
                 return ItemCodex.ItemTypes.Null;
             }
 
-            ItemCodex.ItemTypes gameID = ModAPI.Registry.ID.ItemIDNext++;
+            ItemCodex.ItemTypes gameID = Registry.ID.ItemIDNext++;
 
             ModItemEntry entry = new ModItemEntry(mod, gameID, config.ModID)
             {
                 Config = config.DeepCopy()
             };
 
-            ModAPI.Registry.Library.Items[gameID] = entry;
-            mod.Library.Items[gameID] = entry;
+            Registry.Library.Items[gameID] = entry;
 
             ItemDescription itemData = entry.ItemData = new ItemDescription()
             {
@@ -208,7 +207,7 @@ namespace SoG.Modding.API
         
         public EquipmentInfo.SpecialEffect CreateSpecialEffect()
         {
-            return ModAPI.Registry.ID.ItemEffectIDNext++;
+            return Registry.ID.ItemEffectIDNext++;
         }
 
         /// <summary>
@@ -216,9 +215,9 @@ namespace SoG.Modding.API
         /// If nothing is found, ItemCodex.ItemTypes.Null is returned.
         /// </summary>
 
-        public ItemCodex.ItemTypes GetItemType(BaseScript owner, string uniqueID)
+        public ItemCodex.ItemTypes GetItemType(Mod owner, string uniqueID)
         {
-            var entry = ModAPI.Registry.Library.Items.Values.FirstOrDefault(x => x.Owner == owner && x.ModID == uniqueID);
+            var entry = Registry.Library.Items.Values.FirstOrDefault(x => x.Owner == owner && x.ModID == uniqueID);
 
             return entry?.GameID ?? ItemCodex.ItemTypes.Null;
         }

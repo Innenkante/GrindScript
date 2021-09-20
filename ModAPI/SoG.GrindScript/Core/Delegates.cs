@@ -22,4 +22,10 @@ namespace SoG.Modding.Core
     /// Used to instantiate and edit an enemy.
     /// </summary>
     public delegate void EnemyBuilder(Enemy enemy);
+
+    /// <summary>
+    /// Used to instantiate a spell.
+    /// The value returned must be non-null.
+    /// </summary>
+    public delegate ISpellInstance SpellBuilder(int powerLevel, Level.WorldRegion overrideRegion);
 }

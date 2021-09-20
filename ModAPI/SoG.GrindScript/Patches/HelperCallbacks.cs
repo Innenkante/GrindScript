@@ -9,6 +9,8 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using SoG.Modding.ModUtils;
+using System.IO;
 
 namespace SoG.Modding.Patches
 {
@@ -19,13 +21,13 @@ namespace SoG.Modding.Patches
         /// </summary>
         internal static void InContentLoad()
         {
-            foreach (BaseScript mod in Globals.API.Registry.LoadedMods)
+            foreach (Mod mod in Globals.API.Loader.Mods)
             {
-                Globals.API.Registry.CallWithContext(mod, x =>
+                Globals.API.Loader.CallWithContext(mod, x =>
                 {
                     try
                     {
-                        x.LoadContent();
+                        x.Load();
                     }
                     catch (Exception e)
                     {
@@ -45,7 +47,7 @@ namespace SoG.Modding.Patches
             if (!type.IsFromMod())
                 return;
 
-            ModLevelEntry entry = Globals.API.Registry.Library.Levels[type];
+            ModLevelEntry entry = Globals.API.Loader.Library.Levels[type];
 
             try
             {
@@ -69,16 +71,19 @@ namespace SoG.Modding.Patches
             string target = words[0];
             string trueCommand = command.Substring(command.IndexOf(':') + 1);
 
-            if (!Globals.API.Registry.Library.Commands.TryGetValue(target, out var parsers))
+            Mod mod = Globals.API.Loader.Mods.FirstOrDefault(x => x.Name == target);
+
+            if (mod == null)
             {
-                CAS.AddChatMessage($"[{GSCommands.APIName}] Unknown mod!");
+                CAS.AddChatMessage($"[{Globals.API.CoreMod.Name}] Unknown mod!");
                 return true;
             }
-            if (!parsers.TryGetValue(trueCommand, out var parser))
+
+            if (!mod.ModCommands.TryGetValue(trueCommand, out var parser))
             {
                 if (trueCommand == "Help")
                 {
-                    InChatParseCommand($"{GSCommands.APIName}:Help", target, connection);
+                    InChatParseCommand($"{Globals.API.CoreMod.Name}:Help", target, connection);
                     return true;
                 }
 
@@ -98,13 +103,13 @@ namespace SoG.Modding.Patches
         internal static Enemy InGetEnemyInstance(EnemyCodex.EnemyTypes gameID, Level.WorldRegion assetRegion)
         {
             if (!gameID.IsFromMod())
-                return null; // Switch case will take care of vanilla enemies
+                return new Enemy(); // Switch case will take care of vanilla enemies
 
             Enemy enemy = new Enemy() { enType = gameID };
 
             enemy.xRenderComponent.xOwnerObject = enemy;
 
-            Globals.API.Registry.Library.Enemies[gameID].Config.Constructor?.Invoke(enemy);
+            Globals.API.Loader.Library.Enemies[gameID].Config.Constructor?.Invoke(enemy);
 
             return enemy;
         }
@@ -120,7 +125,7 @@ namespace SoG.Modding.Patches
             if (!enemy.enType.IsFromMod())
                 return false;
 
-            var eliteScaler = Globals.API.Registry.Library.Enemies[enemy.enType].Config.EliteScaler;
+            var eliteScaler = Globals.API.Loader.Library.Enemies[enemy.enType].Config.EliteScaler;
 
             if (eliteScaler != null)
             {
@@ -133,11 +138,76 @@ namespace SoG.Modding.Patches
             }
         }
 
-        public static string GetCueName(string ID) => Globals.API.Registry.GetCueName(ID);
+        /// <summary>
+        /// Called when a server parses a client message. The message type's parser also receives the connection ID of the sender.
+        /// </summary>
+        internal static void InNetworkParseClientMessage(InMessage msg, byte messageType)
+        {
+            if (messageType != NetUtils.ModPacketType)
+            {
+                return;
+            }
 
-        public static SoundBank GetEffectSoundBank(string ID) => Globals.API.Registry.GetEffectSoundBank(ID);
+            try
+            {
 
-        public static SoundBank GetMusicSoundBank(string ID) => Globals.API.Registry.GetMusicSoundBank(ID);
+                NetUtils.ReadModData(msg, out Mod mod, out ushort packetID);
+
+                if (!mod.ModPackets.ContainsKey(packetID))
+                {
+                    return;
+                }
+
+                byte[] content = msg.ReadBytes((int)(msg.BaseStream.Length - msg.BaseStream.Position));
+
+                mod.ModPackets[packetID].ParseOnServer?.Invoke(new BinaryReader(new MemoryStream(content)), msg.iConnectionIdentifier);
+            }
+            catch (Exception e)
+            {
+                Globals.Logger.Error("ParseClientMessage failed! Exception: " + e.Message);
+            }
+        }
+
+        /// <summary>
+        /// Called when a client parses a server message.
+        /// </summary>
+        internal static void InNetworkParseServerMessage(InMessage msg, byte messageType)
+        {
+            if (messageType != NetUtils.ModPacketType)
+            {
+                return;
+            }
+
+            try
+            {
+                NetUtils.ReadModData(msg, out Mod mod, out ushort packetID);
+
+                if (!mod.ModPackets.ContainsKey(packetID))
+                {
+                    return;
+                }
+
+                byte[] content = msg.ReadBytes((int)(msg.BaseStream.Length - msg.BaseStream.Position));
+
+                mod.ModPackets[packetID].ParseOnClient?.Invoke(new BinaryReader(new MemoryStream(content)));
+            }
+            catch (Exception e)
+            {
+                Globals.Logger.Error("ParseServerMessage failed! Exception: " + e.Message);
+            }
+        }
+
+        internal static void GauntletEnemySpawned(Enemy enemy)
+        {
+            foreach (Mod mod in Globals.API.Loader.Mods)
+                mod.PostArcadeGauntletEnemySpawned(enemy);
+        }
+
+        public static string GetCueName(string ID) => Globals.API.Loader.GetCueName(ID);
+
+        public static SoundBank GetEffectSoundBank(string ID) => Globals.API.Loader.GetEffectSoundBank(ID);
+
+        public static SoundBank GetMusicSoundBank(string ID) => Globals.API.Loader.GetMusicSoundBank(ID);
 
         public static SpriteBatch SpriteBatch => typeof(Game1).GetField("spriteBatch", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(Globals.Game) as SpriteBatch;
 

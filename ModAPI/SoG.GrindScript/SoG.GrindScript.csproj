@@ -34,9 +34,34 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>..\..\BuildAPI\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <LangVersion>7.3</LangVersion>
+    <ErrorReport>prompt</ErrorReport>
+    <DocumentationFile>..\..\BuildAPI\Debug\GrindScript.xml</DocumentationFile>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
+    <OutputPath>..\..\BuildAPI\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <LangVersion>7.3</LangVersion>
+    <ErrorReport>prompt</ErrorReport>
+    <DocumentationFile>..\..\BuildAPI\Release\GrindScript.xml</DocumentationFile>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="0Harmony, Version=2.0.4.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\..\packages\Lib.Harmony.2.0.4\lib\net472\0Harmony.dll</HintPath>
+    </Reference>
+    <Reference Include="Lidgren.Network">
+      <HintPath>..\..\VanillaDependencies\Lidgren.Network.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Xna.Framework, Version=4.0.0.0, Culture=neutral, PublicKeyToken=842cf8be1de50553, processorArchitecture=x86">
       <SpecificVersion>False</SpecificVersion>
@@ -74,54 +99,61 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="API\Configs\SpellConfig.cs" />
+    <Compile Include="API\Mod.GlobalHooks.cs" />
+    <Compile Include="API\Mod.Networking.cs" />
     <Compile Include="API\Configs\EnemyConfig.cs" />
     <Compile Include="API\Configs\QuestConfig.cs" />
     <Compile Include="API\Configs\TreatCurseConfig.cs" />
-    <Compile Include="API\BaseScript.Enemies.cs" />
-    <Compile Include="API\BaseScript.Items.cs" />
+    <Compile Include="API\Mod.Enemies.cs" />
+    <Compile Include="API\Mod.Items.cs" />
     <Compile Include="API\Configs\LevelConfig.cs" />
-    <Compile Include="API\BaseScript.Levels.cs" />
-    <Compile Include="API\BaseScript.Commands.cs" />
+    <Compile Include="API\Mod.Levels.cs" />
+    <Compile Include="API\Mod.Commands.cs" />
     <Compile Include="API\Configs\PerkConfig.cs" />
-    <Compile Include="API\BaseScript.Arcade.cs" />
-    <Compile Include="API\BaseScript.Quests.cs" />
+    <Compile Include="API\Mod.Arcade.cs" />
+    <Compile Include="API\Mod.Quests.cs" />
+    <Compile Include="API\Mod.Spells.cs" />
+    <Compile Include="CoreScript\ColliderRC.cs" />
     <Compile Include="Core\Globals.cs" />
-    <Compile Include="Core\GSCommands.cs" />
-    <Compile Include="Core\IDRange.cs" />
-    <Compile Include="Core\ModRegistry.cs" />
+    <Compile Include="CoreScript\GrindScript.cs" />
+    <Compile Include="Core\ModLoader.cs" />
     <Compile Include="Extensions\AnimationExtension.cs" />
     <Compile Include="API\Game1Extension.cs" />
-    <Compile Include="Extensions\IDExtension.cs" />
     <Compile Include="Extensions\LevelExtension.cs" />
-    <Compile Include="Extensions\RoguelikeExtension.cs" />
     <Compile Include="API\Configs\AudioConfig.cs" />
     <Compile Include="Core\LibraryEntries.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="Extensions\ItemExtension.cs" />
     <Compile Include="API\Configs\ItemConfig.cs" />
     <Compile Include="Launcher.cs" />
+    <Compile Include="ModUtils\FileLogger.cs" />
+    <Compile Include="Patches\ArcadePatches.cs" />
     <Compile Include="Patches\Game1Patches.cs" />
     <Compile Include="Patches\HelperCallbacks.cs" />
+    <Compile Include="Patches\ItemLogicPatches.cs" />
     <Compile Include="Patches\MiscPatches.cs" />
     <Compile Include="Patches\SoundSystemPatches.cs" />
-    <Compile Include="Utils\ConsoleLogger.cs" />
+    <Compile Include="ModUtils\ConsoleLogger.cs" />
     <Compile Include="Core\Delegates.cs" />
-    <Compile Include="API\BaseScript.cs" />
+    <Compile Include="API\Mod.cs" />
     <Compile Include="Core\Enums.cs" />
-    <Compile Include="Core\GrindScript.cs" />
-    <Compile Include="Core\IDHolder.cs" />
-    <Compile Include="Core\Libraries.cs" />
-    <Compile Include="API\BaseScript.Audio.cs" />
+    <Compile Include="Core\ModCore.cs" />
+    <Compile Include="Core\ID.cs" />
+    <Compile Include="Core\ModLibrary.cs" />
+    <Compile Include="API\Mod.Audio.cs" />
     <Compile Include="Core\ModSaving.cs" />
-    <Compile Include="Utils\ILogger.cs" />
-    <Compile Include="Utils\NetTools.cs" />
-    <Compile Include="Utils\PatchTools.cs" />
-    <Compile Include="Extensions\TypeExtension.cs" />
+    <Compile Include="ModUtils\ILogger.cs" />
+    <Compile Include="ModUtils\NetUtils.cs" />
+    <Compile Include="ModUtils\PatchUtils.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Utils\Tools.cs" />
+    <Compile Include="ModUtils\Utils.cs" />
     <Compile Include="Patches\TCMenuWorker.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\..\.editorconfig">
+      <Link>.editorconfig</Link>
+    </None>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup />

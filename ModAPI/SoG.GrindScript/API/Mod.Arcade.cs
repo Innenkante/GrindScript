@@ -8,12 +8,12 @@ using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Audio;
 using SoG.Modding.Core;
 using System.Diagnostics;
-using SoG.Modding.Utils;
+using SoG.Modding.ModUtils;
 using SoG.Modding.API.Configs;
 
 namespace SoG.Modding.API
 {
-    public abstract partial class BaseScript
+    public abstract partial class Mod
     {
         public RogueLikeMode.TreatsCurses CreateTreatOrCurse(TreatCurseConfig config)
         {
@@ -22,9 +22,9 @@ namespace SoG.Modding.API
                 throw new ArgumentNullException(nameof(config));
             }
 
-            ModRegistry registry = ModAPI.Registry;
+            ModLoader registry = Registry;
 
-            BaseScript mod = registry.LoadContext;
+            Mod mod = registry.LoadContext;
 
             if (mod != this)
             {
@@ -32,7 +32,7 @@ namespace SoG.Modding.API
                 return RogueLikeMode.TreatsCurses.None;
             }
 
-            if (mod.Library.Curses.Values.Any(x => x.ModID == config.ModID))
+            if (GetLibrary().Curses.Values.Any(x => x.ModID == config.ModID))
             {
                 Globals.Logger.Error($"A treat or curse with the ModID {config.ModID} already exists.", source: nameof(CreateTreatOrCurse));
                 return RogueLikeMode.TreatsCurses.None;
@@ -48,7 +48,6 @@ namespace SoG.Modding.API
             };
 
             registry.Library.Curses[gameID] = entry;
-            mod.Library.Curses[gameID] = entry;
 
             Globals.Game.EXT_AddMiscText("Menus", entry.NameHandle, config.Name);
             Globals.Game.EXT_AddMiscText("Menus", entry.DescriptionHandle, config.Description);
@@ -63,9 +62,9 @@ namespace SoG.Modding.API
                 throw new ArgumentNullException(nameof(config));
             }
 
-            ModRegistry registry = ModAPI.Registry;
+            ModLoader registry = Registry;
 
-            BaseScript mod = registry.LoadContext;
+            Mod mod = registry.LoadContext;
 
             if (mod != this)
             {
@@ -73,7 +72,7 @@ namespace SoG.Modding.API
                 return RogueLikeMode.Perks.None;
             }
 
-            if (mod.Library.Perks.Values.Any(x => x.ModID == config.ModID))
+            if (GetLibrary().Perks.Values.Any(x => x.ModID == config.ModID))
             {
                 Globals.Logger.Error($"A perk with ModID {config.ModID} already exists.", source: nameof(CreatePerk));
                 return RogueLikeMode.Perks.None;
@@ -84,11 +83,10 @@ namespace SoG.Modding.API
             ModPerkEntry entry = new ModPerkEntry(mod, gameID, config.ModID)
             {
                 Config = config.DeepCopy(),
-                TextEntry = ((int)gameID).ToString()
+                TextEntry = $"{(int)gameID}"
             };
 
             registry.Library.Perks[gameID] = entry;
-            mod.Library.Perks[gameID] = entry;
 
             Globals.Game.EXT_AddMiscText("Menus", "Perks_Name_" + entry.TextEntry, config.Name);
             Globals.Game.EXT_AddMiscText("Menus", "Perks_Description_" + entry.TextEntry, config.Description);
