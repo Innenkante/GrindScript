@@ -26,6 +26,8 @@ namespace SoG.Modding.Core
 
 		public Dictionary<SpellCodex.SpellTypes, ModSpellEntry> Spells { get; } = new Dictionary<SpellCodex.SpellTypes, ModSpellEntry>();
 
+		public Dictionary<PinCodex.PinType, ModPinEntry> Pins { get; } = new Dictionary<PinCodex.PinType, ModPinEntry>();
+
 		/// <summary>
 		/// Returns a new ModLibrary which holds only objects owned by the given mod.
 		/// </summary>
@@ -53,6 +55,9 @@ namespace SoG.Modding.Core
 
 			foreach (var pair in Spells.Where(x => x.Value.Owner == mod))
 				library.Spells[pair.Key] = pair.Value;
+			
+			foreach (var pair in Pins.Where(x => x.Value.Owner == mod))
+				library.Pins[pair.Key] = pair.Value;
 
 			return library;
 		}
@@ -60,5 +65,7 @@ namespace SoG.Modding.Core
 		public Dictionary<string, string> VanillaMusicRedirects { get; } = new Dictionary<string, string>();
 
 		public Dictionary<Level.ZoneEnum, ModLevelEntry> Levels { get; } = new Dictionary<Level.ZoneEnum, ModLevelEntry>();
+
+		public Dictionary<BaseStats.StatusEffectSource, ModStatusEffectEntry> StatusEffects { get; } = new Dictionary<BaseStats.StatusEffectSource, ModStatusEffectEntry>();
 	}
 }

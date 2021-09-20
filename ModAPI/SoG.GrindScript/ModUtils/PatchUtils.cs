@@ -100,7 +100,7 @@ namespace SoG.Modding.ModUtils
         /// </summary>
         /// <returns> The original code with the IL instructions inserted.  </returns>
         /// <exception cref="Exception"> Thrown if the method was not found. </exception>
-        public static CodeEnumerable InsertBeforeMethod(CodeEnumerable code, MethodInfo target, CodeEnumerable insert, int methodIndex = 0, ConsoleLogger log = null)
+        public static CodeEnumerable InsertBeforeMethod(CodeEnumerable code, MethodInfo target, CodeEnumerable insert, int methodIndex = 0)
         {
             List<CodeInstruction> codeStore = new List<CodeInstruction>();
             List<CodeInstruction> leftoverCode = new List<CodeInstruction>();

@@ -203,6 +203,17 @@ namespace SoG.Modding.Patches
                 mod.PostArcadeGauntletEnemySpawned(enemy);
         }
 
+        internal static void AddModdedPinsToList(List<PinCodex.PinType> list)
+        {
+            foreach (ModPinEntry entry in Globals.API.Loader.Library.Pins.Values)
+            {
+                if (entry.Config.ConditionToDrop == null || entry.Config.ConditionToDrop.Invoke())
+                {
+                    list.Add(entry.GameID);
+                }
+            }
+        }
+
         public static string GetCueName(string ID) => Globals.API.Loader.GetCueName(ID);
 
         public static SoundBank GetEffectSoundBank(string ID) => Globals.API.Loader.GetEffectSoundBank(ID);

@@ -768,5 +768,42 @@ namespace SoG.Modding.Patches
             foreach (Mod mod in Globals.API.Loader.Mods)
                 mod.PostEnemyKilled(xEnemy, xAttackPhaseThatHit);
         }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Game1), nameof(Game1._RogueLike_ActivatePin))]
+        internal static void PostActivatePin(PlayerView xView, PinCodex.PinType enEffect, bool bSend)
+        {
+            if (!enEffect.IsFromMod())
+                return;
+
+            Globals.API.Loader.Library.Pins[enEffect].Config.EquipAction.Invoke(xView);
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Game1), nameof(Game1._RogueLike_DeactivatePin))]
+        internal static void PostDeactivatePin(PlayerView xView, PinCodex.PinType enEffect, bool bSend)
+        {
+            if (!enEffect.IsFromMod())
+                return;
+
+            Globals.API.Loader.Library.Pins[enEffect].Config.UnequipAction.Invoke(xView);
+        }
+
+        [HarmonyTranspiler]
+        [HarmonyPatch(typeof(Game1), nameof(Game1._RogueLike_GetRandomPin))]
+        internal static CodeList GetRandomPinTranspiler(CodeList code, ILGenerator gen)
+        {
+            List<CodeInstruction> codeList = code.ToList();
+
+            List<CodeInstruction> toInsert = new List<CodeInstruction>()
+            {
+                new CodeInstruction(OpCodes.Ldloc_0),
+                new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(HelperCallbacks), nameof(HelperCallbacks.AddModdedPinsToList))),
+            };
+
+            MethodInfo target = typeof(List<PinCodex.PinType>).GetMethod(nameof(List<PinCodex.PinType>.Add));
+
+            return PatchUtils.InsertBeforeMethod(codeList, target, toInsert);
+        }
     }
 }

@@ -13,6 +13,8 @@ namespace SoG.Modding.Core
 	using QuestID = Quests.QuestCodex.QuestID;
 	using SpecialObjectiveID = Quests.Objective_SpecialObjective.UniqueID;
 	using SpellID = SpellCodex.SpellTypes;
+	using StatusEffectID = BaseStats.StatusEffectSource;
+	using PinID = PinCodex.PinType;
 
 	/// <summary>
 	/// Bookkeeping class for IDs.
@@ -51,11 +53,17 @@ namespace SoG.Modding.Core
 		public const SpellID SpellIDStart = (SpellID)55000;
 		public const SpellID SpellIDEnd = SpellIDStart + 10000;
 
-        #endregion
+		public const StatusEffectID StatusEffectIDStart = (StatusEffectID)10000;
+		public const StatusEffectID StatusEffectIDEnd = StatusEffectIDStart + 10000;
 
-        #region Next ID Values
+		public const PinID PinIDStart = (PinID)10000;
+		public const PinID PinIDEnd = PinIDStart + 10000;
 
-        public ItemID ItemIDNext { get; set; } = ItemIDStart;
+		#endregion
+
+		#region Next ID Values
+
+		public ItemID ItemIDNext { get; set; } = ItemIDStart;
 
 		public ItemEffectID ItemEffectIDNext { get; set; } = ItemEffectIDStart;
 
@@ -75,6 +83,10 @@ namespace SoG.Modding.Core
 
 		public SpellID SpellIDNext { get; set; } = SpellIDStart;
 
+		public StatusEffectID StatusEffectIDNext { get; set; } = StatusEffectIDStart;
+
+		public PinID PinIDNext { get; set; } = PinIDStart;
+
 		#endregion
 	}
 
@@ -82,20 +94,24 @@ namespace SoG.Modding.Core
 	{
 		public static bool IsFromSoG<T>(this T id) where T : Enum => Enum.IsDefined(typeof(T), id);
 
-		public static bool IsFromMod(this ItemCodex.ItemTypes id) => id >= ID.ItemIDStart && id < Globals.API.Loader.ID.ItemIDNext;
+		public static bool IsFromMod(this ItemID id) => id >= ID.ItemIDStart && id < Globals.API.Loader.ID.ItemIDNext;
 
-		public static bool IsFromMod(this Level.WorldRegion id) => ID.WorldIDStart <= id && id < Globals.API.Loader.ID.WorldIDNext;
+		public static bool IsFromMod(this WorldID id) => ID.WorldIDStart <= id && id < Globals.API.Loader.ID.WorldIDNext;
 
-		public static bool IsFromMod(this Level.ZoneEnum id) => ID.LevelIDStart <= id && id < Globals.API.Loader.ID.LevelIDNext;
+		public static bool IsFromMod(this LevelID id) => ID.LevelIDStart <= id && id < Globals.API.Loader.ID.LevelIDNext;
 
-		public static bool IsFromMod(this RogueLikeMode.TreatsCurses id) => id >= ID.CurseIDStart && id < Globals.API.Loader.ID.CurseIDNext;
+		public static bool IsFromMod(this CurseID id) => id >= ID.CurseIDStart && id < Globals.API.Loader.ID.CurseIDNext;
 
-		public static bool IsFromMod(this RogueLikeMode.Perks id) => id >= ID.PerkIDStart && id < Globals.API.Loader.ID.PerkIDNext;
+		public static bool IsFromMod(this PerkID id) => id >= ID.PerkIDStart && id < Globals.API.Loader.ID.PerkIDNext;
 
-		public static bool IsFromMod(this EnemyCodex.EnemyTypes id) => id >= ID.EnemyIDStart && id < Globals.API.Loader.ID.EnemyIDNext;
+		public static bool IsFromMod(this EnemyID id) => id >= ID.EnemyIDStart && id < Globals.API.Loader.ID.EnemyIDNext;
 
-		public static bool IsFromMod(this Quests.QuestCodex.QuestID id) => id >= ID.QuestIDStart && id < Globals.API.Loader.ID.QuestIDNext;
+		public static bool IsFromMod(this QuestID id) => id >= ID.QuestIDStart && id < Globals.API.Loader.ID.QuestIDNext;
 
-		public static bool IsFromMod(this SpellCodex.SpellTypes id) => id >= ID.SpellIDStart && id < Globals.API.Loader.ID.SpellIDNext;
+		public static bool IsFromMod(this SpellID id) => id >= ID.SpellIDStart && id < Globals.API.Loader.ID.SpellIDNext;
+
+		public static bool IsFromMod(this StatusEffectID id) => id >= ID.StatusEffectIDStart && id < Globals.API.Loader.ID.StatusEffectIDNext;
+
+		public static bool IsFromMod(this PinID id) => id >= ID.PinIDStart && id < Globals.API.Loader.ID.PinIDNext;
 	}
 }

@@ -16,9 +16,9 @@ namespace SoG.GrindScriptLauncher
         static Assembly GrindScript;
         static MethodInfo GSInit;
 
-        static void LogErrorAndQuit(string error)
+        static void LogErrorAndQuit(Exception e)
         {
-            Console.WriteLine(whodis + error);
+            Console.WriteLine(whodis + "Exception during execution: " + e);
             Console.WriteLine(whodis + "Hit Enter to exit.");
             Console.ReadLine();
             Environment.Exit(1);
@@ -32,7 +32,7 @@ namespace SoG.GrindScriptLauncher
             }
             catch (Exception e)
             {
-                LogErrorAndQuit("Exception during GrindScript Init call: " + e.Message);
+                LogErrorAndQuit(e);
             }
         }
 
@@ -44,7 +44,7 @@ namespace SoG.GrindScriptLauncher
             }
             catch (Exception e)
             {
-                LogErrorAndQuit("Exception during SoG Main call: " + e.Message);
+                LogErrorAndQuit(e);
             }
         }
 
@@ -69,7 +69,7 @@ namespace SoG.GrindScriptLauncher
             }
             catch (Exception e)
             {
-                LogErrorAndQuit("Exception during Launcher execution: " + e.Message);
+                LogErrorAndQuit(e);
             }
         }
     }

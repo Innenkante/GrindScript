@@ -99,7 +99,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="API\Configs\PinConfig.cs" />
     <Compile Include="API\Configs\SpellConfig.cs" />
+    <Compile Include="API\Configs\StatusEffectConfig.cs" />
+    <Compile Include="API\Mod.Buffs.cs" />
     <Compile Include="API\Mod.GlobalHooks.cs" />
     <Compile Include="API\Mod.Networking.cs" />
     <Compile Include="API\Configs\EnemyConfig.cs" />

@@ -32,7 +32,7 @@ namespace SoG.Modding.ModUtils
         /// <summary>
         /// Tries to load a texture from the given path and ContentManager.
         /// Returns true if the operation succeeded, false otherwise.
-        /// If the operation failed, result is set to RenderMaster.txNullTexture, and a warning message is logged.
+        /// If the operation failed, result is set to RenderMaster.txNullTexture.
         /// </summary>
         public static bool TryLoadTex(string path, ContentManager manager, out Texture2D result)
         {
@@ -41,10 +41,8 @@ namespace SoG.Modding.ModUtils
                 result = manager.Load<Texture2D>(path);
                 return true;
             }
-            catch (Exception e)
+            catch
             {
-                Globals.Logger.Warn(ShortenModPaths(e.Message), source: nameof(TryLoadTex));
-
                 result = RenderMaster.txNullTex;
                 return false;
             }
@@ -62,10 +60,8 @@ namespace SoG.Modding.ModUtils
                 result =  new WaveBank(engine, assetPath);
                 return true;
             }
-            catch (Exception e)
+            catch
             {
-                Globals.Logger.Warn(ShortenModPaths(e.Message), source: nameof(TryLoadWaveBank));
-
                 result = null;
                 return false;
             }

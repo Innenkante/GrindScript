@@ -93,5 +93,42 @@ namespace SoG.Modding.API
 
             return gameID;
         }
+
+        public PinCodex.PinType CreatePin(PinConfig config)
+        {
+            if (config == null)
+            {
+                throw new ArgumentNullException(nameof(config));
+            }
+
+            ModLoader registry = Registry;
+
+            Mod mod = registry.LoadContext;
+
+            if (mod != this)
+            {
+                Globals.Logger.Error("Can not create objects outside of a load context.", source: nameof(CreatePerk));
+                return PinCodex.PinType.EmptySlot;
+            }
+
+            if (GetLibrary().Pins.Values.Any(x => x.ModID == config.ModID))
+            {
+                Globals.Logger.Error($"A perk with ModID {config.ModID} already exists.", source: nameof(CreatePerk));
+                return PinCodex.PinType.EmptySlot;
+            }
+
+            PinCodex.PinType gameID = registry.ID.PinIDNext++;
+
+            ModPinEntry entry = new ModPinEntry(mod, gameID, config.ModID)
+            {
+                Config = config.DeepCopy()
+            };
+
+            registry.Library.Pins[gameID] = entry;
+
+            PinCodex.SortedPinEntries.Add(gameID);
+
+            return gameID;
+        }
     }
 }

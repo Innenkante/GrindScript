@@ -176,4 +176,40 @@ namespace SoG.Modding.Core
             ModID = modID;
         }
     }
+
+    internal class ModStatusEffectEntry : IEntry<BaseStats.StatusEffectSource>
+    {
+        public Mod Owner { get; set; }
+
+        public BaseStats.StatusEffectSource GameID { get; set; }
+
+        public string ModID { get; set; }
+
+        public StatusEffectConfig Config { get; set; }
+
+        public ModStatusEffectEntry(Mod owner, BaseStats.StatusEffectSource gameID, string modID)
+        {
+            Owner = owner;
+            GameID = gameID;
+            ModID = modID;
+        }
+    }
+
+    internal class ModPinEntry : IEntry<PinCodex.PinType>
+    {
+        public Mod Owner { get; set; }
+
+        public PinCodex.PinType GameID { get; set; }
+
+        public string ModID { get; set; }
+
+        public PinConfig Config { get; set; }
+
+        public ModPinEntry(Mod owner, PinCodex.PinType gameID, string modID)
+        {
+            Owner = owner;
+            GameID = gameID;
+            ModID = modID;
+        }
+    }
 }

@@ -12,6 +12,7 @@ using LevelLoading;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
+using SoG.Modding.API.Configs;
 using SoG.Modding.Core;
 using SoG.Modding.Extensions;
 using SoG.Modding.ModUtils;
@@ -290,6 +291,59 @@ namespace SoG.Modding.Patches
                 return;
 
             __result = false;
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(HudRenderComponent), nameof(HudRenderComponent.GetBuffTexture))]
+        internal static void PostGetBuffTexture(ref Texture2D __result, BaseStats.StatusEffectSource en)
+        {
+            if (!en.IsFromMod())
+                return;
+
+            string path = Globals.API.Loader.Library.StatusEffects[en].Config.TexturePath;
+
+            if (string.IsNullOrEmpty(path))
+            {
+                __result = null;
+            }
+            else
+            {
+                Utils.TryLoadTex(Globals.API.Loader.Library.StatusEffects[en].Config.TexturePath, Globals.Game.Content, out __result);
+            }
+
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(PinCodex), nameof(PinCodex.GetInfo))]
+        internal static void PostGetPinInfo(ref PinInfo __result, PinCodex.PinType enType)
+        {
+            if (!enType.IsFromMod())
+                return;
+
+            string[] palettes = new string[]
+            {
+                "Test1",
+                "Test2",
+                "Test3",
+                "Test4",
+                "Test5"
+            };
+
+            ModPinEntry entry = Globals.API.Loader.Library.Pins[enType];
+            PinConfig config = entry.Config;
+
+            __result = new PinInfo(
+                enType, 
+                "None", 
+                config.Description, 
+                config.PinShape.ToString(), 
+                config.PinSymbol.ToString(),
+                config.IsSticky ? "TestLight" : palettes[(int)config.PinColor],
+                config.IsSticky,
+                config.IsBroken,
+                FontManager.GetFontByCategory("SmallTitle", FontManager.FontType.Bold8Spacing1),
+                FontManager.GetFontByCategory("InMenuDescription", FontManager.FontType.Reg7)
+                );
         }
     }
 }
