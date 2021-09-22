@@ -54,6 +54,8 @@ namespace SoG.Modding.API
 
         #region Game Logic Callbacks
 
+        public virtual void OnDraw() { }
+
         /// <summary>
         /// Called when a player is damaged by something.
         /// </summary>

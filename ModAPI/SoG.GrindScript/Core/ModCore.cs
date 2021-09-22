@@ -25,7 +25,7 @@ namespace SoG.Modding.Core
 
         internal ModLoader Loader { get; private set; }
 
-        internal GrindScript CoreMod { get; private set; }
+        internal GrindScript GrindScript { get; private set; }
 
         internal ModCore()
         {
@@ -34,7 +34,7 @@ namespace SoG.Modding.Core
             Loader = new ModLoader();
             Saving = new ModSaving(Loader);
 
-            CoreMod = new GrindScript();
+            GrindScript = new GrindScript();
 
             Logger.Debug("GrindScript instantiated!");
         }
@@ -86,7 +86,7 @@ namespace SoG.Modding.Core
             Globals.Game.sAppData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "/GrindScript/";
             Globals.Game.xGameSessionData.xRogueLikeSession.bTemporaryHighScoreBlock = true;
 
-            Loader.LoadMods(ReadIgnoredMods(), CoreMod);
+            Loader.LoadMods(ReadIgnoredMods(), GrindScript);
         }
 
         private List<string> ReadIgnoredMods()

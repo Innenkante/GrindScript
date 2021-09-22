@@ -28,6 +28,11 @@ namespace SoG.Modding.Core
             CurseID = 1006,
         }
 
+        public class ModMetaData
+        {
+            public string Name;
+        }
+
         public const int Version = 1;
 
         public const string SaveFileExtension = ".gs";
@@ -95,6 +100,43 @@ namespace SoG.Modding.Core
                 ModDataBlock.CurseID,
                 ModDataBlock.EnemyID
                 );
+        }
+
+        internal List<ModMetaData> PeekGrindScriptData(BinaryReader file)
+        {
+            bool fileIsEmpty = file.PeekChar() == -1;
+
+            if (fileIsEmpty)
+                return null;
+
+            List<ModMetaData> modList = new List<ModMetaData>();
+
+            int previousVersion = file.ReadInt32();
+
+            int scriptCount = file.ReadInt32();
+
+            while (scriptCount-- > 0)
+            {
+                string modName = file.ReadString();
+
+                int blockCount = file.ReadInt32();
+
+                while (blockCount-- > 0)
+                {
+                    ModDataBlock blockType = ReadEnum<ModDataBlock>(file);
+
+                    int blockSize = file.ReadInt32();
+
+                    file.BaseStream.Position += blockSize;
+                }
+
+                modList.Add(new ModMetaData()
+                {
+                    Name = modName
+                });
+            }
+
+            return modList;
         }
 
         #endregion

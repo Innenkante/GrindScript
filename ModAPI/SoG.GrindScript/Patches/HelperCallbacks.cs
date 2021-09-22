@@ -17,7 +17,7 @@ namespace SoG.Modding.Patches
     public static class HelperCallbacks
     {
         /// <summary>
-        /// Initializes all mod content.
+        /// Initializes all mod content. Checks arcade save for compatibility.
         /// </summary>
         internal static void DoModContentLoad()
         {
@@ -37,6 +37,8 @@ namespace SoG.Modding.Patches
                     }
                 });
             }
+
+            Globals.API.GrindScript.AnalyzeArcadeSavesForCompatibility();
         }
 
         /// <summary>
@@ -97,7 +99,7 @@ namespace SoG.Modding.Patches
 
             if (mod == null)
             {
-                CAS.AddChatMessage($"[{Globals.API.CoreMod.Name}] Unknown mod!");
+                CAS.AddChatMessage($"[{Globals.API.GrindScript.Name}] Unknown mod!");
                 return true;
             }
 
@@ -105,7 +107,7 @@ namespace SoG.Modding.Patches
             {
                 if (trueCommand == "Help")
                 {
-                    InChatParseCommand($"{Globals.API.CoreMod.Name}:Help", target, connection);
+                    InChatParseCommand($"{Globals.API.GrindScript.Name}:Help", target, connection);
                     return true;
                 }
 
@@ -242,7 +244,7 @@ namespace SoG.Modding.Patches
 
         public static SoundBank GetMusicSoundBank(string ID) => Globals.API.Loader.GetMusicSoundBank(ID);
 
-        public static SpriteBatch SpriteBatch => typeof(Game1).GetField("spriteBatch", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(Globals.Game) as SpriteBatch;
+        public static SpriteBatch SpriteBatch => Globals.SpriteBatch;
 
         public static TCMenuWorker TCMenuWorker { get; } = new TCMenuWorker();
 

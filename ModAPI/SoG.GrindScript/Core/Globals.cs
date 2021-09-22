@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using SoG.Modding.ModUtils;
 using SoG.Modding.API;
 using System.Reflection;
+using Microsoft.Xna.Framework.Graphics;
 
 namespace SoG.Modding.Core
 {
@@ -34,6 +35,8 @@ namespace SoG.Modding.Core
         /// The game's vanilla version.
         /// </summary>
         public static string GameLongVersion => typeof(Game1).GetField("sVersion", BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(Game) as string;
+
+        public static SpriteBatch SpriteBatch => typeof(Game1).GetField("spriteBatch", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(Globals.Game) as SpriteBatch;
 
         /// <summary>
         /// Changes the game version between the vanilla version and modded version.

@@ -8,6 +8,7 @@ using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
 using HarmonyLib;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using SoG.Modding.API;
@@ -456,6 +457,14 @@ namespace SoG.Modding.Patches
             };
 
             return PatchUtils.InsertBeforeMethod(code, target, insert);
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch("Draw")]
+        internal static void OnDraw()
+        {
+            foreach (Mod mod in Globals.API.Loader.Mods)
+                mod.OnDraw();
         }
 
         [HarmonyPostfix]
@@ -917,6 +926,30 @@ namespace SoG.Modding.Patches
             MethodInfo target = typeof(List<PinCodex.PinType>).GetMethod(nameof(List<PinCodex.PinType>.Add));
 
             return PatchUtils.InsertBeforeMethod(codeList, target, toInsert);
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Game1), nameof(Game1._Menu_CharacterSelect_Render))]
+        internal static void PostCharacterSelectRender()
+        {
+            Globals.API.GrindScript.CheckStorySaveCompatibility();
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Game1), nameof(Game1._Menu_Render_TopMenu))]
+        internal static void PostTopMenuRender()
+        {
+            Globals.API.GrindScript.CheckArcadeSaveCompatiblity();
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(GlobalData.MainMenu), nameof(GlobalData.MainMenu.Transition))]
+        internal static void OnMainMenuTransition(GlobalData.MainMenu.MenuLevel enTarget)
+        {
+            if (enTarget == GlobalData.MainMenu.MenuLevel.CharacterSelect)
+            {
+                Globals.API.GrindScript.AnalyzeStorySavesForCompatibility();
+            }
         }
     }
 }
