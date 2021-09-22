@@ -1,17 +1,12 @@
 ﻿using HarmonyLib;
+using SoG.Modding.CoreScript;
+using SoG.Modding.ModUtils;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using Microsoft.Xna.Framework.Graphics;
-using SoG.Modding.API;
-using SoG.Modding.Extensions;
-using SoG.Modding.ModUtils;
-using Microsoft.Xna.Framework.Content;
-using SoG.Modding.Patches;
-using System.Diagnostics;
-using SoG.Modding.CoreScript;
 
 namespace SoG.Modding.Core
 {
@@ -25,8 +20,6 @@ namespace SoG.Modding.Core
         private int _launchState = 0;
 
         internal ILogger Logger { get; }
-
-        public Game1 Game { get; private set; }
 
         internal ModSaving Saving { get; private set; }
 
@@ -89,17 +82,11 @@ namespace SoG.Modding.Core
 
             Assembly gameAssembly = AppDomain.CurrentDomain.GetAssemblies().First(a => a.GetName().Name == "Secrets Of Grindea");
 
-            Game = (Game1)gameAssembly.GetType("SoG.Program").GetField("game").GetValue(null);
+            Globals.Game = (Game1)gameAssembly.GetType("SoG.Program").GetField("game").GetValue(null);
+            Globals.Game.sAppData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "/GrindScript/";
+            Globals.Game.xGameSessionData.xRogueLikeSession.bTemporaryHighScoreBlock = true;
 
-            Game.sAppData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "/GrindScript/";
-
-            Game.xGameSessionData.xRogueLikeSession.bTemporaryHighScoreBlock = true;
-
-            Globals.Game = Game;
-
-            List<string> ignoredMods = ReadIgnoredMods();
-
-            Loader.LoadMods(ignoredMods, CoreMod);
+            Loader.LoadMods(ReadIgnoredMods(), CoreMod);
         }
 
         private List<string> ReadIgnoredMods()

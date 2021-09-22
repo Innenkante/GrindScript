@@ -28,9 +28,7 @@ namespace SoG.Modding.API
                 throw new ArgumentException("config's Reward must not be null!");
             }
 
-            Mod mod = Registry.LoadContext;
-
-            if (mod == null)
+            if (!InLoad)
             {
                 Globals.Logger.Error("Can not create objects outside of a load context.", source: nameof(CreateQuest));
                 return QuestCodex.QuestID.None;
@@ -50,7 +48,7 @@ namespace SoG.Modding.API
                 xReward = config.Reward
             };
 
-            ModQuestEntry entry = new ModQuestEntry(mod, gameID, config.ModID)
+            ModQuestEntry entry = new ModQuestEntry(this, gameID, config.ModID)
             {
                 Config = config.DeepCopy(),
                 QuestData = questData

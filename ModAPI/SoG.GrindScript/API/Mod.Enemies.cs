@@ -23,15 +23,13 @@ namespace SoG.Modding.API
                 throw new ArgumentException("config's Constructor must not be null!");
             }
 
-            Mod mod = Registry.LoadContext;
-
-            if (mod == null)
+            if (!InLoad)
             {
                 Globals.Logger.Error("Can not create objects outside of a load context.", source: nameof(CreateEnemy));
                 return EnemyCodex.EnemyTypes.Null;
             }
 
-            if (GetLibrary().Enemies.Values.Any(x => x.ModID == config.ModID))
+            if (GetLibrary().Enemies.Any(x => x.Value.ModID == config.ModID))
             {
                 Globals.Logger.Error($"An enemy with the ModID {config.ModID} already exists.", source: nameof(CreateEnemy));
                 return EnemyCodex.EnemyTypes.Null;
@@ -53,7 +51,7 @@ namespace SoG.Modding.API
                 iCardDropChance = (int)(100f / config.CardDropChance),
             };
 
-            ModEnemyEntry entry = new ModEnemyEntry(mod, gameID, config.ModID)
+            ModEnemyEntry entry = new ModEnemyEntry(this, gameID, config.ModID)
             {
                 Config = config.DeepCopy(),
                 EnemyData = enemyData

@@ -26,9 +26,7 @@ namespace SoG.Modding.API
                 throw new ArgumentNullException(nameof(config));
             }
 
-            Mod mod = Registry.LoadContext;
-
-            if (mod == null)
+            if (!InLoad)
             {
                 Globals.Logger.Error("Can not create objects outside of a load context.", source: nameof(CreateAudio));
                 return;
@@ -56,7 +54,7 @@ namespace SoG.Modding.API
                 }
             }
 
-            string root = Path.Combine(Content.RootDirectory, mod.AssetPath);
+            string root = Path.Combine(Content.RootDirectory, AssetPath);
 
             Utils.TryLoadWaveBank(Path.Combine(root, "Sound", Name + "Effects.xwb"), audioEngine, out Audio.EffectsWB);
             Utils.TryLoadSoundBank(Path.Combine(root, "Sound", Name + "Effects.xsb"), audioEngine, out Audio.EffectsSB);

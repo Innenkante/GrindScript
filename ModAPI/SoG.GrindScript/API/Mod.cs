@@ -83,6 +83,8 @@ namespace SoG.Modding.API
         /// </summary>
         internal ModAudio Audio { get; } = new ModAudio();
 
+        private bool InLoad => Registry.LoadContext == this;
+
         /// <summary>
         /// Gets a collection of the modded game objects for this mod.
         /// </summary>

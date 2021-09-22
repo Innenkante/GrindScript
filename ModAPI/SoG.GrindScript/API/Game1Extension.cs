@@ -1,14 +1,10 @@
-﻿using System;
+﻿using SoG.Modding.Core;
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using SoG.Modding.Core;
 
 namespace SoG.Modding.API
 {
     using Quests;
-    using SoG.Modding.Extensions;
 
     public static class Game1Extension
     {

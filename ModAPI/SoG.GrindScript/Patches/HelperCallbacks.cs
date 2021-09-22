@@ -19,8 +19,10 @@ namespace SoG.Modding.Patches
         /// <summary>
         /// Initializes all mod content.
         /// </summary>
-        internal static void InContentLoad()
+        internal static void DoModContentLoad()
         {
+            Globals.Logger.Debug("Loading Mod Content...");
+
             foreach (Mod mod in Globals.API.Loader.Mods)
             {
                 Globals.API.Loader.CallWithContext(mod, x =>
@@ -31,10 +33,30 @@ namespace SoG.Modding.Patches
                     }
                     catch (Exception e)
                     {
-                        Globals.Logger.Error($"Mod {mod.GetType().Name} threw an exception during LoadContent: {e.Message}");
+                        Globals.Logger.Error($"Mod {mod.GetType().Name} threw an exception during mod content loading: {e.Message}");
                     }
                 });
             }
+        }
+
+        /// <summary>
+        /// Updates version so that we can tell that the game uses GrindScript.
+        /// </summary>
+        internal static void UpdateVersionNumber()
+        {
+            Globals.Logger.Debug("Updating Version Number...");
+
+            Globals.GameVanillaVersion = Globals.Game.sVersionNumberOnly;
+
+            Globals.SetVersionTypeAsModded(true);
+
+            var versionDisplayField = typeof(Game1).GetField("sVersion", BindingFlags.NonPublic | BindingFlags.Instance);
+
+            versionDisplayField.SetValue(Globals.Game, Globals.GameVanillaVersion as string + " with GrindScript");
+
+            Globals.Logger.Debug("Game Long Version: " + Globals.GameLongVersion);
+            Globals.Logger.Debug("Game Short Version: " + Globals.GameShortVersion);
+            Globals.Logger.Debug("Game Vanilla Version: " + Globals.GameVanillaVersion);
         }
 
         /// <summary>
@@ -223,5 +245,104 @@ namespace SoG.Modding.Patches
         public static SpriteBatch SpriteBatch => typeof(Game1).GetField("spriteBatch", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(Globals.Game) as SpriteBatch;
 
         public static TCMenuWorker TCMenuWorker { get; } = new TCMenuWorker();
+
+        #region Delicate Versioning and Mod List Comparison callbacks
+
+        internal static bool CheckModListCompatibility(bool didVersionCheckPass, InMessage msg)
+        {
+            if (!didVersionCheckPass)
+            {
+                // It's actually just a crappy implementation of short circuiting for AND ¯\_(ツ)_/¯
+
+                Globals.Logger.Debug("Denying connection due to version discrepancy.");
+                Globals.Logger.Debug("Check if client is on the same game version, and is running GrindScript.");
+                return false;
+            }
+
+            int failReason = 0;
+
+            Globals.Logger.Debug("Reading mod list!");
+
+            long savedStreamPosition = msg.BaseStream.Position;
+
+            _ = msg.ReadByte(); // Game mode byte skipped
+
+            List<string> clientModNames = new List<string>();
+            var serverMods = Globals.API.Loader.Mods;
+
+            int clientModCount = msg.ReadInt32();
+            int serverModCount = serverMods.Count;
+
+            for (int index = 0; index < clientModCount; index++)
+            {
+                clientModNames.Add(msg.ReadString());
+            }
+
+            if (clientModCount == serverModCount)
+            {
+                for (int index = 0; index < clientModCount; index++)
+                {
+                    if (clientModNames[index] != serverMods[index].Name)
+                    {
+                        failReason = 2;
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                failReason = 1;
+            }
+
+            Globals.Logger.Debug($"Mods received from client: ");
+            foreach (var name in clientModNames)
+            {
+                Globals.Logger.Debug("    " + name);
+            }
+
+            Globals.Logger.Debug($"Mods on server: ");
+            foreach (var mod in serverMods)
+            {
+                Globals.Logger.Debug("    " + mod.Name);
+            }
+
+            if (failReason == 1)
+            {
+                Globals.Logger.Debug($"Client has {clientModCount} mods, while server has {serverModCount}.");
+            }
+            else if (failReason == 2)
+            {
+                Globals.Logger.Debug($"Client's mod list doesn't compare equal to server's mod list.");
+            }
+
+            if (failReason != 0)
+            {
+                Globals.Logger.Debug("Denying connection due to mod discrepancy.");
+            }
+            else
+            {
+                Globals.Logger.Debug("Client mod list seems compatible!");
+            }
+
+            msg.BaseStream.Position = savedStreamPosition;
+
+            return failReason == 0;
+        }
+
+        internal static void WriteModList(OutMessage msg)
+        {
+            Globals.Logger.Debug("Writing mod list!");
+
+            msg.Write(Globals.API.Loader.Mods.Count);
+
+            foreach (Mod mod in Globals.API.Loader.Mods)
+            {
+                msg.Write(mod.Name);
+            }
+
+            Globals.Logger.Debug("Done with mod list!");
+        }
+
+        #endregion
     }
 }

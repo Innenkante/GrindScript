@@ -38,9 +38,7 @@ namespace SoG.Modding.API
                 throw new ArgumentNullException(nameof(config));
             }
 
-            Mod mod = Registry.LoadContext;
-
-            if (mod == null)
+            if (!InLoad)
             {
                 Globals.Logger.Error("Can not create objects outside of a load context.", source: nameof(CreateLevel));
                 return Level.ZoneEnum.None;
@@ -48,7 +46,7 @@ namespace SoG.Modding.API
 
             Level.ZoneEnum gameID = Registry.ID.LevelIDNext++;
 
-            Registry.Library.Levels[gameID] = new ModLevelEntry(mod, gameID, config.ModID)
+            Registry.Library.Levels[gameID] = new ModLevelEntry(this, gameID, config.ModID)
             {
                 Config = config.DeepCopy()
             };

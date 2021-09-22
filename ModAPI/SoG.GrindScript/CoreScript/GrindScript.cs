@@ -39,7 +39,8 @@ namespace SoG.Modding.CoreScript
                 [nameof(Help)] = Help,
                 [nameof(PlayerPos)] = PlayerPos,
                 [nameof(ModTotals)] = ModTotals,
-                [nameof(RenderColliders)] = RenderColliders
+                [nameof(RenderColliders)] = RenderColliders,
+                [nameof(Version)] = Version,
             };
 
             CreateCommands(commands);
@@ -50,6 +51,15 @@ namespace SoG.Modding.CoreScript
         private bool _colliderRCActive = false;
 
         #region Commands
+
+        private void Version(string message, int connection)
+        {
+            CAS.AddChatMessage(
+                "Short Version: " + Globals.GameShortVersion + "\n" +
+                "Long Version: " + Globals.GameLongVersion + "\n" +
+                "Vanilla Version: " + Globals.GameVanillaVersion
+                );
+        }
 
         private void Help(string message, int connection)
         {

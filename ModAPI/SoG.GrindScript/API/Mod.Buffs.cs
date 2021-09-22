@@ -21,7 +21,13 @@ namespace SoG.Modding.API
 
             if (mod == null)
             {
-                Globals.Logger.Error("Can not create objects outside of a load context.", source: nameof(CreateSpell));
+                Globals.Logger.Error("Can not create objects outside of a load context.", source: nameof(CreateStatusEffect));
+                return BaseStats.StatusEffectSource.SlowLv1;
+            }
+
+            if (GetLibrary().StatusEffects.Any(x => x.Value.ModID == config.ModID))
+            {
+                Globals.Logger.Error($"A status effect with the ModID {config.ModID} already exists.", source: nameof(CreateStatusEffect));
                 return BaseStats.StatusEffectSource.SlowLv1;
             }
 

@@ -32,16 +32,13 @@ namespace SoG.Modding.API
             {
                 throw new ArgumentNullException(nameof(config));
             }
-
-            Mod mod = Registry.LoadContext;
-
-            if (mod == null)
+            if (!InLoad)
             {
                 Globals.Logger.Error("Can not create objects outside of a load context.", source: nameof(CreateItem));
                 return ItemCodex.ItemTypes.Null;
             }
 
-            if (GetLibrary().Items.Values.Any(x => x.ModID == config.ModID))
+            if (GetLibrary().Items.Any(x => x.Value.ModID == config.ModID))
             {
                 Globals.Logger.Error($"An item with the ModID {config.ModID} already exists.", source: nameof(CreateItem));
                 return ItemCodex.ItemTypes.Null;
@@ -49,7 +46,7 @@ namespace SoG.Modding.API
 
             ItemCodex.ItemTypes gameID = Registry.ID.ItemIDNext++;
 
-            ModItemEntry entry = new ModItemEntry(mod, gameID, config.ModID)
+            ModItemEntry entry = new ModItemEntry(this, gameID, config.ModID)
             {
                 Config = config.DeepCopy()
             };

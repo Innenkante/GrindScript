@@ -22,32 +22,28 @@ namespace SoG.Modding.API
                 throw new ArgumentNullException(nameof(config));
             }
 
-            ModLoader registry = Registry;
-
-            Mod mod = registry.LoadContext;
-
-            if (mod != this)
+            if (!InLoad)
             {
                 Logger.Error("Can not create objects outside of a load context.", source: nameof(CreateTreatOrCurse));
                 return RogueLikeMode.TreatsCurses.None;
             }
 
-            if (GetLibrary().Curses.Values.Any(x => x.ModID == config.ModID))
+            if (GetLibrary().Curses.Any(x => x.Value.ModID == config.ModID))
             {
                 Globals.Logger.Error($"A treat or curse with the ModID {config.ModID} already exists.", source: nameof(CreateTreatOrCurse));
                 return RogueLikeMode.TreatsCurses.None;
             }
 
-            RogueLikeMode.TreatsCurses gameID = registry.ID.CurseIDNext++;
+            RogueLikeMode.TreatsCurses gameID = Registry.ID.CurseIDNext++;
 
-            ModCurseEntry entry = new ModCurseEntry(mod, gameID, config.ModID)
+            ModCurseEntry entry = new ModCurseEntry(this, gameID, config.ModID)
             {
                 Config = config.DeepCopy(),
                 NameHandle = $"TreatCurse_{(int)gameID}_Name",
                 DescriptionHandle = $"TreatCurse_{(int)gameID}_Description"
             };
 
-            registry.Library.Curses[gameID] = entry;
+            Registry.Library.Curses[gameID] = entry;
 
             Globals.Game.EXT_AddMiscText("Menus", entry.NameHandle, config.Name);
             Globals.Game.EXT_AddMiscText("Menus", entry.DescriptionHandle, config.Description);

@@ -18,17 +18,21 @@ namespace SoG.Modding.API
                 throw new ArgumentNullException(nameof(config));
             }
 
-            Mod mod = Registry.LoadContext;
-
-            if (mod == null)
+            if (!InLoad)
             {
                 Globals.Logger.Error("Can not create objects outside of a load context.", source: nameof(CreateSpell));
                 return SpellCodex.SpellTypes.NULL;
             }
 
+            if (GetLibrary().Spells.Any(x => x.Value.ModID == config.ModID))
+            {
+                Globals.Logger.Error($"A spell with the ModID {config.ModID} already exists.", source: nameof(CreateSpell));
+                return SpellCodex.SpellTypes.NULL;
+            }
+
             SpellCodex.SpellTypes gameID = Registry.ID.SpellIDNext++;
 
-            Registry.Library.Spells[gameID] = new ModSpellEntry(mod, gameID, config.ModID)
+            Registry.Library.Spells[gameID] = new ModSpellEntry(this, gameID, config.ModID)
             {
                 Config = config.DeepCopy()
             };

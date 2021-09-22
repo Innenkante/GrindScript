@@ -169,6 +169,13 @@ namespace SoG.Modding.Patches
             }
         }
 
+        [HarmonyPrefix]
+        [HarmonyPatch("_Saving_SaveCharacterToFile")]
+        internal static void OnCharacterSave()
+        {
+            Globals.SetVersionTypeAsModded(false);
+        }
+
         /// <summary>
         /// Implements saving of extra information for ".cha" save files.
         /// </summary>
@@ -176,6 +183,8 @@ namespace SoG.Modding.Patches
         [HarmonyPatch("_Saving_SaveCharacterToFile")]
         internal static void PostCharacterSave(int iFileSlot)
         {
+            Globals.SetVersionTypeAsModded(true);
+
             string ext = ModSaving.SaveFileExtension;
 
             PlayerView player = Globals.Game.xLocalPlayer;
@@ -228,6 +237,13 @@ namespace SoG.Modding.Patches
             catch { }
         }
 
+        [HarmonyPrefix]
+        [HarmonyPatch("_Saving_SaveWorldToFile")]
+        internal static void OnWorldSave()
+        {
+            Globals.SetVersionTypeAsModded(false);
+        }
+
         /// <summary>
         /// Implements saving of extra information for ".wld" save files.
         /// </summary>
@@ -235,6 +251,8 @@ namespace SoG.Modding.Patches
         [HarmonyPatch("_Saving_SaveWorldToFile")]
         internal static void PostWorldSave(int iFileSlot)
         {
+            Globals.SetVersionTypeAsModded(true);
+
             string ext = ModSaving.SaveFileExtension;
 
             PlayerView player = Globals.Game.xLocalPlayer;
@@ -275,6 +293,13 @@ namespace SoG.Modding.Patches
             catch { }
         }
 
+        [HarmonyPrefix]
+        [HarmonyPatch("_Saving_SaveRogueToFile", typeof(string))]
+        internal static void OnArcadeSave()
+        {
+            Globals.SetVersionTypeAsModded(false);
+        }
+
         /// <summary>
         /// Implements saving of extra information for ".sav" save files.
         /// </summary>
@@ -282,6 +307,8 @@ namespace SoG.Modding.Patches
         [HarmonyPatch("_Saving_SaveRogueToFile", typeof(string))]
         internal static void PostArcadeSave()
         {
+            Globals.SetVersionTypeAsModded(true);
+
             string ext = ModSaving.SaveFileExtension;
 
             bool other = CAS.IsDebugFlagSet("OtherArcadeMode");
@@ -297,6 +324,13 @@ namespace SoG.Modding.Patches
             File.Delete($"{savFile}.temp");
         }
 
+        [HarmonyPrefix]
+        [HarmonyPatch("_Loading_LoadCharacterFromFile")]
+        internal static void OnCharacterLoad()
+        {
+            Globals.SetVersionTypeAsModded(false);
+        }
+
         /// <summary>
         /// Implements loading of extra information for ".cha" save files.
         /// </summary>
@@ -304,6 +338,8 @@ namespace SoG.Modding.Patches
         [HarmonyPatch("_Loading_LoadCharacterFromFile")]
         internal static void PostCharacterLoad(int iFileSlot, bool bAppearanceOnly)
         {
+            Globals.SetVersionTypeAsModded(true);
+
             string ext = ModSaving.SaveFileExtension;
 
             string chrFile = Globals.Game.sAppData + "Characters/" + $"{iFileSlot}.cha{ext}";
@@ -317,6 +353,13 @@ namespace SoG.Modding.Patches
             }
         }
 
+        [HarmonyPrefix]
+        [HarmonyPatch("_Loading_LoadWorldFromFile")]
+        internal static void OnWorldLoad()
+        {
+            Globals.SetVersionTypeAsModded(false);
+        }
+
         /// <summary>
         /// Implements loading of extra information for ".wld" save files.
         /// </summary>
@@ -324,6 +367,8 @@ namespace SoG.Modding.Patches
         [HarmonyPatch("_Loading_LoadWorldFromFile")]
         internal static void PostWorldLoad(int iFileSlot)
         {
+            Globals.SetVersionTypeAsModded(true);
+
             string ext = ModSaving.SaveFileExtension;
 
             string wldFile = Globals.Game.sAppData + "Worlds/" + $"{iFileSlot}.wld{ext}";
@@ -337,6 +382,13 @@ namespace SoG.Modding.Patches
             }
         }
 
+        [HarmonyPrefix]
+        [HarmonyPatch("_Loading_LoadWorldFromFile")]
+        internal static void OnArcadeLoad()
+        {
+            Globals.SetVersionTypeAsModded(false);
+        }
+
         /// <summary>
         /// Implements loading of extra information for ".sav" save files.
         /// </summary>
@@ -344,6 +396,8 @@ namespace SoG.Modding.Patches
         [HarmonyPatch("_Loading_LoadRogueFile")]
         internal static void PostArcadeLoad()
         {
+            Globals.SetVersionTypeAsModded(true);
+
             string ext = ModSaving.SaveFileExtension;
 
             if (RogueLikeMode.LockedOutDueToHigherVersionSaveFile) return;
@@ -369,12 +423,20 @@ namespace SoG.Modding.Patches
         {
             MethodInfo target = typeof(DialogueCharacterLoading).GetMethod("Init");
 
+            MethodInfo targetTwo = typeof(Game1).GetMethod(nameof(Game1._Loading_LoadGlobalFile));
+
             var insert = new CodeInstruction[]
             {
-                new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(HelperCallbacks), nameof(HelperCallbacks.InContentLoad)))
+                new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(HelperCallbacks), nameof(HelperCallbacks.DoModContentLoad)))
             };
 
-            return PatchUtils.InsertAfterMethod(code, target, insert);
+            var moreInsert = new CodeInstruction[]
+            {
+                new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(HelperCallbacks), nameof(HelperCallbacks.UpdateVersionNumber)))
+            };
+
+            code = PatchUtils.InsertAfterMethod(code, target, insert);
+            return PatchUtils.InsertBeforeMethod(code, targetTwo, moreInsert);
         }
 
         /// <summary>
@@ -693,72 +755,123 @@ namespace SoG.Modding.Patches
             }
         }
 
+        /// <summary>
+        /// Transpiles processing of client messages by the server.
+        /// </summary>
         [HarmonyTranspiler]
         [HarmonyPatch(typeof(Game1), "_Network_ParseClientMessage")]
         internal static CodeList NetworkParseClientMessageTranspiler(CodeList code, ILGenerator gen)
         {
-            List<CodeInstruction> codeList = code.ToList();
-
-            int position = -1;
-
-            for (int index = 0; index + 2 < codeList.Count; index++)
+            // Finds the method end. Used to insert mod packet parsing
+            bool isMethodEnd(List<CodeInstruction> list, int index)
             {
-                bool found =
-                    codeList[index].opcode == OpCodes.Leave_S &&
-                    codeList[index + 1].opcode == OpCodes.Ldc_I4_1 &&
-                    codeList[index + 2].opcode == OpCodes.Ret;
-
-                if (found)
-                {
-                    position = index + 1;
-                    break;
-                }
+                return
+                    list[index].opcode == OpCodes.Leave_S &&
+                    list[index + 1].opcode == OpCodes.Ldc_I4_1 &&
+                    list[index + 2].opcode == OpCodes.Ret;
             }
 
-            var insert = new CodeInstruction[]
+            // Finds the demo check in message 97 parser. Used to check mod list compatibility
+            bool isMessage97VersionCheck(List<CodeInstruction> list, int index)
             {
-                new CodeInstruction(OpCodes.Ldarg_1).WithLabels(codeList[position].labels.ToArray()),
+                return
+                    list[index].opcode == OpCodes.Ldarg_0 &&
+                    list[index + 1].opcode == OpCodes.Ldfld &&
+                    ReferenceEquals(list[index + 1].operand, typeof(Game1).GetField(nameof(Game1.bIsDemo))) &&
+                    list[index + 2].opcode == OpCodes.Brfalse_S;
+            }
+
+            List<CodeInstruction> codeList = code.ToList();
+
+            // First Insertion
+
+            int methodEndIndex = PatchUtils.FindPosition(codeList, isMethodEnd);
+            int firstIndex = methodEndIndex + 1;
+            var firstInsert = new CodeInstruction[]
+            {
+                new CodeInstruction(OpCodes.Ldarg_1),
                 new CodeInstruction(OpCodes.Ldloc_3),
                 new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(HelperCallbacks), nameof(HelperCallbacks.InNetworkParseClientMessage))),
             };
 
-            codeList[position].labels.Clear(); // Shifts labels to account for insertion
+            firstInsert[0].WithLabels(codeList[firstIndex].labels.ToArray());
+            codeList[firstIndex].labels.Clear();
 
-            return PatchUtils.InsertAt(codeList, insert, position);
+            codeList = PatchUtils.InsertAt(codeList, firstInsert, firstIndex).ToList();
+
+            // Second Insertion
+
+            int versionCheckIndex = PatchUtils.FindPosition(codeList, isMessage97VersionCheck);
+            MethodInfo secondTargetMethod = typeof(string).GetMethod("op_Equality", BindingFlags.Static | BindingFlags.Public);
+            var secondInsert = new CodeInstruction[]
+            {
+                new CodeInstruction(OpCodes.Ldarg_1),
+                new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(HelperCallbacks), nameof(HelperCallbacks.CheckModListCompatibility)))
+            };
+
+            codeList = PatchUtils.InsertAfterMethod(codeList, secondTargetMethod, secondInsert, startIndex: versionCheckIndex, usesReturnValue: true).ToList();
+
+            return codeList;
         }
 
+        /// <summary>
+        /// Transpiles processing of server messages by the client.
+        /// First insertion allows mod packets from server to be parsed.
+        /// </summary>
         [HarmonyTranspiler]
         [HarmonyPatch(typeof(Game1), "_Network_ParseServerMessage")]
         internal static CodeList NetworkParseServerMessageTranspiler(CodeList code, ILGenerator gen)
         {
-            List<CodeInstruction> codeList = code.ToList();
-
-            int position = -1;
-
-            for (int index = 0; index + 2 < codeList.Count; index++)
+            bool isMethodEnd(List<CodeInstruction> codeToSearch, int index)
             {
-                bool found =
-                    codeList[index].opcode == OpCodes.Leave_S &&
-                    codeList[index + 1].opcode == OpCodes.Ldc_I4_1 &&
-                    codeList[index + 2].opcode == OpCodes.Ret;
-
-                if (found)
-                {
-                    position = index + 1;
-                    break;
-                }
+                return
+                    codeToSearch[index].opcode == OpCodes.Leave_S &&
+                    codeToSearch[index + 1].opcode == OpCodes.Ldc_I4_1 &&
+                    codeToSearch[index + 2].opcode == OpCodes.Ret;
             }
 
-            var insert = new CodeInstruction[]
+            bool isMessage19VersionSend(List<CodeInstruction> list, int index)
             {
-                new CodeInstruction(OpCodes.Ldarg_1).WithLabels(codeList[position].labels.ToArray()),
+                return
+                    list[index].opcode == OpCodes.Ldarg_0 &&
+                    list[index + 1].opcode == OpCodes.Ldfld &&
+                    ReferenceEquals(list[index + 1].operand, typeof(Game1).GetField(nameof(Game1.bIsDemo))) &&
+                    list[index + 2].opcode == OpCodes.Brfalse_S;
+            }
+
+            List<CodeInstruction> codeList = code.ToList();
+
+            // First Insertion
+
+            int methodEndIndex = PatchUtils.FindPosition(codeList, isMethodEnd);
+            int firstInsertIndex = methodEndIndex + 1;
+            var firstInsert = new CodeInstruction[]
+            {
+                new CodeInstruction(OpCodes.Ldarg_1),
                 new CodeInstruction(OpCodes.Ldloc_1),
                 new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(HelperCallbacks), nameof(HelperCallbacks.InNetworkParseServerMessage))),
             };
 
-            codeList[position].labels.Clear(); // Shifts labels to account for insertion
+            firstInsert[0].WithLabels(codeList[firstInsertIndex].labels.ToArray());
+            codeList[firstInsertIndex].labels.Clear();
 
-            return PatchUtils.InsertAt(codeList, insert, position);
+            codeList = PatchUtils.InsertAt(codeList, firstInsert, firstInsertIndex).ToList();
+
+            // Second Insertion
+
+            int versionCheckIndex = PatchUtils.FindPosition(codeList, isMessage19VersionSend);
+
+            MethodInfo secondTargetMethod = typeof(Game1).GetMethod(nameof(Game1._Network_SendMessage), new Type[] { typeof(OutMessage), typeof(int), typeof(Lidgren.Network.NetDeliveryMethod) });
+
+            var secondInsert = new CodeInstruction[]
+            {
+                new CodeInstruction(OpCodes.Ldloc_S, 81),
+                new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(HelperCallbacks), nameof(HelperCallbacks.WriteModList)))
+            };
+
+            codeList = PatchUtils.InsertBeforeMethod(codeList, secondTargetMethod, secondInsert, startIndex: versionCheckIndex).ToList();
+
+            return codeList;
         }
 
         [HarmonyPostfix]

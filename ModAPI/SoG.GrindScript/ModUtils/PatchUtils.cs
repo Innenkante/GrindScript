@@ -1,5 +1,6 @@
 ﻿using HarmonyLib;
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -47,7 +48,7 @@ namespace SoG.Modding.ModUtils
         };
 
         /// <summary>
-        /// Inserts IL instructions after the target method call (zero-indexed). <para/>
+        /// Inserts IL instructions after the target method call (zero-indexed, counting from the start index provided). <para/>
         /// If the method returns an object, either the first IL instruction inserted must be OpCodes.Pop, or usesReturnValue must be true.
         /// </summary>
         /// <returns> The original code with the IL instructions inserted. </returns>
@@ -55,17 +56,20 @@ namespace SoG.Modding.ModUtils
         /// Thrown if the method was not found, or if it returns a value, 
         /// the first IL instruction is not OpCodes.Pop, and usesReturnValue is false.
         /// </exception>
-        public static CodeEnumerable InsertAfterMethod(CodeEnumerable code, MethodInfo target, CodeEnumerable insert, int methodIndex = 0, bool usesReturnValue = false)
+        public static CodeEnumerable InsertAfterMethod(CodeEnumerable code, MethodInfo target, CodeEnumerable insert, int methodIndex = 0, int startIndex = 0, bool usesReturnValue = false)
         {
             int counter = methodIndex + 1;
             var noReturnValue = target.ReturnType == typeof(void);
             int stage = 0;
+            int index = -1;
 
             foreach (CodeInstruction ins in code)
             {
+                index++;
+
                 if (stage == 0)
                 {
-                    if (ins.Calls(target) && --counter == 0) 
+                    if (index >= startIndex && ins.Calls(target) && --counter == 0) 
                         stage = 1;
                 }
                 else if (stage == 1)
@@ -96,22 +100,28 @@ namespace SoG.Modding.ModUtils
         }
 
         /// <summary> 
-        /// Inserts IL instructions after the target method call (zero-indexed).
+        /// Inserts IL instructions before the target method call (zero-indexed, counting from the start index provided).
+        /// If the method call's first IL instruction has any jump labels, these are shifted to the first instruction in the insert list.
         /// </summary>
         /// <returns> The original code with the IL instructions inserted.  </returns>
         /// <exception cref="Exception"> Thrown if the method was not found. </exception>
-        public static CodeEnumerable InsertBeforeMethod(CodeEnumerable code, MethodInfo target, CodeEnumerable insert, int methodIndex = 0)
+        public static CodeEnumerable InsertBeforeMethod(CodeEnumerable code, MethodInfo target, CodeEnumerable insert, int methodIndex = 0, int startIndex = 0)
         {
             List<CodeInstruction> codeStore = new List<CodeInstruction>();
             List<CodeInstruction> leftoverCode = new List<CodeInstruction>();
             int counter = methodIndex + 1;
             int stage = 0;
+            int index = -1;
+            CodeInstruction firstMethodCallInstruction = null;
 
             foreach (CodeInstruction ins in code)
             {
-                if (stage == 0 && ins.Calls(target) && --counter == 0)
+                index++;
+
+                if (index >= startIndex && stage == 0 && ins.Calls(target) && --counter == 0)
                 {
                     stage = 1;
+                    firstMethodCallInstruction = ins;
                 }
 
                 if (stage == 0)
@@ -147,6 +157,7 @@ namespace SoG.Modding.ModUtils
                     if (stackDelta == 0)
                     {
                         stage = 2;
+                        firstMethodCallInstruction = codeStore[insertIndex];
                         break;
                     }
                     if (stackDelta > 0)
@@ -163,7 +174,7 @@ namespace SoG.Modding.ModUtils
                 throw new InvalidOperationException("Could not calculate insert position.");
             }
 
-            for (int index = 0; index < codeStore.Count; index++)
+            for (index = 0; index < codeStore.Count; index++)
             {
                 if (index == insertIndex)
                 {
@@ -181,15 +192,22 @@ namespace SoG.Modding.ModUtils
 
             foreach (CodeInstruction ins in leftoverCode)
                 yield return ins;
+
+            CodeInstruction firstInserted = insert.First();
+
+            // This is done due to methods that come right after scopes
+
+            firstInserted.WithLabels(firstMethodCallInstruction.labels.ToArray());
+            firstMethodCallInstruction.labels.Clear();
         }
 
         /// <summary>
         /// Calls InsertAfterMethod and InsertBeforeMethod, in that order, with the given arguments.
         /// </summary>
-        public static CodeEnumerable InsertAroundMethod(CodeEnumerable code, MethodInfo target, CodeEnumerable before, CodeEnumerable after, int methodIndex = 0, bool missingPopIsOk = false)
+        public static CodeEnumerable InsertAroundMethod(CodeEnumerable code, MethodInfo target, CodeEnumerable before, CodeEnumerable after, int methodIndex = 0, int startIndex = 0, bool usesReturnValue = false)
         {
-            code = InsertAfterMethod(code, target, after, methodIndex, missingPopIsOk);
-            return InsertBeforeMethod(code, target, before, methodIndex);
+            code = InsertAfterMethod(code, target, after, methodIndex, startIndex, usesReturnValue);
+            return InsertBeforeMethod(code, target, before, methodIndex, startIndex);
         }
 
         /// <summary>
@@ -249,6 +267,23 @@ namespace SoG.Modding.ModUtils
 
             op = OpCodes.Nop;
             return false;
+        }
+
+        /// <summary>
+        /// Returns the first position in the code list where the find criteria provided returns true.
+        /// If not found, returns -1.
+        /// </summary>
+        public static int FindPosition(List<CodeInstruction> code, Func<List<CodeInstruction>, int, bool> findCriteria)
+        {
+            for (int index = 0; index < code.Count; index++)
+            {
+                if (findCriteria(code, index))
+                {
+                    return index;
+                }
+            }
+
+            return -1;
         }
     }
 }

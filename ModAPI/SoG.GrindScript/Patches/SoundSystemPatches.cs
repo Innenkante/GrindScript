@@ -59,7 +59,7 @@ namespace SoG.Modding.Patches
                 new CodeInstruction(OpCodes.Nop).WithLabels(skipVanillaBank)
             };
 
-            return PatchUtils.InsertAroundMethod(code, target, insertBefore, insertAfter, missingPopIsOk: true);
+            return PatchUtils.InsertAroundMethod(code, target, insertBefore, insertAfter, usesReturnValue: true);
         }
 
         [HarmonyTranspiler]
@@ -95,7 +95,7 @@ namespace SoG.Modding.Patches
                 new CodeInstruction(OpCodes.Nop).WithLabels(skipVanillaBank)
             };
 
-            return PatchUtils.InsertAroundMethod(code, target, insertBefore, insertAfter, missingPopIsOk: true);
+            return PatchUtils.InsertAroundMethod(code, target, insertBefore, insertAfter, usesReturnValue: true);
         }
 
         [HarmonyTranspiler]
@@ -147,7 +147,7 @@ namespace SoG.Modding.Patches
                 new CodeInstruction(OpCodes.Nop).WithLabels(skipVanillaBank)
             };
 
-            return PatchUtils.InsertAroundMethod(code, target, insertBefore, insertAfter, missingPopIsOk: true);
+            return PatchUtils.InsertAroundMethod(code, target, insertBefore, insertAfter, usesReturnValue: true);
         }
 
         [HarmonyTranspiler]
@@ -185,8 +185,8 @@ namespace SoG.Modding.Patches
             };
 
             // Patch both methods
-            code = PatchUtils.InsertAroundMethod(code, target, insertBefore, insertAfter, methodIndex: 1, missingPopIsOk: true);
-            return PatchUtils.InsertAroundMethod(code, target, insertBefore, insertAfter, missingPopIsOk: true);
+            code = PatchUtils.InsertAroundMethod(code, target, insertBefore, insertAfter, methodIndex: 1, usesReturnValue: true);
+            return PatchUtils.InsertAroundMethod(code, target, insertBefore, insertAfter, usesReturnValue: true);
         }
 
         [HarmonyPrefix]
