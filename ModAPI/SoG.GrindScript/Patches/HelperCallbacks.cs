@@ -38,7 +38,7 @@ namespace SoG.Modding.Patches
                 });
             }
 
-            Globals.API.GrindScript.AnalyzeArcadeSavesForCompatibility();
+            MainMenuWorker.AnalyzeArcadeSavesForCompatibility();
         }
 
         /// <summary>
@@ -244,9 +244,11 @@ namespace SoG.Modding.Patches
 
         public static SoundBank GetMusicSoundBank(string ID) => Globals.API.Loader.GetMusicSoundBank(ID);
 
-        public static SpriteBatch SpriteBatch => Globals.SpriteBatch;
+        internal static SpriteBatch SpriteBatch => Globals.SpriteBatch;
 
-        public static TCMenuWorker TCMenuWorker { get; } = new TCMenuWorker();
+        internal static TCMenuWorker TCMenuWorker { get; } = new TCMenuWorker();
+
+        internal static MainMenuWorker MainMenuWorker { get; } = new MainMenuWorker();
 
         #region Delicate Versioning and Mod List Comparison callbacks
 

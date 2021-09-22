@@ -501,7 +501,7 @@ namespace SoG.Modding.Patches
 
             var firstInsert = new CodeInstruction[]
             {
-                new CodeInstruction(OpCodes.Call, typeof(HelperCallbacks).GetProperty(nameof(HelperCallbacks.TCMenuWorker)).GetGetMethod()),
+                new CodeInstruction(OpCodes.Call, typeof(HelperCallbacks).GetProperty(nameof(HelperCallbacks.TCMenuWorker), BindingFlags.Static | BindingFlags.NonPublic).GetGetMethod(true)),
                 new CodeInstruction(OpCodes.Stloc_S, worker.LocalIndex),
                 new CodeInstruction(OpCodes.Ldloc_S, worker.LocalIndex),
                 new CodeInstruction(OpCodes.Call, typeof(TCMenuWorker).GetMethod(nameof(TCMenuWorker.Update))),
@@ -522,7 +522,7 @@ namespace SoG.Modding.Patches
             var thirdInsert = new CodeInstruction[]
             {
                 new CodeInstruction(OpCodes.Ldloc_S, worker.LocalIndex),
-                new CodeInstruction(OpCodes.Call, typeof(HelperCallbacks).GetProperty(nameof(HelperCallbacks.SpriteBatch)).GetGetMethod()),
+                new CodeInstruction(OpCodes.Call, typeof(HelperCallbacks).GetProperty(nameof(HelperCallbacks.SpriteBatch), BindingFlags.Static | BindingFlags.NonPublic).GetGetMethod(true)),
                 new CodeInstruction(OpCodes.Ldarg_1),
                 new CodeInstruction(OpCodes.Ldarg_2),
                 new CodeInstruction(OpCodes.Call, typeof(TCMenuWorker).GetMethod(nameof(TCMenuWorker.DrawScroller))),
@@ -932,14 +932,14 @@ namespace SoG.Modding.Patches
         [HarmonyPatch(typeof(Game1), nameof(Game1._Menu_CharacterSelect_Render))]
         internal static void PostCharacterSelectRender()
         {
-            Globals.API.GrindScript.CheckStorySaveCompatibility();
+            HelperCallbacks.MainMenuWorker.CheckStorySaveCompatibility();
         }
 
         [HarmonyPostfix]
         [HarmonyPatch(typeof(Game1), nameof(Game1._Menu_Render_TopMenu))]
         internal static void PostTopMenuRender()
         {
-            Globals.API.GrindScript.CheckArcadeSaveCompatiblity();
+            HelperCallbacks.MainMenuWorker.CheckArcadeSaveCompatiblity();
         }
 
         [HarmonyPrefix]
@@ -948,7 +948,7 @@ namespace SoG.Modding.Patches
         {
             if (enTarget == GlobalData.MainMenu.MenuLevel.CharacterSelect)
             {
-                Globals.API.GrindScript.AnalyzeStorySavesForCompatibility();
+                HelperCallbacks.MainMenuWorker.AnalyzeStorySavesForCompatibility();
             }
         }
     }

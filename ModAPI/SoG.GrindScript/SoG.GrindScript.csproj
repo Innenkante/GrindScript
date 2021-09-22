@@ -135,6 +135,7 @@
     <Compile Include="Patches\Game1Patches.cs" />
     <Compile Include="Patches\HelperCallbacks.cs" />
     <Compile Include="Patches\ItemLogicPatches.cs" />
+    <Compile Include="Patches\MainMenuWorker.cs" />
     <Compile Include="Patches\MiscPatches.cs" />
     <Compile Include="Patches\SoundSystemPatches.cs" />
     <Compile Include="ModUtils\ConsoleLogger.cs" />
