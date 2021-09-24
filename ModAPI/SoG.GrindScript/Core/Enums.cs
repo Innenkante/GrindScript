@@ -1,4 +1,4 @@
-﻿namespace SoG.Modding.Core
+﻿namespace SoG.Modding
 {
     /// <summary>
     /// Defines equipment types based on ItemCodex.ItemCategories.

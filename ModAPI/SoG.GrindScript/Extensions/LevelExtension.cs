@@ -1,18 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 using Microsoft.Xna.Framework;
-using System.Reflection;
 using System.IO;
 using LevelLoading;
 
 namespace SoG.Modding.Extensions
 {
-	/// <summary>
-	/// Extension methods for Level-related stuff that expose some vanilla methods and add new ones.
-	/// </summary>
+    /// <summary>
+    /// Extension methods for Level-related stuff that expose some vanilla methods and add new ones.
+    /// </summary>
     public static class LevelExtension
     {
 		internal static void CheckForConsistency(this LevelBlueprint bp, bool withSpawns = false)

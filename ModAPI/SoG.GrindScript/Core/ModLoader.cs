@@ -1,17 +1,14 @@
 ﻿using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Content;
-using SoG.Modding.API;
-using SoG.Modding.ModUtils;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using SoG.Modding.CoreScript;
+using SoG.Modding.GrindScriptMod;
+using SoG.Modding.Utils;
 
-namespace SoG.Modding.Core
+namespace SoG.Modding
 {
     internal class ModLoader
     {
@@ -75,7 +72,7 @@ namespace SoG.Modding.Core
                 LoadMod(file);
             }
 
-            Mods.Sort((x, y) => string.Compare(x.Name, y.Name));
+            Mods.Sort((x, y) => string.Compare(x.NameID, y.NameID));
 
             for (int i = 0; i < Mods.Count; i++)
             {
@@ -88,13 +85,23 @@ namespace SoG.Modding.Core
         /// </summary>
         private void LoadMod(string path)
         {
-            Globals.Logger.Info("Loading mod " + Utils.ShortenModPaths(path));
+            string shortPath = ModUtils.ShortenModPaths(path);
+
+            Globals.Logger.Info("Loading mod " + shortPath);
 
             try
             {
                 Assembly assembly = Assembly.LoadFile(path);
                 Type type = assembly.DefinedTypes.First(t => t.BaseType == typeof(Mod));
                 Mod mod = Activator.CreateInstance(type) as Mod;
+
+                bool conflictingID = Mods.Any(x => x.NameID == mod.NameID);
+
+                if (conflictingID)
+                {
+                    Globals.Logger.Error($"Mod {shortPath} with NameID {mod.NameID} conflicts with a previously loaded mod.");
+                    return;
+                }
 
                 SetupMod(mod);
 
@@ -103,7 +110,7 @@ namespace SoG.Modding.Core
             catch (BadImageFormatException) { /* Ignore non-managed DLLs */ }
             catch (Exception e)
             {
-                Globals.Logger.Error($"Failed to load mod {Utils.ShortenModPaths(path)}. Exception message: {Utils.ShortenModPaths(e.Message)}");
+                Globals.Logger.Error($"Failed to load mod {Utils.ModUtils.ShortenModPaths(path)}. Exception message: {Utils.ModUtils.ShortenModPaths(e.Message)}");
             }
         }
 
@@ -189,7 +196,7 @@ namespace SoG.Modding.Core
 
         public string GetCueName(string GSID)
         {
-            if (!Utils.SplitAudioID(GSID, out int entryID, out bool isMusic, out int cueID))
+            if (!Utils.ModUtils.SplitAudioID(GSID, out int entryID, out bool isMusic, out int cueID))
                 return "";
             var entry = Mods[entryID].Audio;
             return isMusic ? entry.IndexedMusicCues[cueID] : entry.IndexedEffectCues[cueID];
@@ -201,7 +208,7 @@ namespace SoG.Modding.Core
 
         public Cue GetEffectCue(string audioID)
         {
-            bool success = Utils.SplitAudioID(audioID, out int entryID, out bool isMusic, out int cueID);
+            bool success = Utils.ModUtils.SplitAudioID(audioID, out int entryID, out bool isMusic, out int cueID);
             if (!(success && !isMusic))
                 return null;
 
@@ -215,7 +222,7 @@ namespace SoG.Modding.Core
 
         public SoundBank GetEffectSoundBank(string audioID)
         {
-            bool success = Utils.SplitAudioID(audioID, out int entryID, out bool isMusic, out _);
+            bool success = Utils.ModUtils.SplitAudioID(audioID, out int entryID, out bool isMusic, out _);
             if (!(success && !isMusic))
                 return null;
 
@@ -233,7 +240,7 @@ namespace SoG.Modding.Core
 
         public WaveBank GetEffectWaveBank(string audioID)
         {
-            bool success = Utils.SplitAudioID(audioID, out int entryID, out bool isMusic, out _);
+            bool success = Utils.ModUtils.SplitAudioID(audioID, out int entryID, out bool isMusic, out _);
             if (!(success && !isMusic))
                 return null;
 
@@ -246,7 +253,7 @@ namespace SoG.Modding.Core
 
         public SoundBank GetMusicSoundBank(string audioID)
         {
-            bool success = Utils.SplitAudioID(audioID, out int entryID, out bool isMusic, out _);
+            bool success = Utils.ModUtils.SplitAudioID(audioID, out int entryID, out bool isMusic, out _);
             if (!(success && isMusic))
                 return null;
 
@@ -259,7 +266,7 @@ namespace SoG.Modding.Core
 
         public string GetMusicWaveBank(string audioID)
         {
-            bool success = Utils.SplitAudioID(audioID, out int entryID, out bool isMusic, out int cueID);
+            bool success = Utils.ModUtils.SplitAudioID(audioID, out int entryID, out bool isMusic, out int cueID);
             if (!(success && isMusic))
                 return null;
 
@@ -283,7 +290,7 @@ namespace SoG.Modding.Core
 
             foreach (var mod in Mods)
             {
-                if (mod.Name == bank)
+                if (mod.NameID == bank)
                     return true;
             }
 

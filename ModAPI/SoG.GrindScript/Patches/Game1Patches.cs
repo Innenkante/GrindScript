@@ -6,15 +6,11 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
-using System.Threading.Tasks;
 using HarmonyLib;
-using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
-using SoG.Modding.API;
-using SoG.Modding.Core;
-using SoG.Modding.Extensions;
-using SoG.Modding.ModUtils;
+using SoG.Modding.GrindScriptMod;
+using SoG.Modding.Utils;
 
 namespace SoG.Modding.Patches
 {
@@ -31,7 +27,7 @@ namespace SoG.Modding.Patches
         /// Starts the API, which loads mods and their content.
         /// </summary>
         [HarmonyPrefix]
-        [HarmonyPatch("Initialize")]
+        [HarmonyPatch("Initialize")] // Protected Method
         internal static void OnGame1Initialize()
         {
             Globals.API.Start();
@@ -41,7 +37,7 @@ namespace SoG.Modding.Patches
         /// Implements custom command parsing.
         /// </summary>
         [HarmonyTranspiler]
-        [HarmonyPatch("_Chat_ParseCommand")]
+        [HarmonyPatch(nameof(Game1._Chat_ParseCommand))]
         internal static CodeList CommandTranspiler(CodeList code, ILGenerator gen)
         {
             Label afterRet = gen.DefineLabel();
@@ -66,14 +62,14 @@ namespace SoG.Modding.Patches
         /// Implements failsafe custom texture paths for shields.
         /// </summary>
         [HarmonyPrefix]
-        [HarmonyPatch("_Animations_GetAnimationSet", typeof(PlayerView), typeof(string), typeof(string), typeof(bool), typeof(bool), typeof(bool), typeof(bool))]
+        [HarmonyPatch(nameof(Game1._Animations_GetAnimationSet), typeof(PlayerView), typeof(string), typeof(string), typeof(bool), typeof(bool), typeof(bool), typeof(bool))]
         internal static bool OnGetAnimationSet(PlayerView xPlayerView, string sAnimation, string sDirection, bool bWithWeapon, bool bCustomHat, bool bWithShield, bool bWeaponOnTop, ref PlayerAnimationTextureSet __result)
         {
             ContentManager VanillaContent = RenderMaster.contPlayerStuff;
 
             __result = new PlayerAnimationTextureSet() { bWeaponOnTop = bWeaponOnTop };
 
-            Utils.TryLoadTex($"Sprites/Heroes/{sAnimation}/{sDirection}", VanillaContent, out __result.txBase);
+            Utils.ModUtils.TryLoadTex($"Sprites/Heroes/{sAnimation}/{sDirection}", VanillaContent, out __result.txBase);
 
             string resource = xPlayerView.xEquipment.DisplayShield?.sResourceName ?? "";
             if (bWithShield && resource != "")
@@ -83,11 +79,11 @@ namespace SoG.Modding.Patches
 
                 if (modItem)
                 {
-                    Utils.TryLoadTex($"{resource}/{sAnimation}/{sDirection}", Globals.API.Loader.Library.Items[enType].Config.Manager, out __result.txShield);
+                    Utils.ModUtils.TryLoadTex($"{resource}/{sAnimation}/{sDirection}", Globals.API.Loader.Library.Items[enType].Config.Manager, out __result.txShield);
                 }
                 else
                 {
-                    Utils.TryLoadTex($"Sprites/Heroes/{sAnimation}/Shields/{resource}/{sDirection}", VanillaContent, out __result.txShield);
+                    Utils.ModUtils.TryLoadTex($"Sprites/Heroes/{sAnimation}/Shields/{resource}/{sDirection}", VanillaContent, out __result.txShield);
                 }
             }
 
@@ -101,7 +97,7 @@ namespace SoG.Modding.Patches
         /// Implements failsafe custom texture paths for perks.
         /// </summary>
         [HarmonyPrefix]
-        [HarmonyPatch("_RogueLike_GetPerkTexture")]
+        [HarmonyPatch(nameof(Game1._RogueLike_GetPerkTexture))]
         internal static bool OnGetPerkTexture(RogueLikeMode.Perks enPerk, ref Texture2D __result)
         {
             if (!enPerk.IsFromMod())
@@ -109,7 +105,7 @@ namespace SoG.Modding.Patches
 
             string path = Globals.API.Loader.Library.Perks[enPerk].Config.TexturePath;
 
-            Utils.TryLoadTex(path, Globals.Game.Content, out __result);
+            Utils.ModUtils.TryLoadTex(path, Globals.Game.Content, out __result);
 
             return false;
         }
@@ -118,7 +114,7 @@ namespace SoG.Modding.Patches
         /// Implements failsafe custom texture paths for treats and perks.
         /// </summary>
         [HarmonyPrefix]
-        [HarmonyPatch("_RogueLike_GetTreatCurseTexture")]
+        [HarmonyPatch(nameof(Game1._RogueLike_GetTreatCurseTexture))]
         internal static bool OnGetTreatCurseTexture(RogueLikeMode.TreatsCurses enTreat, ref Texture2D __result)
         {
             if (!enTreat.IsFromMod())
@@ -126,7 +122,7 @@ namespace SoG.Modding.Patches
 
             string path = Globals.API.Loader.Library.Curses[enTreat].Config.TexturePath;
 
-            Utils.TryLoadTex(path, Globals.Game.Content, out __result);
+            Utils.ModUtils.TryLoadTex(path, Globals.Game.Content, out __result);
 
             return false;
         }
@@ -135,7 +131,7 @@ namespace SoG.Modding.Patches
         /// Implements custom treats and curses.
         /// </summary>
         [HarmonyPrefix]
-        [HarmonyPatch("_RogueLike_GetTreatCurseInfo")]
+        [HarmonyPatch(nameof(Game1._RogueLike_GetTreatCurseInfo))]
         internal static bool OnGetTreatCurseInfo(RogueLikeMode.TreatsCurses enTreatCurse, out string sNameHandle, out string sDescriptionHandle, out float fScoreModifier)
         {
             if (!enTreatCurse.IsFromMod())
@@ -160,7 +156,7 @@ namespace SoG.Modding.Patches
         /// Activation happens when a run starts, and can be used to modify player stats, etc.
         /// </summary>
         [HarmonyPostfix]
-        [HarmonyPatch("_RogueLike_ActivatePerks")]
+        [HarmonyPatch(nameof(Game1._RogueLike_ActivatePerks))]
         internal static void PostPerkActivation(PlayerView xView, List<RogueLikeMode.Perks> len)
         {
             foreach (var perk in len)
@@ -171,7 +167,7 @@ namespace SoG.Modding.Patches
         }
 
         [HarmonyPrefix]
-        [HarmonyPatch("_Saving_SaveCharacterToFile")]
+        [HarmonyPatch(nameof(Game1._Saving_SaveCharacterToFile))]
         internal static void OnCharacterSave()
         {
             Globals.SetVersionTypeAsModded(false);
@@ -181,7 +177,7 @@ namespace SoG.Modding.Patches
         /// Implements saving of extra information for ".cha" save files.
         /// </summary>
         [HarmonyPostfix]
-        [HarmonyPatch("_Saving_SaveCharacterToFile")]
+        [HarmonyPatch(nameof(Game1._Saving_SaveCharacterToFile))]
         internal static void PostCharacterSave(int iFileSlot)
         {
             Globals.SetVersionTypeAsModded(true);
@@ -209,7 +205,7 @@ namespace SoG.Modding.Patches
                 }
 
                 backupPath = $"{appData}Backups/" + $"{player.sSaveableName}_{player.xJournalInfo.iCollectorID}{iFileSlot}/";
-                Utils.TryCreateDirectory(backupPath);
+                Utils.ModUtils.TryCreateDirectory(backupPath);
 
                 File.Copy(chrFile, backupPath + $"auto{carousel}.cha{ext}", overwrite: true);
 
@@ -239,7 +235,7 @@ namespace SoG.Modding.Patches
         }
 
         [HarmonyPrefix]
-        [HarmonyPatch("_Saving_SaveWorldToFile")]
+        [HarmonyPatch(nameof(Game1._Saving_SaveWorldToFile))]
         internal static void OnWorldSave()
         {
             Globals.SetVersionTypeAsModded(false);
@@ -249,7 +245,7 @@ namespace SoG.Modding.Patches
         /// Implements saving of extra information for ".wld" save files.
         /// </summary>
         [HarmonyPostfix]
-        [HarmonyPatch("_Saving_SaveWorldToFile")]
+        [HarmonyPatch(nameof(Game1._Saving_SaveWorldToFile))]
         internal static void PostWorldSave(int iFileSlot)
         {
             Globals.SetVersionTypeAsModded(true);
@@ -273,7 +269,7 @@ namespace SoG.Modding.Patches
                 }
 
                 backupPath = $"{appData}Backups/" + $"{player.sSaveableName}_{player.xJournalInfo.iCollectorID}{iFileSlot}/";
-                Utils.TryCreateDirectory(backupPath);
+                Utils.ModUtils.TryCreateDirectory(backupPath);
             }
 
             using (BinaryWriter bw = new BinaryWriter(new FileStream($"{wldFile}.temp", FileMode.Create, FileAccess.Write)))
@@ -295,7 +291,7 @@ namespace SoG.Modding.Patches
         }
 
         [HarmonyPrefix]
-        [HarmonyPatch("_Saving_SaveRogueToFile", typeof(string))]
+        [HarmonyPatch(nameof(Game1._Saving_SaveRogueToFile), typeof(string))]
         internal static void OnArcadeSave()
         {
             Globals.SetVersionTypeAsModded(false);
@@ -305,7 +301,7 @@ namespace SoG.Modding.Patches
         /// Implements saving of extra information for ".sav" save files.
         /// </summary>
         [HarmonyPostfix]
-        [HarmonyPatch("_Saving_SaveRogueToFile", typeof(string))]
+        [HarmonyPatch(nameof(Game1._Saving_SaveRogueToFile), typeof(string))]
         internal static void PostArcadeSave()
         {
             Globals.SetVersionTypeAsModded(true);
@@ -326,7 +322,7 @@ namespace SoG.Modding.Patches
         }
 
         [HarmonyPrefix]
-        [HarmonyPatch("_Loading_LoadCharacterFromFile")]
+        [HarmonyPatch(nameof(Game1._Loading_LoadCharacterFromFile))]
         internal static void OnCharacterLoad()
         {
             Globals.SetVersionTypeAsModded(false);
@@ -336,7 +332,7 @@ namespace SoG.Modding.Patches
         /// Implements loading of extra information for ".cha" save files.
         /// </summary>
         [HarmonyPostfix]
-        [HarmonyPatch("_Loading_LoadCharacterFromFile")]
+        [HarmonyPatch(nameof(Game1._Loading_LoadCharacterFromFile))]
         internal static void PostCharacterLoad(int iFileSlot, bool bAppearanceOnly)
         {
             Globals.SetVersionTypeAsModded(true);
@@ -355,7 +351,7 @@ namespace SoG.Modding.Patches
         }
 
         [HarmonyPrefix]
-        [HarmonyPatch("_Loading_LoadWorldFromFile")]
+        [HarmonyPatch(nameof(Game1._Loading_LoadWorldFromFile))]
         internal static void OnWorldLoad()
         {
             Globals.SetVersionTypeAsModded(false);
@@ -365,7 +361,7 @@ namespace SoG.Modding.Patches
         /// Implements loading of extra information for ".wld" save files.
         /// </summary>
         [HarmonyPostfix]
-        [HarmonyPatch("_Loading_LoadWorldFromFile")]
+        [HarmonyPatch(nameof(Game1._Loading_LoadWorldFromFile))]
         internal static void PostWorldLoad(int iFileSlot)
         {
             Globals.SetVersionTypeAsModded(true);
@@ -384,7 +380,7 @@ namespace SoG.Modding.Patches
         }
 
         [HarmonyPrefix]
-        [HarmonyPatch("_Loading_LoadWorldFromFile")]
+        [HarmonyPatch(nameof(Game1._Loading_LoadWorldFromFile))]
         internal static void OnArcadeLoad()
         {
             Globals.SetVersionTypeAsModded(false);
@@ -394,7 +390,7 @@ namespace SoG.Modding.Patches
         /// Implements loading of extra information for ".sav" save files.
         /// </summary>
         [HarmonyPostfix]
-        [HarmonyPatch("_Loading_LoadRogueFile")]
+        [HarmonyPatch(nameof(Game1._Loading_LoadRogueFile))]
         internal static void PostArcadeLoad()
         {
             Globals.SetVersionTypeAsModded(true);
@@ -416,10 +412,40 @@ namespace SoG.Modding.Patches
         }
 
         /// <summary>
+        /// This patch cleans up the mod character info along with the base character save.
+        /// </summary>
+        [HarmonyPostfix]
+        [HarmonyPatch(nameof(Game1._Saving_DeleteCharacterFile))]
+        internal static void PostCharacterDelete(int iFileSlot)
+        {
+            string path = Globals.Game.sAppData + "Characters/" + iFileSlot + ".cha" + ModSaving.SaveFileExtension;
+
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+
+        /// <summary>
+        /// This patch cleans up the mod world info along with the base world save.
+        /// </summary>
+        [HarmonyPostfix]
+        [HarmonyPatch(nameof(Game1._Saving_DeleteWorldFile))]
+        internal static void PostWorldDelete(int iFileSlot)
+        {
+            string path = Globals.Game.sAppData + "Worlds/" + iFileSlot + ".wld" + ModSaving.SaveFileExtension;
+
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+
+        /// <summary>
         /// Implements mod content loading by inserting a call before important game code runs.
         /// </summary>
         [HarmonyTranspiler]
-        [HarmonyPatch("__StartupThreadExecute")]
+        [HarmonyPatch(nameof(Game1.__StartupThreadExecute))]
         internal static CodeList StartupTranspiler(CodeList code, ILGenerator gen)
         {
             MethodInfo target = typeof(DialogueCharacterLoading).GetMethod("Init");
@@ -444,7 +470,7 @@ namespace SoG.Modding.Patches
         /// Implements custom level load code.
         /// </summary>
         [HarmonyTranspiler]
-        [HarmonyPatch("_LevelLoading_DoStuff")]
+        [HarmonyPatch(nameof(Game1._LevelLoading_DoStuff))]
         internal static CodeList LevelDoStuffTranspiler(CodeList code, ILGenerator gen)
         {
             MethodInfo target = typeof(Quests.QuestLog).GetMethod("UpdateCheck_PlaceVisited");
@@ -460,7 +486,7 @@ namespace SoG.Modding.Patches
         }
 
         [HarmonyPrefix]
-        [HarmonyPatch("Draw")]
+        [HarmonyPatch("Draw")] // Protected Method
         internal static void OnDraw()
         {
             foreach (Mod mod in Globals.API.Loader.Mods)
@@ -468,7 +494,7 @@ namespace SoG.Modding.Patches
         }
 
         [HarmonyPostfix]
-        [HarmonyPatch("_Level_Load")]
+        [HarmonyPatch(nameof(Game1._Level_Load))]
         internal static void PostLevelLoad(LevelBlueprint xBP, bool bStaticOnly)
         {
             foreach (Mod mod in Globals.API.Loader.Mods)
@@ -480,7 +506,7 @@ namespace SoG.Modding.Patches
         /// The new menus support viewing more than 10 entries at a time.
         /// </summary>
         [HarmonyTranspiler]
-        [HarmonyPatch("_ShopMenu_Render_TreatCurseAssign")]
+        [HarmonyPatch(nameof(Game1._ShopMenu_Render_TreatCurseAssign))]
         internal static CodeList RenderTreatCurseAssignTranspiler(CodeList code, ILGenerator gen)
         {
             const string ErrorMessage = "ShopMenu_Render_TreatCurseAssign transpiler is invalid!";
@@ -554,7 +580,7 @@ namespace SoG.Modding.Patches
         }
         
         [HarmonyPrefix]
-        [HarmonyPatch(typeof(Game1), "_Player_TakeDamage")]
+        [HarmonyPatch(nameof(Game1._Player_TakeDamage))]
         internal static void OnPlayerTakeDamage(PlayerView xView, ref int iInDamage, ref byte byType)
         {
             foreach (Mod mod in Globals.API.Loader.Mods)
@@ -562,7 +588,7 @@ namespace SoG.Modding.Patches
         }
 
         [HarmonyPrefix]
-        [HarmonyPatch(typeof(Game1), "_Player_KillPlayer", new Type[] { typeof(PlayerView), typeof(bool), typeof(bool) })]
+        [HarmonyPatch(nameof(Game1._Player_KillPlayer), new Type[] { typeof(PlayerView), typeof(bool), typeof(bool) })]
         internal static void OnPlayerKilled(PlayerView xView)
         {
             foreach (Mod mod in Globals.API.Loader.Mods)
@@ -570,7 +596,7 @@ namespace SoG.Modding.Patches
         }
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(Game1), "_Player_ApplyLvUpBonus")]
+        [HarmonyPatch(nameof(Game1._Player_ApplyLvUpBonus))]
         internal static void PostPlayerLevelUp(PlayerView xView)
         {
             foreach (Mod mod in Globals.API.Loader.Mods)
@@ -578,7 +604,7 @@ namespace SoG.Modding.Patches
         }
 
         [HarmonyPrefix]
-        [HarmonyPatch(typeof(Game1), "_Enemy_TakeDamage")]
+        [HarmonyPatch(nameof(Game1._Enemy_TakeDamage))]
         internal static void OnEnemyTakeDamage(Enemy xEnemy, ref int iDamage, ref byte byType)
         {
             foreach (Mod mod in Globals.API.Loader.Mods)
@@ -586,7 +612,7 @@ namespace SoG.Modding.Patches
         }
 
         [HarmonyPrefix]
-        [HarmonyPatch(typeof(Game1), "_NPC_TakeDamage")]
+        [HarmonyPatch(nameof(Game1._NPC_TakeDamage))]
         internal static void OnNPCTakeDamage(NPC xEnemy, ref int iDamage, ref byte byType)
         {
             foreach (Mod mod in Globals.API.Loader.Mods)
@@ -594,7 +620,7 @@ namespace SoG.Modding.Patches
         }
 
         [HarmonyPrefix]
-        [HarmonyPatch(typeof(Game1), "_NPC_Interact")]
+        [HarmonyPatch(nameof(Game1._NPC_Interact))]
         internal static void OnNPCInteraction(PlayerView xView, NPC xNPC)
         {
             foreach (Mod mod in Globals.API.Loader.Mods)
@@ -602,7 +628,7 @@ namespace SoG.Modding.Patches
         }
 
         [HarmonyPrefix]
-        [HarmonyPatch("_LevelLoading_DoStuff_Arcadia")]
+        [HarmonyPatch(nameof(Game1._LevelLoading_DoStuff_Arcadia))]
         internal static void OnArcadiaLoad()
         {
             foreach (Mod mod in Globals.API.Loader.Mods)
@@ -613,7 +639,7 @@ namespace SoG.Modding.Patches
         }
 
         [HarmonyPrefix]
-        [HarmonyPatch("_Item_Use", new Type[] { typeof(ItemCodex.ItemTypes), typeof(PlayerView), typeof(bool) })]
+        [HarmonyPatch(nameof(Game1._Item_Use), new Type[] { typeof(ItemCodex.ItemTypes), typeof(PlayerView), typeof(bool) })]
         internal static void OnItemUse(ItemCodex.ItemTypes enItem, PlayerView xView, ref bool bSend)
         {
             if (xView.xViewStats.bIsDead)
@@ -623,7 +649,7 @@ namespace SoG.Modding.Patches
         }
 
         [HarmonyPostfix]
-        [HarmonyPatch("_LevelLoading_DoStuff_ArcadeModeRoom")]
+        [HarmonyPatch(nameof(Game1._LevelLoading_DoStuff_ArcadeModeRoom))]
         internal static void PostArcadeRoomStart()
         {
             foreach (Mod mod in Globals.API.Loader.Mods)
@@ -631,7 +657,7 @@ namespace SoG.Modding.Patches
         }
 
         [HarmonyPostfix]
-        [HarmonyPatch("_Skill_ActivateSkill")]
+        [HarmonyPatch(nameof(Game1._Skill_ActivateSkill))]
         internal static void PostSpellActivation(PlayerView xView, ISpellActivation xact, SpellCodex.SpellTypes enType, int iBoostState)
         {
             foreach (Mod mod in Globals.API.Loader.Mods)
@@ -639,7 +665,7 @@ namespace SoG.Modding.Patches
         }
 
         [HarmonyPrefix]
-        [HarmonyPatch(typeof(Game1), "_Enemy_AdjustForDifficulty")]
+        [HarmonyPatch(nameof(Game1._Enemy_AdjustForDifficulty))]
         internal static void OnEnemyAdjustForDifficulty(Enemy xEn)
         {
             if (!xEn.enType.IsFromMod())
@@ -649,7 +675,7 @@ namespace SoG.Modding.Patches
         }
 
         [HarmonyTranspiler]
-        [HarmonyPatch(typeof(Game1), "_Enemy_MakeElite")]
+        [HarmonyPatch(nameof(Game1._Enemy_MakeElite))]
         internal static CodeList EnemyMakeEliteTranspiler(CodeList code, ILGenerator gen)
         {
             // * vanilla switch case *
@@ -689,7 +715,7 @@ namespace SoG.Modding.Patches
         /// instead of launching the Grindea Beta Error Report tool.
         /// </summary>
         [HarmonyPrefix]
-        [HarmonyPatch(typeof(Game1), "OutputError", typeof(string), typeof(string))]
+        [HarmonyPatch(nameof(Game1.OutputError), typeof(string), typeof(string))]
         internal static bool OnOutputError(string p_sLocation, string e)
         {
             if (CAS.IsDebugFlagSet_Release("silentsend"))
@@ -753,7 +779,7 @@ namespace SoG.Modding.Patches
         }
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(Game1), "OnExiting")]
+        [HarmonyPatch("OnExiting")] // Protected Method
         internal static void PostGameExit()
         {
             (Globals.Logger?.NextLogger as FileLogger)?.FlushToDisk();
@@ -768,7 +794,7 @@ namespace SoG.Modding.Patches
         /// Transpiles processing of client messages by the server.
         /// </summary>
         [HarmonyTranspiler]
-        [HarmonyPatch(typeof(Game1), "_Network_ParseClientMessage")]
+        [HarmonyPatch(nameof(Game1._Network_ParseClientMessage))]
         internal static CodeList NetworkParseClientMessageTranspiler(CodeList code, ILGenerator gen)
         {
             // Finds the method end. Used to insert mod packet parsing
@@ -828,7 +854,7 @@ namespace SoG.Modding.Patches
         /// First insertion allows mod packets from server to be parsed.
         /// </summary>
         [HarmonyTranspiler]
-        [HarmonyPatch(typeof(Game1), "_Network_ParseServerMessage")]
+        [HarmonyPatch(nameof(Game1._Network_ParseServerMessage))]
         internal static CodeList NetworkParseServerMessageTranspiler(CodeList code, ILGenerator gen)
         {
             bool isMethodEnd(List<CodeInstruction> codeToSearch, int index)
@@ -884,7 +910,7 @@ namespace SoG.Modding.Patches
         }
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(Game1), "_Enemy_HandleDeath")]
+        [HarmonyPatch(nameof(Game1._Enemy_HandleDeath))]
         internal static void PostEnemyHandleDeath(Enemy xEnemy, AttackPhase xAttackPhaseThatHit)
         {
             foreach (Mod mod in Globals.API.Loader.Mods)
@@ -892,7 +918,7 @@ namespace SoG.Modding.Patches
         }
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(Game1), nameof(Game1._RogueLike_ActivatePin))]
+        [HarmonyPatch(nameof(Game1._RogueLike_ActivatePin))]
         internal static void PostActivatePin(PlayerView xView, PinCodex.PinType enEffect, bool bSend)
         {
             if (!enEffect.IsFromMod())
@@ -902,7 +928,7 @@ namespace SoG.Modding.Patches
         }
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(Game1), nameof(Game1._RogueLike_DeactivatePin))]
+        [HarmonyPatch(nameof(Game1._RogueLike_DeactivatePin))]
         internal static void PostDeactivatePin(PlayerView xView, PinCodex.PinType enEffect, bool bSend)
         {
             if (!enEffect.IsFromMod())
@@ -912,7 +938,7 @@ namespace SoG.Modding.Patches
         }
 
         [HarmonyTranspiler]
-        [HarmonyPatch(typeof(Game1), nameof(Game1._RogueLike_GetRandomPin))]
+        [HarmonyPatch(nameof(Game1._RogueLike_GetRandomPin))]
         internal static CodeList GetRandomPinTranspiler(CodeList code, ILGenerator gen)
         {
             List<CodeInstruction> codeList = code.ToList();
@@ -929,27 +955,28 @@ namespace SoG.Modding.Patches
         }
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(Game1), nameof(Game1._Menu_CharacterSelect_Render))]
+        [HarmonyPatch(nameof(Game1._Menu_CharacterSelect_Render))]
         internal static void PostCharacterSelectRender()
         {
             HelperCallbacks.MainMenuWorker.CheckStorySaveCompatibility();
         }
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(Game1), nameof(Game1._Menu_Render_TopMenu))]
+        [HarmonyPatch(nameof(Game1._Menu_Render_TopMenu))]
         internal static void PostTopMenuRender()
         {
             HelperCallbacks.MainMenuWorker.CheckArcadeSaveCompatiblity();
+
+            HelperCallbacks.MainMenuWorker.PostTopMenuRender();
         }
 
-        [HarmonyPrefix]
-        [HarmonyPatch(typeof(GlobalData.MainMenu), nameof(GlobalData.MainMenu.Transition))]
-        internal static void OnMainMenuTransition(GlobalData.MainMenu.MenuLevel enTarget)
+        [HarmonyPostfix]
+        [HarmonyPatch(nameof(Game1._Menu_TopMenu_Interface))]
+        internal static void PostTopMenuInterface()
         {
-            if (enTarget == GlobalData.MainMenu.MenuLevel.CharacterSelect)
-            {
-                HelperCallbacks.MainMenuWorker.AnalyzeStorySavesForCompatibility();
-            }
+            HelperCallbacks.MainMenuWorker.PostTopMenuInterface();
         }
+
+
     }
 }

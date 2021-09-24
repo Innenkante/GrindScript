@@ -1,6 +1,4 @@
-﻿using Microsoft.Xna.Framework.Content;
-
-namespace SoG.Modding.Core
+﻿namespace SoG.Modding
 {
     /// <summary>
     /// Used to process a chat command.

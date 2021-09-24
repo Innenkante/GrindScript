@@ -1,25 +1,22 @@
 ﻿using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
-using SoG.Modding.API;
-using SoG.Modding.Core;
-using SoG.Modding.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using SoG.Modding.ModUtils;
+using SoG.Modding.Utils;
 using System.IO;
+using SoG.Modding.LibraryEntries;
+using SoG.Modding.GrindScriptMod;
 
 namespace SoG.Modding.Patches
 {
-    public static class HelperCallbacks
+    internal static class HelperCallbacks
     {
         /// <summary>
         /// Initializes all mod content. Checks arcade save for compatibility.
         /// </summary>
-        internal static void DoModContentLoad()
+        public static void DoModContentLoad()
         {
             Globals.Logger.Debug("Loading Mod Content...");
 
@@ -44,7 +41,7 @@ namespace SoG.Modding.Patches
         /// <summary>
         /// Updates version so that we can tell that the game uses GrindScript.
         /// </summary>
-        internal static void UpdateVersionNumber()
+        public static void UpdateVersionNumber()
         {
             Globals.Logger.Debug("Updating Version Number...");
 
@@ -64,14 +61,14 @@ namespace SoG.Modding.Patches
         /// <summary>
         /// Executes additional code after a level's blueprint has been processed.
         /// </summary>
-        internal static void InLevelLoadDoStuff(Level.ZoneEnum type, bool staticOnly)
+        public static void InLevelLoadDoStuff(Level.ZoneEnum type, bool staticOnly)
         {
             // Modifying vanilla levels not supported yet
 
             if (!type.IsFromMod())
                 return;
 
-            ModLevelEntry entry = Globals.API.Loader.Library.Levels[type];
+            LevelEntry entry = Globals.API.Loader.Library.Levels[type];
 
             try
             {
@@ -86,7 +83,7 @@ namespace SoG.Modding.Patches
         /// <summary>
         /// Parses chat messages for custom commands.
         /// </summary>
-        internal static bool InChatParseCommand(string command, string message, int connection)
+        public static bool InChatParseCommand(string command, string message, int connection)
         {
             string[] words = command.Split(':');
             if (words.Length < 2)
@@ -95,11 +92,11 @@ namespace SoG.Modding.Patches
             string target = words[0];
             string trueCommand = command.Substring(command.IndexOf(':') + 1);
 
-            Mod mod = Globals.API.Loader.Mods.FirstOrDefault(x => x.Name == target);
+            Mod mod = Globals.API.Loader.Mods.FirstOrDefault(x => x.NameID == target);
 
             if (mod == null)
             {
-                CAS.AddChatMessage($"[{Globals.API.GrindScript.Name}] Unknown mod!");
+                CAS.AddChatMessage($"[{Globals.API.GrindScript.NameID}] Unknown mod!");
                 return true;
             }
 
@@ -107,7 +104,7 @@ namespace SoG.Modding.Patches
             {
                 if (trueCommand == "Help")
                 {
-                    InChatParseCommand($"{Globals.API.GrindScript.Name}:Help", target, connection);
+                    InChatParseCommand($"{Globals.API.GrindScript.NameID}:Help", target, connection);
                     return true;
                 }
 
@@ -124,7 +121,7 @@ namespace SoG.Modding.Patches
         /// <summary>
         /// For modded enemies, creates an enemy and runs its "constructor".
         /// </summary>
-        internal static Enemy InGetEnemyInstance(EnemyCodex.EnemyTypes gameID, Level.WorldRegion assetRegion)
+        public static Enemy InGetEnemyInstance(EnemyCodex.EnemyTypes gameID, Level.WorldRegion assetRegion)
         {
             if (!gameID.IsFromMod())
                 return new Enemy(); // Switch case will take care of vanilla enemies
@@ -144,7 +141,7 @@ namespace SoG.Modding.Patches
         /// Returns true if the enemy was made elite, false otherwise.
         /// The return value is used for subsequent vanilla code.
         /// </summary>
-        internal static bool InEnemyMakeElite(Enemy enemy)
+        public static bool InEnemyMakeElite(Enemy enemy)
         {
             if (!enemy.enType.IsFromMod())
                 return false;
@@ -165,7 +162,7 @@ namespace SoG.Modding.Patches
         /// <summary>
         /// Called when a server parses a client message. The message type's parser also receives the connection ID of the sender.
         /// </summary>
-        internal static void InNetworkParseClientMessage(InMessage msg, byte messageType)
+        public static void InNetworkParseClientMessage(InMessage msg, byte messageType)
         {
             if (messageType != NetUtils.ModPacketType)
             {
@@ -195,7 +192,7 @@ namespace SoG.Modding.Patches
         /// <summary>
         /// Called when a client parses a server message.
         /// </summary>
-        internal static void InNetworkParseServerMessage(InMessage msg, byte messageType)
+        public static void InNetworkParseServerMessage(InMessage msg, byte messageType)
         {
             if (messageType != NetUtils.ModPacketType)
             {
@@ -221,15 +218,15 @@ namespace SoG.Modding.Patches
             }
         }
 
-        internal static void GauntletEnemySpawned(Enemy enemy)
+        public static void GauntletEnemySpawned(Enemy enemy)
         {
             foreach (Mod mod in Globals.API.Loader.Mods)
                 mod.PostArcadeGauntletEnemySpawned(enemy);
         }
 
-        internal static void AddModdedPinsToList(List<PinCodex.PinType> list)
+        public static void AddModdedPinsToList(List<PinCodex.PinType> list)
         {
-            foreach (ModPinEntry entry in Globals.API.Loader.Library.Pins.Values)
+            foreach (PinEntry entry in Globals.API.Loader.Library.Pins.Values)
             {
                 if (entry.Config.ConditionToDrop == null || entry.Config.ConditionToDrop.Invoke())
                 {
@@ -244,15 +241,15 @@ namespace SoG.Modding.Patches
 
         public static SoundBank GetMusicSoundBank(string ID) => Globals.API.Loader.GetMusicSoundBank(ID);
 
-        internal static SpriteBatch SpriteBatch => Globals.SpriteBatch;
+        public static SpriteBatch SpriteBatch => Globals.SpriteBatch;
 
-        internal static TCMenuWorker TCMenuWorker { get; } = new TCMenuWorker();
+        public static TCMenuWorker TCMenuWorker { get; } = new TCMenuWorker();
 
-        internal static MainMenuWorker MainMenuWorker { get; } = new MainMenuWorker();
+        public static MainMenuWorker MainMenuWorker { get; } = new MainMenuWorker();
 
         #region Delicate Versioning and Mod List Comparison callbacks
 
-        internal static bool CheckModListCompatibility(bool didVersionCheckPass, InMessage msg)
+        public static bool CheckModListCompatibility(bool didVersionCheckPass, InMessage msg)
         {
             if (!didVersionCheckPass)
             {
@@ -286,7 +283,7 @@ namespace SoG.Modding.Patches
             {
                 for (int index = 0; index < clientModCount; index++)
                 {
-                    if (clientModNames[index] != serverMods[index].Name)
+                    if (clientModNames[index] != serverMods[index].NameID)
                     {
                         failReason = 2;
                         break;
@@ -307,7 +304,7 @@ namespace SoG.Modding.Patches
             Globals.Logger.Debug($"Mods on server: ");
             foreach (var mod in serverMods)
             {
-                Globals.Logger.Debug("    " + mod.Name);
+                Globals.Logger.Debug("    " + mod.NameID);
             }
 
             if (failReason == 1)
@@ -333,7 +330,7 @@ namespace SoG.Modding.Patches
             return failReason == 0;
         }
 
-        internal static void WriteModList(OutMessage msg)
+        public static void WriteModList(OutMessage msg)
         {
             Globals.Logger.Debug("Writing mod list!");
 
@@ -341,7 +338,7 @@ namespace SoG.Modding.Patches
 
             foreach (Mod mod in Globals.API.Loader.Mods)
             {
-                msg.Write(mod.Name);
+                msg.Write(mod.NameID);
             }
 
             Globals.Logger.Debug("Done with mod list!");

@@ -1,25 +1,24 @@
-﻿using System.Collections.Generic;
-using System;
+﻿using System;
 
-namespace SoG.Modding.Core
+namespace SoG.Modding
 {
-	using ItemID = ItemCodex.ItemTypes;
-	using ItemEffectID = EquipmentInfo.SpecialEffect;
-	using LevelID = Level.ZoneEnum;
-	using WorldID = Level.WorldRegion;
-	using PerkID = RogueLikeMode.Perks;
-	using CurseID = RogueLikeMode.TreatsCurses;
-	using EnemyID = EnemyCodex.EnemyTypes;
-	using QuestID = Quests.QuestCodex.QuestID;
-	using SpecialObjectiveID = Quests.Objective_SpecialObjective.UniqueID;
-	using SpellID = SpellCodex.SpellTypes;
-	using StatusEffectID = BaseStats.StatusEffectSource;
-	using PinID = PinCodex.PinType;
+    using ItemID = ItemCodex.ItemTypes;
+    using ItemEffectID = EquipmentInfo.SpecialEffect;
+    using LevelID = Level.ZoneEnum;
+    using WorldID = Level.WorldRegion;
+    using PerkID = RogueLikeMode.Perks;
+    using CurseID = RogueLikeMode.TreatsCurses;
+    using EnemyID = EnemyCodex.EnemyTypes;
+    using QuestID = Quests.QuestCodex.QuestID;
+    using SpecialObjectiveID = Quests.Objective_SpecialObjective.UniqueID;
+    using SpellID = SpellCodex.SpellTypes;
+    using StatusEffectID = BaseStats.StatusEffectSource;
+    using PinID = PinCodex.PinType;
 
-	/// <summary>
-	/// Bookkeeping class for IDs.
-	/// </summary>
-	internal class ID
+    /// <summary>
+    /// Bookkeeping class for IDs.
+    /// </summary>
+    internal class ID
 	{
         #region Ranges
 

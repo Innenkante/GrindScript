@@ -1,14 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Reflection.Emit;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using HarmonyLib;
-using SoG.Modding.Core;
-using SoG.Modding.Extensions;
-using SoG.Modding.ModUtils;
-using SoG.Modding.API;
+using SoG.Modding.Utils;
 
 namespace SoG.Modding.Patches
 {
@@ -24,8 +18,8 @@ namespace SoG.Modding.Patches
         /// <summary>
         /// Inserts custom curses in the Curse shop menu.
         /// </summary>
+        [HarmonyPatch(typeof(ShopMenu.TreatCurseMenu), nameof(ShopMenu.TreatCurseMenu.FillCurseList))]
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(ShopMenu.TreatCurseMenu), "FillCurseList")]
         internal static void PostFillCurseList(ShopMenu.TreatCurseMenu __instance)
         {
             foreach (var kvp in Globals.API.Loader.Library.Curses)
@@ -38,8 +32,8 @@ namespace SoG.Modding.Patches
         /// <summary>
         /// Inserts custom curses in the Treat shop menu.
         /// </summary>
+        [HarmonyPatch(typeof(ShopMenu.TreatCurseMenu), nameof(ShopMenu.TreatCurseMenu.FillTreatList))]
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(ShopMenu.TreatCurseMenu), "FillTreatList")]
         internal static void PostFillTreatList(ShopMenu.TreatCurseMenu __instance)
         {
             foreach (var kvp in Globals.API.Loader.Library.Curses)
@@ -52,8 +46,8 @@ namespace SoG.Modding.Patches
         /// <summary>
         /// Inserts custom perks in the Perk shop menu.
         /// </summary>
+        [HarmonyPatch(typeof(RogueLikeMode.PerkInfo), nameof(RogueLikeMode.PerkInfo.Init))]
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(RogueLikeMode.PerkInfo), "Init")]
         internal static void PostPerkListInit()
         {
             foreach (var perk in Globals.API.Loader.Library.Perks.Values)
@@ -61,7 +55,7 @@ namespace SoG.Modding.Patches
         }
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(Bagmen.OpenGatesAtRoomClear), "OpenBlockades")]
+        [HarmonyPatch(typeof(Bagmen.OpenGatesAtRoomClear), nameof(Bagmen.OpenGatesAtRoomClear.OpenBlockades))]
         internal static void PostArcadeRoomEnd()
         {
             foreach (Mod mod in Globals.API.Loader.Mods)
@@ -69,7 +63,7 @@ namespace SoG.Modding.Patches
         }
 
         [HarmonyTranspiler]
-        [HarmonyPatch(typeof(Watchers.ArcadeModeGauntletSpawnWatcher), "Update")]
+        [HarmonyPatch(typeof(Watchers.ArcadeModeGauntletSpawnWatcher), nameof(Watchers.ArcadeModeGauntletSpawnWatcher.Update))]
         internal static CodeList GauntletSpawnWatcherUpdateTranspiler(CodeList code, ILGenerator gen)
         {
             List<CodeInstruction> codeList = code.ToList();

@@ -1,15 +1,9 @@
-﻿using Microsoft.Xna.Framework.Content;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using SoG.Modding.ModUtils;
-using SoG.Modding.API;
+﻿using System.Collections.Generic;
+using SoG.Modding.Utils;
 using System.Reflection;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace SoG.Modding.Core
+namespace SoG.Modding
 {
     /// <summary>
     /// Provides a common access point to default objects.
@@ -22,21 +16,21 @@ namespace SoG.Modding.Core
         public static Game1 Game { get; internal set; }
 
         /// <summary>
-        /// The game's vanilla version.
+        /// The game's initial (vanilla) version.
         /// </summary>
         public static string GameVanillaVersion { get; internal set; }
 
         /// <summary>
-        /// The game's vanilla version.
+        /// The game's modded version, short form.
         /// </summary>
         public static string GameShortVersion => Game.sVersionNumberOnly;
 
         /// <summary>
-        /// The game's vanilla version.
+        /// The game's modded version, long form.
         /// </summary>
         public static string GameLongVersion => typeof(Game1).GetField("sVersion", BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(Game) as string;
 
-        public static SpriteBatch SpriteBatch => typeof(Game1).GetField("spriteBatch", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(Globals.Game) as SpriteBatch;
+        public static SpriteBatch SpriteBatch => typeof(Game1).GetField("spriteBatch", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(Game) as SpriteBatch;
 
         /// <summary>
         /// Changes the game version between the vanilla version and modded version.

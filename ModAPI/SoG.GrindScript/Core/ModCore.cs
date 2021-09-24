@@ -1,6 +1,6 @@
 ﻿using HarmonyLib;
-using SoG.Modding.CoreScript;
-using SoG.Modding.ModUtils;
+using SoG.Modding.GrindScriptMod;
+using SoG.Modding.Utils;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -8,7 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 
-namespace SoG.Modding.Core
+namespace SoG.Modding
 {
     /// <summary>
     /// Provides access to the objects used for modding, and some miscellaneous functionality.
@@ -53,8 +53,8 @@ namespace SoG.Modding.Core
                 throw new InvalidOperationException("Couldn't find Secrets of Grindea.exe in current AppDomain!");
             }
 
-            Utils.TryCreateDirectory("Mods");
-            Utils.TryCreateDirectory("Content/ModContent");
+            Utils.ModUtils.TryCreateDirectory("Mods");
+            Utils.ModUtils.TryCreateDirectory("Content/ModContent");
 
             _harmony = new Harmony("GrindScriptPatcher");
 

@@ -1,9 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
-using SoG.Modding.API;
-using SoG.Modding.API.Configs;
-using SoG.Modding.Core;
 using SoG.Modding.Extensions;
-using SoG.Modding.ModUtils;
+using SoG.Modding.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -11,6 +8,8 @@ using System.IO;
 namespace SoG.FeatureExample
 {
     using Quests;
+    using SoG.Modding;
+    using SoG.Modding.Configs;
     using CancelOptions = Animation.CancelOptions;
     using Criteria = AnimInsCriteria.Criteria;
     using EventType = AnimInsEvent.EventType;
@@ -41,6 +40,8 @@ namespace SoG.FeatureExample
         string audioDestiny = "";
         string audioClash = "";
         string audioDeafSilence = "";
+
+        public override string NameID => base.NameID;
 
         public override void Load()
         {
@@ -258,7 +259,8 @@ namespace SoG.FeatureExample
                 },
             };
 
-            CreateItems(ItemLibrary.Values);
+            foreach (var item in ItemLibrary)
+                CreateItem(item.Value);
 
             modShield = GetItemType(this, "_Mod_Item0001");
             modAccessory = GetItemType(this, "_Mod_Item0002");
@@ -396,7 +398,10 @@ namespace SoG.FeatureExample
                 },
             };
 
-            CreateCommands(parsers);
+            foreach (var command in parsers)
+            {
+                CreateCommand(command.Key, command.Value);
+            }
 
             Logger.Info("Commands set up successfully!");
         }

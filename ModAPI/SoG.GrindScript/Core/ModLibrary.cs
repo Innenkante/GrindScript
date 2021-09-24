@@ -1,32 +1,32 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using SoG.Modding.API;
 
-namespace SoG.Modding.Core
+namespace SoG.Modding
 {
-	using Quests;
+    using Quests;
+    using SoG.Modding.LibraryEntries;
 
-	// I wanted to make something fancy that auto - updates when content is added
-	// but just maintaining both libraries is probably better
+    // I wanted to make something fancy that auto - updates when content is added
+    // but just maintaining both libraries is probably better
 
     /// <summary>
     /// Holds all mod-relevant content. Usually composed of PersistentEntries.
     /// </summary>
-	internal class ModLibrary
+    internal class ModLibrary
 	{
-		public Dictionary<ItemCodex.ItemTypes, ModItemEntry> Items { get; } = new Dictionary<ItemCodex.ItemTypes, ModItemEntry>();
+		public Dictionary<ItemCodex.ItemTypes, ItemEntry> Items { get; } = new Dictionary<ItemCodex.ItemTypes, ItemEntry>();
 
-		public Dictionary<RogueLikeMode.TreatsCurses, ModCurseEntry> Curses { get; } = new Dictionary<RogueLikeMode.TreatsCurses, ModCurseEntry>();
+		public Dictionary<RogueLikeMode.TreatsCurses, CurseEntry> Curses { get; } = new Dictionary<RogueLikeMode.TreatsCurses, CurseEntry>();
 
-		public Dictionary<RogueLikeMode.Perks, ModPerkEntry> Perks { get; } = new Dictionary<RogueLikeMode.Perks, ModPerkEntry>();
+		public Dictionary<RogueLikeMode.Perks, PerkEntry> Perks { get; } = new Dictionary<RogueLikeMode.Perks, PerkEntry>();
 
-		public Dictionary<EnemyCodex.EnemyTypes, ModEnemyEntry> Enemies { get; } = new Dictionary<EnemyCodex.EnemyTypes, ModEnemyEntry>();
+		public Dictionary<EnemyCodex.EnemyTypes, EnemyEntry> Enemies { get; } = new Dictionary<EnemyCodex.EnemyTypes, EnemyEntry>();
 		
-		public Dictionary<QuestCodex.QuestID, ModQuestEntry> Quests { get; } = new Dictionary<QuestCodex.QuestID, ModQuestEntry>();
+		public Dictionary<QuestCodex.QuestID, QuestEntry> Quests { get; } = new Dictionary<QuestCodex.QuestID, QuestEntry>();
 
-		public Dictionary<SpellCodex.SpellTypes, ModSpellEntry> Spells { get; } = new Dictionary<SpellCodex.SpellTypes, ModSpellEntry>();
+		public Dictionary<SpellCodex.SpellTypes, SpellEntry> Spells { get; } = new Dictionary<SpellCodex.SpellTypes, SpellEntry>();
 
-		public Dictionary<PinCodex.PinType, ModPinEntry> Pins { get; } = new Dictionary<PinCodex.PinType, ModPinEntry>();
+		public Dictionary<PinCodex.PinType, PinEntry> Pins { get; } = new Dictionary<PinCodex.PinType, PinEntry>();
 
 		/// <summary>
 		/// Returns a new ModLibrary which holds only objects owned by the given mod.
@@ -64,8 +64,8 @@ namespace SoG.Modding.Core
 
 		public Dictionary<string, string> VanillaMusicRedirects { get; } = new Dictionary<string, string>();
 
-		public Dictionary<Level.ZoneEnum, ModLevelEntry> Levels { get; } = new Dictionary<Level.ZoneEnum, ModLevelEntry>();
+		public Dictionary<Level.ZoneEnum, LevelEntry> Levels { get; } = new Dictionary<Level.ZoneEnum, LevelEntry>();
 
-		public Dictionary<BaseStats.StatusEffectSource, ModStatusEffectEntry> StatusEffects { get; } = new Dictionary<BaseStats.StatusEffectSource, ModStatusEffectEntry>();
+		public Dictionary<BaseStats.StatusEffectSource, StatusEffectEntry> StatusEffects { get; } = new Dictionary<BaseStats.StatusEffectSource, StatusEffectEntry>();
 	}
 }

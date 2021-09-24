@@ -1,25 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Reflection;
 using System.Reflection.Emit;
-using System.Text;
-using System.Threading.Tasks;
 using HarmonyLib;
 using LevelLoading;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
-using SoG.Modding.API.Configs;
-using SoG.Modding.Core;
 using SoG.Modding.Extensions;
-using SoG.Modding.ModUtils;
+using SoG.Modding.Utils;
 
 namespace SoG.Modding.Patches
 {
-    using CodeList = System.Collections.Generic.IEnumerable<HarmonyLib.CodeInstruction>;
+    using Quests;
+    using SoG.Modding.Configs;
+    using SoG.Modding.LibraryEntries;
+    using CodeList = IEnumerable<CodeInstruction>;
 
     /// <summary>
     /// Contains miscellaneous patches.
@@ -28,7 +24,7 @@ namespace SoG.Modding.Patches
     internal static class MiscPatches
     {
         [HarmonyPrefix]
-        [HarmonyPatch(typeof(LevelBlueprint), "GetBlueprint")]
+        [HarmonyPatch(typeof(LevelBlueprint), nameof(LevelBlueprint.GetBlueprint))]
         internal static bool OnGetLevelBlueprint(ref LevelBlueprint __result, Level.ZoneEnum enZoneToGet)
         {
             if (!enZoneToGet.IsFromMod())
@@ -38,7 +34,7 @@ namespace SoG.Modding.Patches
 
             bprint.CheckForConsistency();
 
-            ModLevelEntry entry = Globals.API.Loader.Library.Levels[enZoneToGet];
+            LevelEntry entry = Globals.API.Loader.Library.Levels[enZoneToGet];
 
             try
             {
@@ -77,7 +73,7 @@ namespace SoG.Modding.Patches
         }
 
         [HarmonyPrefix]
-        [HarmonyPatch(typeof(EnemyCodex), "GetEnemyDescription")]
+        [HarmonyPatch(typeof(EnemyCodex), nameof(EnemyCodex.GetEnemyDescription))]
         internal static bool OnGetEnemyDescription(ref EnemyDescription __result, EnemyCodex.EnemyTypes enType)
         {
             if (!enType.IsFromMod())
@@ -93,7 +89,7 @@ namespace SoG.Modding.Patches
         /// (Note that our IDs will always trigger the condition for "CacuteForward" version to be called)
         /// </summary>
         [HarmonyTranspiler]
-        [HarmonyPatch(typeof(EnemyCodex), "GetEnemyInstance_CacuteForward")]
+        [HarmonyPatch(typeof(EnemyCodex), nameof(EnemyCodex.GetEnemyInstance_CacuteForward))]
         internal static CodeList GetEnemyInstanceTranspiler(CodeList code, ILGenerator gen)
         {
             // Assert to check if underlying method hasn't shifted heavily
@@ -112,7 +108,7 @@ namespace SoG.Modding.Patches
         }
 
         [HarmonyPrefix]
-        [HarmonyPatch(typeof(CardCodex), "GetIllustrationPath")]
+        [HarmonyPatch(typeof(CardCodex), nameof(CardCodex.GetIllustrationPath))]
         public static bool OnGetIllustrationPatch(ref string __result, EnemyCodex.EnemyTypes enEnemy)
         {
             if (!enEnemy.IsFromMod())
@@ -126,7 +122,7 @@ namespace SoG.Modding.Patches
         }
 
         [HarmonyPrefix]
-        [HarmonyPatch(typeof(EnemyCodex), "GetEnemyDefaultAnimation")]
+        [HarmonyPatch(typeof(EnemyCodex), nameof(EnemyCodex.GetEnemyDefaultAnimation))]
         public static bool OnGetEnemyDefaultAnimation(ref Animation __result, EnemyCodex.EnemyTypes enType, ContentManager Content)
         {
             if (!enType.IsFromMod())
@@ -145,7 +141,7 @@ namespace SoG.Modding.Patches
         }
 
         [HarmonyPrefix]
-        [HarmonyPatch(typeof(EnemyCodex), "GetEnemyDisplayIcon")]
+        [HarmonyPatch(typeof(EnemyCodex), nameof(EnemyCodex.GetEnemyDisplayIcon))]
         public static bool OnGetEnemyDisplayIcon(ref Texture2D __result, EnemyCodex.EnemyTypes enType, ContentManager Content)
         {
             if (!enType.IsFromMod())
@@ -164,7 +160,7 @@ namespace SoG.Modding.Patches
         }
 
         [HarmonyPrefix]
-        [HarmonyPatch(typeof(EnemyCodex), "GetEnemyLocationPicture")]
+        [HarmonyPatch(typeof(EnemyCodex), nameof(EnemyCodex.GetEnemyLocationPicture))]
         public static bool OnGetEnemyLocationPicture(ref Texture2D __result, EnemyCodex.EnemyTypes enType, ContentManager Content)
         {
             if (!enType.IsFromMod())
@@ -183,8 +179,8 @@ namespace SoG.Modding.Patches
         }
 
         [HarmonyPrefix]
-        [HarmonyPatch(typeof(Quests.QuestCodex), "GetQuestDescription")]
-        public static bool OnGetQuestDescription(ref Quests.QuestDescription __result, Quests.QuestCodex.QuestID p_enID)
+        [HarmonyPatch(typeof(QuestCodex), nameof(Quests.QuestCodex.GetQuestDescription))]
+        public static bool OnGetQuestDescription(ref QuestDescription __result, QuestCodex.QuestID p_enID)
         {
             if (!p_enID.IsFromMod())
             {
@@ -197,8 +193,8 @@ namespace SoG.Modding.Patches
         }
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(Quests.QuestCodex), "GetQuestInstance")]
-        public static void PostGetQuestInstance(ref Quests.Quest __result, Quests.QuestCodex.QuestID p_enID)
+        [HarmonyPatch(typeof(QuestCodex), nameof(Quests.QuestCodex.GetQuestInstance))]
+        public static void PostGetQuestInstance(ref Quest __result, QuestCodex.QuestID p_enID)
         {
             if (!p_enID.IsFromMod())
             {
@@ -308,7 +304,7 @@ namespace SoG.Modding.Patches
             }
             else
             {
-                Utils.TryLoadTex(Globals.API.Loader.Library.StatusEffects[en].Config.TexturePath, Globals.Game.Content, out __result);
+                Utils.ModUtils.TryLoadTex(Globals.API.Loader.Library.StatusEffects[en].Config.TexturePath, Globals.Game.Content, out __result);
             }
 
         }
@@ -329,7 +325,7 @@ namespace SoG.Modding.Patches
                 "Test5"
             };
 
-            ModPinEntry entry = Globals.API.Loader.Library.Pins[enType];
+            PinEntry entry = Globals.API.Loader.Library.Pins[enType];
             PinConfig config = entry.Config;
 
             __result = new PinInfo(
@@ -344,6 +340,16 @@ namespace SoG.Modding.Patches
                 FontManager.GetFontByCategory("SmallTitle", FontManager.FontType.Bold8Spacing1),
                 FontManager.GetFontByCategory("InMenuDescription", FontManager.FontType.Reg7)
                 );
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(GlobalData.MainMenu), nameof(GlobalData.MainMenu.Transition))]
+        internal static void OnMainMenuTransition(GlobalData.MainMenu.MenuLevel enTarget)
+        {
+            if (enTarget == GlobalData.MainMenu.MenuLevel.CharacterSelect)
+            {
+                HelperCallbacks.MainMenuWorker.AnalyzeStorySavesForCompatibility();
+            }
         }
     }
 }

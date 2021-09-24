@@ -1,10 +1,5 @@
 ﻿using Microsoft.Xna.Framework.Content;
-using SoG.Modding.ModUtils;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SoG.Modding.Extensions
 {
@@ -72,13 +67,13 @@ namespace SoG.Modding.Extensions
 
         public static Animation LoadTexture(this Animation anim, ContentManager manager, string path)
         {
-            Utils.TryLoadTex(path, manager, out anim.txTexture);
+            Utils.ModUtils.TryLoadTex(path, manager, out anim.txTexture);
             return anim;
         }
 
         public static Animation LoadTwilightTexture(this Animation anim, ContentManager manager, string path)
         {
-            Utils.TryLoadTex(path, manager, out anim.txTwilightTexture);
+            Utils.ModUtils.TryLoadTex(path, manager, out anim.txTwilightTexture);
             return anim;
         }
 

@@ -2,14 +2,14 @@
 using System.IO;
 using System.Linq;
 using System;
-using SoG.Modding.API;
 
-namespace SoG.Modding.Core
+namespace SoG.Modding
 {
     // Currently this class only houses internals
     // Later on, we can allow each mod to store some flags or something
 
     using Quests;
+    using SoG.Modding.LibraryEntries;
 
     public class ModSaving
     {
@@ -143,6 +143,11 @@ namespace SoG.Modding.Core
 
         #region Helper write and read logic
 
+        private void ReadModMetaData()
+        {
+
+        }
+
         private void LoadGrindScriptFile(BinaryReader file, params ModDataBlock[] blocks)
         {
             HashSet<ModDataBlock> blockSet = new HashSet<ModDataBlock>(blocks);
@@ -175,7 +180,7 @@ namespace SoG.Modding.Core
 
                 int blockCount = file.ReadInt32();
 
-                Mod mod = _mods.Mods.FirstOrDefault(x => x.Name == modName);
+                Mod mod = _mods.Mods.FirstOrDefault(x => x.NameID == modName);
 
                 if (mod == null)
                 {
@@ -247,7 +252,7 @@ namespace SoG.Modding.Core
             file.Write(_mods.Mods.Count);
             foreach (Mod mod in _mods.Mods)
             {
-                file.Write(mod.Name);
+                file.Write(mod.NameID);
 
                 file.Write(blockSet.Count);
 
