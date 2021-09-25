@@ -18,5 +18,15 @@ namespace SoG.Modding.LibraryEntries
             GameID = gameID;
             ModID = modID;
         }
+
+        public void Initialize()
+        {
+            PinCodex.SortedPinEntries.Add(GameID);
+        }
+
+        public void Cleanup()
+        {
+            PinCodex.SortedPinEntries.Remove(GameID);
+        }
     }
 }

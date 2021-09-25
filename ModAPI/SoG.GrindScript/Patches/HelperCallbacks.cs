@@ -18,22 +18,7 @@ namespace SoG.Modding.Patches
         /// </summary>
         public static void DoModContentLoad()
         {
-            Globals.Logger.Debug("Loading Mod Content...");
-
-            foreach (Mod mod in Globals.API.Loader.Mods)
-            {
-                Globals.API.Loader.CallWithContext(mod, x =>
-                {
-                    try
-                    {
-                        x.Load();
-                    }
-                    catch (Exception e)
-                    {
-                        Globals.Logger.Error($"Mod {mod.GetType().Name} threw an exception during mod content loading: {e.Message}");
-                    }
-                });
-            }
+            Globals.ModManager.Loader.Reload();
 
             MainMenuWorker.AnalyzeArcadeSavesForCompatibility();
         }
@@ -68,7 +53,7 @@ namespace SoG.Modding.Patches
             if (!type.IsFromMod())
                 return;
 
-            LevelEntry entry = Globals.API.Loader.Library.Levels[type];
+            LevelEntry entry = Globals.ModManager.Library.Levels[type];
 
             try
             {
@@ -92,11 +77,11 @@ namespace SoG.Modding.Patches
             string target = words[0];
             string trueCommand = command.Substring(command.IndexOf(':') + 1);
 
-            Mod mod = Globals.API.Loader.Mods.FirstOrDefault(x => x.NameID == target);
+            Mod mod = Globals.ModManager.Mods.FirstOrDefault(x => x.NameID == target);
 
             if (mod == null)
             {
-                CAS.AddChatMessage($"[{Globals.API.GrindScript.NameID}] Unknown mod!");
+                CAS.AddChatMessage($"[{Globals.ModManager.GrindScript.NameID}] Unknown mod!");
                 return true;
             }
 
@@ -104,7 +89,7 @@ namespace SoG.Modding.Patches
             {
                 if (trueCommand == "Help")
                 {
-                    InChatParseCommand($"{Globals.API.GrindScript.NameID}:Help", target, connection);
+                    InChatParseCommand($"{Globals.ModManager.GrindScript.NameID}:Help", target, connection);
                     return true;
                 }
 
@@ -130,7 +115,7 @@ namespace SoG.Modding.Patches
 
             enemy.xRenderComponent.xOwnerObject = enemy;
 
-            Globals.API.Loader.Library.Enemies[gameID].Config.Constructor?.Invoke(enemy);
+            Globals.ModManager.Library.Enemies[gameID].Config.Constructor?.Invoke(enemy);
 
             return enemy;
         }
@@ -146,7 +131,7 @@ namespace SoG.Modding.Patches
             if (!enemy.enType.IsFromMod())
                 return false;
 
-            var eliteScaler = Globals.API.Loader.Library.Enemies[enemy.enType].Config.EliteScaler;
+            var eliteScaler = Globals.ModManager.Library.Enemies[enemy.enType].Config.EliteScaler;
 
             if (eliteScaler != null)
             {
@@ -220,13 +205,13 @@ namespace SoG.Modding.Patches
 
         public static void GauntletEnemySpawned(Enemy enemy)
         {
-            foreach (Mod mod in Globals.API.Loader.Mods)
+            foreach (Mod mod in Globals.ModManager.Mods)
                 mod.PostArcadeGauntletEnemySpawned(enemy);
         }
 
         public static void AddModdedPinsToList(List<PinCodex.PinType> list)
         {
-            foreach (PinEntry entry in Globals.API.Loader.Library.Pins.Values)
+            foreach (PinEntry entry in Globals.ModManager.Library.Pins.Values)
             {
                 if (entry.Config.ConditionToDrop == null || entry.Config.ConditionToDrop.Invoke())
                 {
@@ -235,11 +220,11 @@ namespace SoG.Modding.Patches
             }
         }
 
-        public static string GetCueName(string ID) => Globals.API.Loader.GetCueName(ID);
+        public static string GetCueName(string ID) => Globals.ModManager.GetCueName(ID);
 
-        public static SoundBank GetEffectSoundBank(string ID) => Globals.API.Loader.GetEffectSoundBank(ID);
+        public static SoundBank GetEffectSoundBank(string ID) => Globals.ModManager.GetEffectSoundBank(ID);
 
-        public static SoundBank GetMusicSoundBank(string ID) => Globals.API.Loader.GetMusicSoundBank(ID);
+        public static SoundBank GetMusicSoundBank(string ID) => Globals.ModManager.GetMusicSoundBank(ID);
 
         public static SpriteBatch SpriteBatch => Globals.SpriteBatch;
 
@@ -269,7 +254,7 @@ namespace SoG.Modding.Patches
             _ = msg.ReadByte(); // Game mode byte skipped
 
             List<string> clientModNames = new List<string>();
-            var serverMods = Globals.API.Loader.Mods;
+            var serverMods = Globals.ModManager.Mods;
 
             int clientModCount = msg.ReadInt32();
             int serverModCount = serverMods.Count;
@@ -334,9 +319,9 @@ namespace SoG.Modding.Patches
         {
             Globals.Logger.Debug("Writing mod list!");
 
-            msg.Write(Globals.API.Loader.Mods.Count);
+            msg.Write(Globals.ModManager.Mods.Count);
 
-            foreach (Mod mod in Globals.API.Loader.Mods)
+            foreach (Mod mod in Globals.ModManager.Mods)
             {
                 msg.Write(mod.NameID);
             }

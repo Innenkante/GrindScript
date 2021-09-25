@@ -1,4 +1,5 @@
 ﻿using SoG.Modding.Configs;
+using SoG.Modding.Utils;
 
 namespace SoG.Modding.LibraryEntries
 {
@@ -25,6 +26,22 @@ namespace SoG.Modding.LibraryEntries
             Owner = owner;
             GameID = gameID;
             ModID = modID;
+        }
+
+        public void Initialize()
+        {
+            Globals.Game.EXT_AddMiscText("Menus", NameHandle, Config.Name);
+            Globals.Game.EXT_AddMiscText("Menus", DescriptionHandle, Config.Description);
+
+            // Texture on demand
+        }
+
+        public void Cleanup()
+        {
+            Globals.Game.EXT_RemoveMiscText("Menus", NameHandle);
+            Globals.Game.EXT_RemoveMiscText("Menus", DescriptionHandle);
+
+            ContentUtils.ForceUnloadAsset(Globals.Game.Content, Config.TexturePath);
         }
     }
 }

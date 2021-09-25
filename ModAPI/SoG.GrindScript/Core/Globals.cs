@@ -38,7 +38,7 @@ namespace SoG.Modding
         /// </summary>
         internal static void SetVersionTypeAsModded(bool modded)
         {
-            Globals.Game.sVersionNumberOnly = GameVanillaVersion + (modded ? "-modded" : "");
+            Game.sVersionNumberOnly = GameVanillaVersion + (modded ? "-modded" : "");
         }
 
         /// <summary>
@@ -46,24 +46,18 @@ namespace SoG.Modding
         /// </summary>
         internal static ILogger Logger { get; set; }
 
-        private static ModCore _API = null;
+        private static ModManager _modManager = null;
 
-        internal static ModCore API
+        internal static ModManager ModManager
         {
             get
             {
-                return _API;
+                return _modManager;
             }
             set
             {
-                _API = value;
-                Library = _API.Loader.Library;
-                Mods = _API.Loader.Mods;
+                _modManager = value;
             }
         }
-
-        internal static ModLibrary Library { get; private set; }
-
-        internal static List<Mod> Mods { get; private set; }
     }
 }

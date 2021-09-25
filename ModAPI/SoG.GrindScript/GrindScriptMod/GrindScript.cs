@@ -29,11 +29,11 @@ namespace SoG.Modding.GrindScriptMod
         {
             _colliderRC = new ColliderRC();
 
-            Utils.ModUtils.TryLoadTex(Path.Combine(AssetPath, "NullTexGS"), Globals.Game.Content, out Texture2D tex);
+            ModUtils.TryLoadTex(Path.Combine(AssetPath, "NullTexGS"), Globals.Game.Content, out Texture2D tex);
 
             ErrorTexture = tex;
 
-            Utils.ModUtils.TryLoadTex(Path.Combine(AssetPath, "ModMenu"), Globals.Game.Content, out tex);
+            ModUtils.TryLoadTex(Path.Combine(AssetPath, "ModMenu"), Globals.Game.Content, out tex);
 
             ModMenuText = tex;
 
@@ -52,6 +52,17 @@ namespace SoG.Modding.GrindScriptMod
             {
                 CreateCommand(command.Key, command.Value);
             }
+        }
+
+        public override void Unload()
+        {
+            _colliderRC = null;
+
+            ContentUtils.ForceUnloadAsset(Globals.Game.Content, Path.Combine(AssetPath, "NullTexGS"));
+            ErrorTexture = null;
+
+            ContentUtils.ForceUnloadAsset(Globals.Game.Content, Path.Combine(AssetPath, "ModMenu"));
+            ModMenuText = null;
         }
 
         private ColliderRC _colliderRC;
@@ -73,7 +84,7 @@ namespace SoG.Modding.GrindScriptMod
         {
             Dictionary<string, CommandParser> commandList;
 
-            string[] args = Utils.ModUtils.GetArgs(message);
+            string[] args = ModUtils.GetArgs(message);
 
             if (args.Length == 0)
             {
@@ -81,7 +92,7 @@ namespace SoG.Modding.GrindScriptMod
             }
             else
             {
-                Mod mod = Globals.API.Loader.Mods.FirstOrDefault(x => x.NameID == args[0]);
+                Mod mod = Globals.ModManager.Mods.FirstOrDefault(x => x.NameID == args[0]);
 
                 if (mod == null)
                 {
@@ -114,11 +125,11 @@ namespace SoG.Modding.GrindScriptMod
 
         private void ModList(string message, int connection)
         {
-            CAS.AddChatMessage($"[{NameID}] Mod Count: {Globals.API.Loader.Mods.Count}");
+            CAS.AddChatMessage($"[{NameID}] Mod Count: {Globals.ModManager.Mods.Count}");
 
             var messages = new List<string>();
             var concated = "";
-            foreach (var mod in Globals.API.Loader.Mods)
+            foreach (var mod in Globals.ModManager.Mods)
             {
                 string name = mod.NameID;
                 if (concated.Length + name.Length > 40)
@@ -144,7 +155,7 @@ namespace SoG.Modding.GrindScriptMod
 
         private void ModTotals(string message, int connection)
         {
-            string[] args = Utils.ModUtils.GetArgs(message);
+            string[] args = ModUtils.GetArgs(message);
             if (args.Length != 1)
             {
                 CAS.AddChatMessage($"[{NameID}] Usage: /{NameID}:{nameof(ModTotals)} <unique type>");
@@ -154,14 +165,14 @@ namespace SoG.Modding.GrindScriptMod
             switch (args[0])
             {
                 case "Items":
-                    CAS.AddChatMessage($"[{NameID}] Items defined: " + Globals.API.Loader.Library.Items.Count);
+                    CAS.AddChatMessage($"[{NameID}] Items defined: " + Globals.ModManager.Library.Items.Count);
                     break;
                 case "Perks":
-                    CAS.AddChatMessage($"[{NameID}] Perks defined: " + Globals.API.Loader.Library.Perks.Count);
+                    CAS.AddChatMessage($"[{NameID}] Perks defined: " + Globals.ModManager.Library.Perks.Count);
                     break;
                 case "Treats":
                 case "Curses":
-                    CAS.AddChatMessage($"[{NameID}] Treats and Curses defined: " + Globals.API.Loader.Library.Curses.Count);
+                    CAS.AddChatMessage($"[{NameID}] Treats and Curses defined: " + Globals.ModManager.Library.Curses.Count);
                     break;
                 default:
                     CAS.AddChatMessage($"[{NameID}] Usage: /{NameID}:{nameof(ModTotals)} <unique type>");

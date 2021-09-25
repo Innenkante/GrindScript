@@ -46,9 +46,9 @@ namespace SoG.Modding.Configs
 
         public Func<ContentManager, Animation> DefaultAnimation { get; set; } = null;
 
-        public Func<ContentManager, Texture2D> DisplayBackground { get; set; } = null;
+        public string DisplayBackgroundPath { get; set; } = null;
 
-        public Func<ContentManager, Texture2D> DisplayIcon { get; set; } = null;
+        public string DisplayIconPath { get; set; } = null;
 
         public Vector2 ApproximateCenter { get; set; } = new Vector2(0, -8);
 

@@ -66,7 +66,7 @@ namespace SoG.Modding.Utils
             int modIndex = msg.ReadInt32();
 
             packetID = msg.ReadUInt16();
-            mod = Globals.API.Loader.Mods[modIndex];
+            mod = Globals.ModManager.Mods[modIndex];
         }
     }
 }

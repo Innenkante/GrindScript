@@ -19,22 +19,20 @@ namespace SoG.Modding
     /// All mods need to implement the LoadContent method. GrindScript will call this method when modded content should be loaded. <para/>
     /// BaseScript has a few callbacks that can be overriden to add extra behavior to the game for certain events.
     /// </summary>
-    public abstract partial class Mod
+    public abstract class Mod
     {
         public class ModPacket
         {
             /// <summary>
-            /// A delegate used to parse client messages on the server.
-            /// The BinaryReader can be used to read the data written by the mod.
-            /// The identifier can be used to retrieve the PlayerView.
+            /// Called when the server receives the mod packet from clients.
+            /// The connection ID can be used to retrieve the client that sent the message.
             /// </summary>
-            public Action<BinaryReader, long> ParseOnServer { get; set; }
+            public ClientMessageParser ParseOnServer { get; set; }
 
             /// <summary>
-            /// A delegate used to parse server messages on the client.
-            /// The BinaryReader can be used to read the data written by the mod.
+            /// Called when the client receives the mod packet from servers.
             /// </summary>
-            public Action<BinaryReader> ParseOnClient { get; set; }
+            public ServerMessageParser ParseOnClient { get; set; }
         }
 
         internal class ModAudio
@@ -54,24 +52,18 @@ namespace SoG.Modding
             public List<string> IndexedMusicCues = new List<string>();
 
             public List<string> IndexedMusicBanks = new List<string>();
+
+            public void Cleanup()
+            {
+                EffectsSB?.Dispose();
+
+                EffectsWB?.Dispose();
+
+                MusicSB?.Dispose();
+
+                UniversalWB?.Dispose();
+            }
         }
-
-        /// <summary>
-        /// The name of the mod, used as an identifier.
-        /// The default value is GetType().Name.
-        /// This should be unique, as mods with the same identifier will cause conflicts.
-        /// </summary>
-        public virtual string NameID => GetType().Name;
-
-        /// <summary>
-        /// The default Logger for this mod.
-        /// </summary>
-        public ILogger Logger { get; protected set; }
-
-        /// <summary>
-        /// The default ContentManager for this mod.
-        /// </summary>
-        public ContentManager Content { get; internal set; }
 
         public Mod()
         {
@@ -88,18 +80,34 @@ namespace SoG.Modding
         }
 
         /// <summary>
+        /// The name of the mod. This acts as an identifier, and should be unique between mods.
+        /// The default value is GetType().Name.
+        /// </summary>
+        public virtual string NameID => GetType().Name;
+
+        /// <summary>
+        /// The default Logger for this mod.
+        /// </summary>
+        public ILogger Logger { get; protected set; }
+
+        /// <summary>
+        /// The default ContentManager for this mod.
+        /// </summary>
+        public ContentManager Content { get; internal set; }
+
+        /// <summary>
         /// The path to the mod's assets, relative to the "ModContent" folder.
-        /// By default, it is equal to "ModContent/{ShortName}".
+        /// The default value is "ModContent/{NameID}".
         /// </summary>
         public string AssetPath => Path.Combine("ModContent", NameID) + "/";
 
         /// <summary>
         /// A reference to the registry, for ease of use.
         /// </summary>
-        internal ModLoader Registry { get; set; }
+        internal ModManager Manager { get; set; }
 
         /// <summary>
-        /// The index of the mod in load order.
+        /// Index assigned to mod by GrindScript.
         /// </summary>
         internal int ModIndex { get; set; }
 
@@ -118,14 +126,14 @@ namespace SoG.Modding
         /// </summary>
         internal ModAudio Audio { get; } = new ModAudio();
 
-        private bool InLoad => Registry.LoadContext == this;
+        private bool InLoad => Manager.Loader.ModInLoad == this;
 
         /// <summary>
         /// Gets a collection of the modded game objects for this mod.
         /// </summary>
         private ModLibrary GetLibrary()
         {
-            return Registry.Library.GetLibraryOfMod(this);
+            return Manager.Library.GetLibraryOfMod(this);
         }
 
         #region Virtual Methods
@@ -134,6 +142,12 @@ namespace SoG.Modding
         /// Use this method to create or load your modded game content.
         /// </summary>
         public abstract void Load();
+
+        /// <summary>
+        /// Use this method to unload any content that is not automatically unloaded by GrindScript.
+        /// Unload is guaranteed to happen in the reverse order that mods were loaded.
+        /// </summary>
+        public abstract void Unload();
 
         /// <summary>
         /// Called when character files (".cha") need saving.
@@ -280,7 +294,7 @@ namespace SoG.Modding
             if (duplicateID)
                 throw new InvalidOperationException(ErrorCodex.DuplicateModID);
 
-            QuestCodex.QuestID gameID = Registry.ID.QuestIDNext++;
+            QuestCodex.QuestID gameID = Manager.ID.QuestIDNext++;
 
             QuestDescription questData = new QuestDescription()
             {
@@ -298,18 +312,16 @@ namespace SoG.Modding
                 QuestData = questData
             };
 
-            Registry.Library.Quests[gameID] = entry;
+            Manager.Library.Quests[gameID] = entry;
 
-            Globals.Game.EXT_AddMiscText("Quests", questData.sQuestNameReference, config.Name);
-            Globals.Game.EXT_AddMiscText("Quests", questData.sSummaryReference, config.Summary);
-            Globals.Game.EXT_AddMiscText("Quests", questData.sDescriptionReference, config.Description);
+            entry.Initialize();
 
             return gameID;
         }
 
         public Objective_SpecialObjective.UniqueID CreateSpecialObjective()
         {
-            return Registry.ID.SpecialObjectiveIDNext++;
+            return Manager.ID.SpecialObjectiveIDNext++;
         }
 
         public SpellCodex.SpellTypes CreateSpell(SpellConfig config)
@@ -325,9 +337,9 @@ namespace SoG.Modding
             if (duplicateID)
                 throw new InvalidOperationException(ErrorCodex.DuplicateModID);
 
-            SpellCodex.SpellTypes gameID = Registry.ID.SpellIDNext++;
+            SpellCodex.SpellTypes gameID = Manager.ID.SpellIDNext++;
 
-            Registry.Library.Spells[gameID] = new SpellEntry(this, gameID, config.ModID)
+            Manager.Library.Spells[gameID] = new SpellEntry(this, gameID, config.ModID)
             {
                 Config = config.DeepCopy()
             };
@@ -338,13 +350,27 @@ namespace SoG.Modding
         /// <summary>
         /// Creates a new world region, and returns its ID.
         /// </summary>
-        public Level.WorldRegion CreateWorldRegion()
+        public Level.WorldRegion CreateWorldRegion(WorldRegionConfig config)
         {
-            var VanillaContent = Globals.Game.Content;
+            if (config == null)
+                throw new ArgumentNullException(nameof(config));
 
-            var gameID = Registry.ID.WorldIDNext++;
+            if (!InLoad)
+                throw new InvalidOperationException(ErrorCodex.UseOnlyDuringLoad);
 
-            Globals.Game.xLevelMaster.denxRegionContent.Add(gameID, new ContentManager(VanillaContent.ServiceProvider, VanillaContent.RootDirectory));
+            bool duplicateID = GetLibrary().WorldRegions.Any(x => x.Value.ModID == config.ModID);
+
+            if (duplicateID)
+                throw new InvalidOperationException(ErrorCodex.DuplicateModID);
+
+            var gameID = Manager.ID.WorldIDNext++;
+
+            WorldRegionEntry entry = new WorldRegionEntry(this, gameID, config.ModID)
+            {
+                Config = config.DeepCopy()
+            };
+
+            entry.Initialize();
 
             return gameID;
         }
@@ -365,12 +391,16 @@ namespace SoG.Modding
             if (duplicateID)
                 throw new InvalidOperationException(ErrorCodex.DuplicateModID);
 
-            Level.ZoneEnum gameID = Registry.ID.LevelIDNext++;
+            Level.ZoneEnum gameID = Manager.ID.LevelIDNext++;
 
-            Registry.Library.Levels[gameID] = new LevelEntry(this, gameID, config.ModID)
+            LevelEntry entry = new LevelEntry(this, gameID, config.ModID)
             {
                 Config = config.DeepCopy()
             };
+
+            Manager.Library.Levels[gameID] = entry;
+
+            entry.Initialize();
 
             return gameID;
         }
@@ -391,14 +421,14 @@ namespace SoG.Modding
             if (duplicateID)
                 throw new InvalidOperationException(ErrorCodex.DuplicateModID);
 
-            ItemCodex.ItemTypes gameID = Registry.ID.ItemIDNext++;
+            ItemCodex.ItemTypes gameID = Manager.ID.ItemIDNext++;
 
             ItemEntry entry = new ItemEntry(this, gameID, config.ModID)
             {
                 Config = config.DeepCopy()
             };
 
-            Registry.Library.Items[gameID] = entry;
+            Manager.Library.Items[gameID] = entry;
 
             ItemDescription itemData = entry.ItemData = new ItemDescription()
             {
@@ -512,8 +542,7 @@ namespace SoG.Modding
                 }
             }
 
-            Globals.Game.EXT_AddMiscText("Items", itemData.sNameLibraryHandle, itemData.sFullName);
-            Globals.Game.EXT_AddMiscText("Items", itemData.sDescriptionLibraryHandle, itemData.sDescription);
+            entry.Initialize();
 
             return gameID;
         }
@@ -523,7 +552,7 @@ namespace SoG.Modding
         /// </summary>
         public EquipmentInfo.SpecialEffect CreateSpecialEffect()
         {
-            return Registry.ID.ItemEffectIDNext++;
+            return Manager.ID.ItemEffectIDNext++;
         }
 
         public EnemyCodex.EnemyTypes CreateEnemy(EnemyConfig config)
@@ -542,7 +571,7 @@ namespace SoG.Modding
             if (duplicateID)
                 throw new InvalidOperationException(ErrorCodex.DuplicateModID);
 
-            EnemyCodex.EnemyTypes gameID = Registry.ID.EnemyIDNext++;
+            EnemyCodex.EnemyTypes gameID = Manager.ID.EnemyIDNext++;
 
             EnemyDescription enemyData = new EnemyDescription(gameID, config.Category, $"{gameID}_Name", config.Level, config.BaseHealth)
             {
@@ -564,26 +593,11 @@ namespace SoG.Modding
                 EnemyData = enemyData
             };
 
-            Registry.Library.Enemies[gameID] = entry;
+            Manager.Library.Enemies[gameID] = entry;
 
             config.LootTable.ForEach(x => enemyData.lxLootTable.Add(new DropChance((int)(1000 * x.Chance), x.Item)));
 
-            Globals.Game.EXT_AddMiscText("Enemies", enemyData.sNameLibraryHandle, enemyData.sFullName);
-            Globals.Game.EXT_AddMiscText("Enemies", enemyData.sFlavorLibraryHandle, enemyData.sFlavorText);
-            Globals.Game.EXT_AddMiscText("Enemies", enemyData.sCardDescriptionLibraryHandle, enemyData.sCardDescription);
-            Globals.Game.EXT_AddMiscText("Enemies", enemyData.sDetailedDescriptionLibraryHandle, enemyData.sDetailedDescription);
-
-            if (config.CardDropChance != 0 && config.CardDropOverride == EnemyCodex.EnemyTypes.Null)
-            {
-                // Add a Card entry in the Journal
-                EnemyCodex.lxSortedCardEntries.Add(enemyData);
-            }
-
-            if (config.CreateJournalEntry)
-            {
-                // Add an Enemy entry in the Journal
-                EnemyCodex.lxSortedDescriptions.Add(enemyData);
-            }
+            entry.Initialize();
 
             return gameID;
         }
@@ -620,12 +634,16 @@ namespace SoG.Modding
             if (duplicateID)
                 throw new InvalidOperationException(ErrorCodex.DuplicateModID);
 
-            BaseStats.StatusEffectSource gameID = Registry.ID.StatusEffectIDNext++;
+            BaseStats.StatusEffectSource gameID = Manager.ID.StatusEffectIDNext++;
 
-            Registry.Library.StatusEffects[gameID] = new StatusEffectEntry(this, gameID, config.ModID)
+            StatusEffectEntry entry = new StatusEffectEntry(this, gameID, config.ModID)
             {
                 Config = config.DeepCopy()
             };
+
+            Manager.Library.StatusEffects[gameID] = entry;
+
+            entry.Initialize();
 
             return gameID;
         }
@@ -664,10 +682,10 @@ namespace SoG.Modding
 
             string root = Path.Combine(Content.RootDirectory, AssetPath);
 
-            Utils.ModUtils.TryLoadWaveBank(Path.Combine(root, "Sound", NameID + "Effects.xwb"), audioEngine, out Audio.EffectsWB);
-            Utils.ModUtils.TryLoadSoundBank(Path.Combine(root, "Sound", NameID + "Effects.xsb"), audioEngine, out Audio.EffectsSB);
-            Utils.ModUtils.TryLoadSoundBank(Path.Combine(root, "Sound", NameID + "Music.xsb"), audioEngine, out Audio.MusicSB);
-            Utils.ModUtils.TryLoadWaveBank(Path.Combine(root, "Sound", NameID + ".xwb"), audioEngine, out Audio.UniversalWB);
+            ModUtils.TryLoadWaveBank(Path.Combine(root, "Sound", NameID + "Effects.xwb"), audioEngine, out Audio.EffectsWB);
+            ModUtils.TryLoadSoundBank(Path.Combine(root, "Sound", NameID + "Effects.xsb"), audioEngine, out Audio.EffectsSB);
+            ModUtils.TryLoadSoundBank(Path.Combine(root, "Sound", NameID + "Music.xsb"), audioEngine, out Audio.MusicSB);
+            ModUtils.TryLoadWaveBank(Path.Combine(root, "Sound", NameID + ".xwb"), audioEngine, out Audio.UniversalWB);
         }
 
         public RogueLikeMode.TreatsCurses CreateTreatOrCurse(TreatCurseConfig config)
@@ -683,7 +701,7 @@ namespace SoG.Modding
             if (duplicateID)
                 throw new InvalidOperationException(ErrorCodex.DuplicateModID);
 
-            RogueLikeMode.TreatsCurses gameID = Registry.ID.CurseIDNext++;
+            RogueLikeMode.TreatsCurses gameID = Manager.ID.CurseIDNext++;
 
             CurseEntry entry = new CurseEntry(this, gameID, config.ModID)
             {
@@ -692,10 +710,9 @@ namespace SoG.Modding
                 DescriptionHandle = $"TreatCurse_{(int)gameID}_Description"
             };
 
-            Registry.Library.Curses[gameID] = entry;
+            Manager.Library.Curses[gameID] = entry;
 
-            Globals.Game.EXT_AddMiscText("Menus", entry.NameHandle, config.Name);
-            Globals.Game.EXT_AddMiscText("Menus", entry.DescriptionHandle, config.Description);
+            entry.Initialize();
 
             return gameID;
         }
@@ -713,7 +730,7 @@ namespace SoG.Modding
             if (duplicateID)
                 throw new InvalidOperationException(ErrorCodex.DuplicateModID);
 
-            RogueLikeMode.Perks gameID = Registry.ID.PerkIDNext++;
+            RogueLikeMode.Perks gameID = Manager.ID.PerkIDNext++;
 
             PerkEntry entry = new PerkEntry(this, gameID, config.ModID)
             {
@@ -721,10 +738,9 @@ namespace SoG.Modding
                 TextEntry = $"{(int)gameID}"
             };
 
-            Registry.Library.Perks[gameID] = entry;
+            Manager.Library.Perks[gameID] = entry;
 
-            Globals.Game.EXT_AddMiscText("Menus", "Perks_Name_" + entry.TextEntry, config.Name);
-            Globals.Game.EXT_AddMiscText("Menus", "Perks_Description_" + entry.TextEntry, config.Description);
+            entry.Initialize();
 
             return gameID;
         }
@@ -742,16 +758,16 @@ namespace SoG.Modding
             if (duplicateID)
                 throw new InvalidOperationException(ErrorCodex.DuplicateModID);
 
-            PinCodex.PinType gameID = Registry.ID.PinIDNext++;
+            PinCodex.PinType gameID = Manager.ID.PinIDNext++;
 
             PinEntry entry = new PinEntry(this, gameID, config.ModID)
             {
                 Config = config.DeepCopy()
             };
 
-            Registry.Library.Pins[gameID] = entry;
+            Manager.Library.Pins[gameID] = entry;
 
-            PinCodex.SortedPinEntries.Add(gameID);
+            entry.Initialize();
 
             return gameID;
         }
@@ -799,7 +815,7 @@ namespace SoG.Modding
         /// </summary>
         public ItemCodex.ItemTypes GetItemType(Mod owner, string uniqueID)
         {
-            var entry = Registry.Library.Items.Values.FirstOrDefault(x => x.Owner == owner && x.ModID == uniqueID);
+            var entry = Manager.Library.Items.Values.FirstOrDefault(x => x.Owner == owner && x.ModID == uniqueID);
 
             return entry?.GameID ?? ItemCodex.ItemTypes.Null;
         }
@@ -818,8 +834,8 @@ namespace SoG.Modding
                 return;
             }
 
-            bool isModded = Utils.ModUtils.SplitAudioID(redirect, out int entryID, out bool isMusic, out int cueID);
-            var entry = Registry.Mods[entryID].Audio;
+            bool isModded = ModUtils.SplitAudioID(redirect, out int entryID, out bool isMusic, out int cueID);
+            var entry = Manager.Mods[entryID].Audio;
 
             string cueName = entry != null && cueID >= 0 && cueID < entry.IndexedMusicCues.Count ? entry.IndexedMusicCues[cueID] : null;
 
@@ -829,7 +845,7 @@ namespace SoG.Modding
                 return;
             }
 
-            var redirectedSongs = Registry.Library.VanillaMusicRedirects;
+            var redirectedSongs = Manager.Library.VanillaMusicRedirects;
             bool replacing = redirectedSongs.ContainsKey(vanilla);
 
             if (redirect == "")
@@ -844,14 +860,42 @@ namespace SoG.Modding
             }
         }
 
-        public string GetMusicID(string audioID)
-        {
-            return Registry.GetMusicID(this, audioID);
-        }
+        /// <summary>
+        /// Gets the ID of the effect that has the given cue name. <para/>
+        /// This ID can be used to play effects with methods such as SoundSystem.PlayCue.
+        /// </summary>
 
         public string GetEffectID(string cueName)
         {
-            return Registry.GetEffectID(this, cueName);
+            var effects = Audio.IndexedEffectCues;
+
+            for (int i = 0; i < effects.Count; i++)
+            {
+                if (effects[i] == cueName)
+                {
+                    return $"GS_{ModIndex}_S{i}";
+                }
+            }
+
+            return "";
+        }
+
+        /// <summary>
+        /// Gets the ID of the music that has the given cue name. <para/>
+        /// This ID can be used to play effects with <see cref="SoundSystem.PlaySong"/>.
+        /// </summary>
+
+        public string GetMusicID(string cueName)
+        {
+            var music = Audio.IndexedMusicCues;
+
+            for (int i = 0; i < music.Count; i++)
+            {
+                if (music[i] == cueName)
+                    return $"GS_{ModIndex}_M{i}";
+            }
+
+            return "";
         }
 
         /// <summary>

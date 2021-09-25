@@ -37,11 +37,11 @@ namespace SoG.Modding
 
         public const string SaveFileExtension = ".gs";
 
-        private ModLoader _mods;
+        private ModManager _manager;
 
-        internal ModSaving(ModLoader mods)
+        internal ModSaving(ModManager manager)
         {
-            _mods = mods;
+            _manager = manager;
         }
 
         #region GrindScript internal methods
@@ -180,7 +180,7 @@ namespace SoG.Modding
 
                 int blockCount = file.ReadInt32();
 
-                Mod mod = _mods.Mods.FirstOrDefault(x => x.NameID == modName);
+                Mod mod = _manager.Mods.FirstOrDefault(x => x.NameID == modName);
 
                 if (mod == null)
                 {
@@ -188,7 +188,7 @@ namespace SoG.Modding
                     skipLoading = true;
                 }
 
-                ModLibrary library = mod != null ? _mods.Library.GetLibraryOfMod(mod) : null;
+                ModLibrary library = mod != null ? _manager.Library.GetLibraryOfMod(mod) : null;
 
                 while (blockCount-- > 0)
                 {
@@ -249,14 +249,14 @@ namespace SoG.Modding
 
             file.Write(Version);
 
-            file.Write(_mods.Mods.Count);
-            foreach (Mod mod in _mods.Mods)
+            file.Write(_manager.Mods.Count);
+            foreach (Mod mod in _manager.Mods)
             {
                 file.Write(mod.NameID);
 
                 file.Write(blockSet.Count);
 
-                ModLibrary library = _mods.Library.GetLibraryOfMod(mod);
+                ModLibrary library = _manager.Library.GetLibraryOfMod(mod);
 
                 foreach (ModDataBlock blockType in blockSet)
                 {

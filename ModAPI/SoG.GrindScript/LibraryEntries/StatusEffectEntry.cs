@@ -1,4 +1,5 @@
 ﻿using SoG.Modding.Configs;
+using SoG.Modding.Utils;
 
 namespace SoG.Modding.LibraryEntries
 {
@@ -17,6 +18,16 @@ namespace SoG.Modding.LibraryEntries
             Owner = owner;
             GameID = gameID;
             ModID = modID;
+        }
+
+        public void Initialize()
+        {
+            // Nothing, texture is loaded on demand
+        }
+
+        public void Cleanup()
+        {
+            ContentUtils.ForceUnloadAsset(Globals.Game.Content, Config.TexturePath);
         }
     }
 }

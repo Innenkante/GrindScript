@@ -7,21 +7,19 @@ using HarmonyLib;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
 using SoG.Modding.Utils;
+using CodeList = System.Collections.Generic.IEnumerable<HarmonyLib.CodeInstruction>;
 
 namespace SoG.Modding.Patches
 {
-    using CodeList = System.Collections.Generic.IEnumerable<HarmonyLib.CodeInstruction>;
-
     /// <summary>
     /// Contains patches for SoundSystem class.
     /// </summary>
-
     [HarmonyPatch(typeof(SoundSystem))]
-    internal static class SoundSystemPatches
+    internal static class Patch_SoundSystem
     {
         [HarmonyTranspiler]
         [HarmonyPatch(nameof(SoundSystem.PlayInterfaceCue))]
-        internal static CodeList PlayEffectTranspiler(CodeList code, ILGenerator gen)
+        internal static CodeList PlayInterfaceCue_Transpiler(CodeList code, ILGenerator gen)
         {
             // Original: soundBank.PlayCue(sCueName)
             // Modified: (local1 = GetEffectSoundBank(sCueName)) != null ? local1.PlayCue(sCueName) : soundBank.PlayCue(sCueName)
@@ -57,7 +55,7 @@ namespace SoG.Modding.Patches
 
         [HarmonyTranspiler]
         [HarmonyPatch(nameof(SoundSystem.PlayTrackableInterfaceCue))]
-        internal static CodeList GetEffectTranspiler_0(CodeList code, ILGenerator gen)
+        internal static CodeList PlayTrackableInterfaceCue_Transpiler(CodeList code, ILGenerator gen)
         {
             // Original: soundBank.GetCue(sCueName)
             // Modified: (local1 = GetEffectSoundBank(sCueName)) != null ? local1.GetCue(sCueName) : soundBank.GetCue(sCueName)
@@ -93,23 +91,35 @@ namespace SoG.Modding.Patches
 
         [HarmonyTranspiler]
         [HarmonyPatch(nameof(SoundSystem.PlayCue), typeof(string), typeof(Vector2))]
-        internal static CodeList GetEffectTranspiler_1(CodeList code, ILGenerator gen) => GetEffectTranspiler_0(code, gen);
+        internal static CodeList PlayCue_0_Transpiler(CodeList code, ILGenerator gen)
+        {
+            return PlayTrackableInterfaceCue_Transpiler(code, gen);
+        }
 
         [HarmonyTranspiler]
         [HarmonyPatch(nameof(SoundSystem.PlayCue), typeof(string), typeof(TransformComponent))]
-        internal static CodeList GetEffectTranspiler_2(CodeList code, ILGenerator gen) => GetEffectTranspiler_0(code, gen);
+        internal static CodeList PlayCue_1_Transpiler(CodeList code, ILGenerator gen)
+        {
+            return PlayTrackableInterfaceCue_Transpiler(code, gen);
+        }
 
         [HarmonyTranspiler]
         [HarmonyPatch(nameof(SoundSystem.PlayCue), typeof(string), typeof(Vector2), typeof(float))]
-        internal static CodeList GetEffectTranspiler_3(CodeList code, ILGenerator gen) => GetEffectTranspiler_0(code, gen);
+        internal static CodeList PlayCue_2_Transpiler(CodeList code, ILGenerator gen)
+        {
+            return PlayTrackableInterfaceCue_Transpiler(code, gen);
+        }
 
         [HarmonyTranspiler]
         [HarmonyPatch(nameof(SoundSystem.PlayCue), typeof(string), typeof(IEntity), typeof(bool), typeof(bool))]
-        internal static CodeList GetEffectTranspiler_4(CodeList code, ILGenerator gen) => GetEffectTranspiler_0(code, gen);
+        internal static CodeList PlayCue_3_Transpiler(CodeList code, ILGenerator gen)
+        {
+            return PlayTrackableInterfaceCue_Transpiler(code, gen);
+        }
 
         [HarmonyTranspiler]
         [HarmonyPatch(nameof(SoundSystem.ReadySongInCue))]
-        internal static CodeList GetMusicTranspiler_0(CodeList code, ILGenerator gen)
+        internal static CodeList ReadySongInCue_Transpiler(CodeList code, ILGenerator gen)
         {
             // Original: musicBank.GetCue(sCueName)
             // Modified: (local1 = GetMusicSoundBank(sCueName)) != null ? local1.GetCue(sCueName) : soundBank.GetCue(sCueName)
@@ -143,13 +153,29 @@ namespace SoG.Modding.Patches
             return PatchUtils.InsertAroundMethod(code, target, insertBefore, insertAfter, usesReturnValue: true);
         }
 
+        [HarmonyPrefix]
+        [HarmonyPatch(nameof(SoundSystem.PlaySong))]
+        internal static void PlaySong_Prefix(ref string sSongName, bool bFadeIn)
+        {
+            var redirects = Globals.ModManager.Library.VanillaMusicRedirects;
+            string audioIDToUse = sSongName;
+
+            if (!audioIDToUse.StartsWith("GS_") && redirects.ContainsKey(audioIDToUse))
+                audioIDToUse = redirects[audioIDToUse];
+
+            sSongName = audioIDToUse;
+        }
+
         [HarmonyTranspiler]
         [HarmonyPatch(nameof(SoundSystem.PlaySong))]
-        internal static CodeList GetMusicTranspiler_1(CodeList code, ILGenerator gen) => GetMusicTranspiler_0(code, gen);
+        internal static CodeList PlaySong_Transpiler(CodeList code, ILGenerator gen)
+        {
+            return ReadySongInCue_Transpiler(code, gen);
+        }
 
         [HarmonyTranspiler]
         [HarmonyPatch(nameof(SoundSystem.PlayMixCues))]
-        internal static CodeList PlayMixTranspiler(CodeList code, ILGenerator gen)
+        internal static CodeList PlayMixCues_Transpiler(CodeList code, ILGenerator gen)
         {
             Label skipVanillaBank = gen.DefineLabel();
             Label doVanillaBank = gen.DefineLabel();
@@ -183,21 +209,8 @@ namespace SoG.Modding.Patches
         }
 
         [HarmonyPrefix]
-        [HarmonyPatch(nameof(SoundSystem.PlaySong))]
-        internal static void OnPlaySong(ref string sSongName, bool bFadeIn)
-        {
-            var redirects = Globals.API.Loader.Library.VanillaMusicRedirects;
-            string audioIDToUse = sSongName;
-
-            if (!audioIDToUse.StartsWith("GS_") && redirects.ContainsKey(audioIDToUse))
-                audioIDToUse = redirects[audioIDToUse];
-
-            sSongName = audioIDToUse;
-        }
-
-        [HarmonyPrefix]
         [HarmonyPatch(nameof(SoundSystem.ChangeSongRegionIfNecessary))]
-        internal static bool OnChangeSongRegionIfNecessary(ref SoundSystem __instance, string sSongName)
+        internal static bool ChangeSongRegionIfNecessary_Prefix(ref SoundSystem __instance, string sSongName)
         {
             // This will probably cause you brain and eye damage if you read it
             
@@ -214,18 +227,18 @@ namespace SoG.Modding.Patches
             var universalMusic = soundType.GetField("universalMusicWaveBank", flag).GetValue(soundSystem) as WaveBank;
             var audioEngine = soundType.GetField("audioEngine", flag).GetValue(soundSystem) as AudioEngine;
 
-            bool currentIsModded = Utils.ModUtils.SplitAudioID(sSongName, out int entryID, out bool isMusic, out int cueID);
+            bool currentIsModded = ModUtils.SplitAudioID(sSongName, out int entryID, out bool isMusic, out int cueID);
 
             if (currentIsModded && !isMusic)
                 Globals.Logger.Warn($"Trying to play modded audio as music, but the audio isn't music! ID: {sSongName}");
 
-            Mod mod = currentIsModded ? Globals.API.Loader.Mods[entryID] : null;
+            Mod mod = currentIsModded ? Globals.ModManager.Mods[entryID] : null;
             Mod.ModAudio entry = currentIsModded ? mod.Audio : null;
             string nextBankName = currentIsModded ? entry.IndexedMusicBanks[cueID] : dssSongRegionMap[sSongName];
 
             WaveBank currentMusicBank = f_musicWaveBank.GetValue(soundSystem) as WaveBank;
 
-            if (Globals.API.Loader.IsUniversalMusicBank(nextBankName))
+            if (Globals.ModManager.IsUniversalMusicBank(nextBankName))
             {
                 if (currentIsModded && entry.UniversalWB == null)
                 {
@@ -233,14 +246,14 @@ namespace SoG.Modding.Patches
                     return false;
                 }
 
-                if (currentMusicBank != null && !Globals.API.Loader.IsUniversalMusicBank(currentMusicBank))
+                if (currentMusicBank != null && !Globals.ModManager.IsUniversalMusicBank(currentMusicBank))
                     soundSystem.SetStandbyBank(soundSystem.sCurrentMusicWaveBank, currentMusicBank);
 
                 f_musicWaveBank.SetValue(soundSystem, currentIsModded ? entry.UniversalWB : universalMusic);
             }
             else if (soundSystem.sCurrentMusicWaveBank != nextBankName)
             {
-                if (currentMusicBank != null && !Globals.API.Loader.IsUniversalMusicBank(currentMusicBank) && !currentMusicBank.IsDisposed)
+                if (currentMusicBank != null && !Globals.ModManager.IsUniversalMusicBank(currentMusicBank) && !currentMusicBank.IsDisposed)
                     soundSystem.SetStandbyBank(soundSystem.sCurrentMusicWaveBank, currentMusicBank);
 
                 soundSystem.sCurrentMusicWaveBank = nextBankName;
@@ -262,7 +275,7 @@ namespace SoG.Modding.Patches
                 
                 AccessTools.Method(soundType, "CheckStandbyBanks").Invoke(soundSystem, new object[] { nextBankName });
             }
-            else if (Globals.API.Loader.IsUniversalMusicBank(currentMusicBank))
+            else if (Globals.ModManager.IsUniversalMusicBank(currentMusicBank))
             {
                 if (dsxStandbyWaveBanks.ContainsKey(soundSystem.sCurrentMusicWaveBank))
                 {

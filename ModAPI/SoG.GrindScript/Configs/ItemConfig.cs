@@ -84,9 +84,6 @@ namespace SoG.Modding.Configs
         /// <summary> Determines the special visual effect used for item drops. Valid values are 1 (none), 2 (silver ring) and 3 (gold ring). </summary>
         public byte Fancyness { get; set; } = 1;
 
-        /// <summary> The ContentManager to use for this item's textures. Default manager is Game1.Content. </summary>
-        public ContentManager Manager { get; set; } = Globals.Game.Content;
-
         /// <summary> Item Categories to assign to this item. GrindScript automatically assigns certain categories for equipments. </summary>
         public HashSet<ItemCodex.ItemCategories> Categories { get; private set; } = new HashSet<ItemCodex.ItemCategories>();
 

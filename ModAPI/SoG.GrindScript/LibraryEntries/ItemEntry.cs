@@ -1,5 +1,8 @@
 ﻿using System.Collections.Generic;
+using System.IO;
+using Microsoft.Xna.Framework.Content;
 using SoG.Modding.Configs;
+using SoG.Modding.Utils;
 
 namespace SoG.Modding.LibraryEntries
 {
@@ -28,6 +31,67 @@ namespace SoG.Modding.LibraryEntries
             Owner = owner;
             GameID = gameID;
             ModID = modID;
+        }
+
+        public void Initialize()
+        {
+            Globals.Game.EXT_AddMiscText("Items", ItemData.sNameLibraryHandle, ItemData.sFullName);
+            Globals.Game.EXT_AddMiscText("Items", ItemData.sDescriptionLibraryHandle, ItemData.sDescription);
+
+            // Textures are loaded on demand
+        }
+
+        public void Cleanup()
+        {
+            Globals.Game.EXT_RemoveMiscText("Items", ItemData.sNameLibraryHandle);
+            Globals.Game.EXT_RemoveMiscText("Items", ItemData.sDescriptionLibraryHandle);
+
+            // TODO: Set texture references to null since they're disposed
+
+            // Weapon assets are automatically disposed of by the game
+            // Same goes for dropped item's textures
+
+            ContentManager manager = Globals.Game.Content;
+
+            ContentUtils.ForceUnloadAsset(Globals.Game.Content, Config.IconPath);
+
+            string[] directions = new string[]
+            {
+                "Up", "Right", "Down", "Left"
+            };
+
+            if (EquipData is HatInfo hatData)
+            {
+                string path = Config.EquipResourcePath;
+                int index = -1;
+
+                while (++index < 4)
+                {
+                    ContentUtils.ForceUnloadAsset(manager, Path.Combine(path, directions[index]));
+                }
+
+                foreach (var kvp in hatData.denxAlternateVisualSets)
+                {
+                    string altPath = Path.Combine(path, HatAltSetResourcePaths[kvp.Key]);
+
+                    index = -1;
+
+                    while (++index < 4)
+                    {
+                        ContentUtils.ForceUnloadAsset(manager, Path.Combine(altPath, directions[index]));
+                    }
+                }
+            }
+            else if (EquipData is FacegearInfo)
+            {
+                string path = Config.EquipResourcePath;
+                int index = -1;
+
+                while (++index < 4)
+                {
+                    ContentUtils.ForceUnloadAsset(manager, Path.Combine(path, directions[index]));
+                }
+            }
         }
     }
 }

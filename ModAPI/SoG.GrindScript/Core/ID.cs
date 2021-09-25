@@ -20,6 +20,11 @@ namespace SoG.Modding
     /// </summary>
     internal class ID
 	{
+		public ID()
+        {
+			Reset();
+        }
+
         #region Ranges
 
         public const ItemID ItemIDStart = (ItemID)700000;
@@ -62,55 +67,85 @@ namespace SoG.Modding
 
 		#region Next ID Values
 
-		public ItemID ItemIDNext { get; set; } = ItemIDStart;
+		public ItemID ItemIDNext { get; set; }
 
-		public ItemEffectID ItemEffectIDNext { get; set; } = ItemEffectIDStart;
+		public ItemEffectID ItemEffectIDNext { get; set; }
 
-		public LevelID LevelIDNext { get; set; } = LevelIDStart;
+		public LevelID LevelIDNext { get; set; }
 
-		public WorldID WorldIDNext { get; set; } = WorldIDStart;
+		public WorldID WorldIDNext { get; set; }
 
-		public PerkID PerkIDNext { get; set; } = PerkIDStart;
+		public PerkID PerkIDNext { get; set; }
 
-		public CurseID CurseIDNext { get; set; } = CurseIDStart;
+		public CurseID CurseIDNext { get; set; }
 
-		public EnemyID EnemyIDNext { get; set; } = EnemyIDStart;
+		public EnemyID EnemyIDNext { get; set; }
 
-		public QuestID QuestIDNext { get; set; } = QuestIDStart;
+		public QuestID QuestIDNext { get; set; }
 
-		public SpecialObjectiveID SpecialObjectiveIDNext { get; set; } = SpecialObjectiveIDStart;
+		public SpecialObjectiveID SpecialObjectiveIDNext { get; set; }
 
-		public SpellID SpellIDNext { get; set; } = SpellIDStart;
+		public SpellID SpellIDNext { get; set; }
 
-		public StatusEffectID StatusEffectIDNext { get; set; } = StatusEffectIDStart;
+		public StatusEffectID StatusEffectIDNext { get; set; }
 
-		public PinID PinIDNext { get; set; } = PinIDStart;
+		public PinID PinIDNext { get; set; }
 
 		#endregion
+
+		/// <summary>
+		/// Resets all IDs. This should be used during unloading only.
+		/// </summary>
+		public void Reset()
+        {
+			ItemIDNext = ItemIDStart;
+
+			ItemEffectIDNext = ItemEffectIDStart;
+
+			LevelIDNext = LevelIDStart;
+
+			WorldIDNext = WorldIDStart;
+
+			PerkIDNext = PerkIDStart;
+
+			CurseIDNext = CurseIDStart;
+
+			EnemyIDNext = EnemyIDStart;
+
+			QuestIDNext = QuestIDStart;
+
+			SpecialObjectiveIDNext = SpecialObjectiveIDStart;
+
+			SpellIDNext = SpellIDStart;
+
+			StatusEffectIDNext = StatusEffectIDStart;
+
+			PinIDNext = PinIDStart;
+		}
 	}
 
 	public static class IDExtension
 	{
 		public static bool IsFromSoG<T>(this T id) where T : Enum => Enum.IsDefined(typeof(T), id);
 
-		public static bool IsFromMod(this ItemID id) => id >= ID.ItemIDStart && id < Globals.API.Loader.ID.ItemIDNext;
+		public static bool IsFromMod(this ItemID id) => id >= ID.ItemIDStart && id < Globals.ModManager.ID.ItemIDNext;
 
-		public static bool IsFromMod(this WorldID id) => ID.WorldIDStart <= id && id < Globals.API.Loader.ID.WorldIDNext;
+		public static bool IsFromMod(this WorldID id) => ID.WorldIDStart <= id && id < Globals.ModManager.ID.WorldIDNext;
 
-		public static bool IsFromMod(this LevelID id) => ID.LevelIDStart <= id && id < Globals.API.Loader.ID.LevelIDNext;
+		public static bool IsFromMod(this LevelID id) => ID.LevelIDStart <= id && id < Globals.ModManager.ID.LevelIDNext;
 
-		public static bool IsFromMod(this CurseID id) => id >= ID.CurseIDStart && id < Globals.API.Loader.ID.CurseIDNext;
+		public static bool IsFromMod(this CurseID id) => id >= ID.CurseIDStart && id < Globals.ModManager.ID.CurseIDNext;
 
-		public static bool IsFromMod(this PerkID id) => id >= ID.PerkIDStart && id < Globals.API.Loader.ID.PerkIDNext;
+		public static bool IsFromMod(this PerkID id) => id >= ID.PerkIDStart && id < Globals.ModManager.ID.PerkIDNext;
 
-		public static bool IsFromMod(this EnemyID id) => id >= ID.EnemyIDStart && id < Globals.API.Loader.ID.EnemyIDNext;
+		public static bool IsFromMod(this EnemyID id) => id >= ID.EnemyIDStart && id < Globals.ModManager.ID.EnemyIDNext;
 
-		public static bool IsFromMod(this QuestID id) => id >= ID.QuestIDStart && id < Globals.API.Loader.ID.QuestIDNext;
+		public static bool IsFromMod(this QuestID id) => id >= ID.QuestIDStart && id < Globals.ModManager.ID.QuestIDNext;
 
-		public static bool IsFromMod(this SpellID id) => id >= ID.SpellIDStart && id < Globals.API.Loader.ID.SpellIDNext;
+		public static bool IsFromMod(this SpellID id) => id >= ID.SpellIDStart && id < Globals.ModManager.ID.SpellIDNext;
 
-		public static bool IsFromMod(this StatusEffectID id) => id >= ID.StatusEffectIDStart && id < Globals.API.Loader.ID.StatusEffectIDNext;
+		public static bool IsFromMod(this StatusEffectID id) => id >= ID.StatusEffectIDStart && id < Globals.ModManager.ID.StatusEffectIDNext;
 
-		public static bool IsFromMod(this PinID id) => id >= ID.PinIDStart && id < Globals.API.Loader.ID.PinIDNext;
+		public static bool IsFromMod(this PinID id) => id >= ID.PinIDStart && id < Globals.ModManager.ID.PinIDNext;
 	}
 }

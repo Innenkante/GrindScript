@@ -47,7 +47,7 @@ namespace SoG.Modding.GrindScriptMod
                 {
                     using (BinaryReader stream = new BinaryReader(new FileStream(path, FileMode.Open, FileAccess.Read)))
                     {
-                        var modMeta = Globals.API.Saving.PeekGrindScriptData(stream);
+                        var modMeta = Globals.ModManager.Saving.PeekGrindScriptData(stream);
 
                         _modSaves[index].ModsSaved = modMeta.Select(x => x.Name).ToList();
                     }
@@ -73,7 +73,7 @@ namespace SoG.Modding.GrindScriptMod
             {
                 using (BinaryReader stream = new BinaryReader(new FileStream(path, FileMode.Open, FileAccess.Read)))
                 {
-                    var modMeta = Globals.API.Saving.PeekGrindScriptData(stream);
+                    var modMeta = Globals.ModManager.Saving.PeekGrindScriptData(stream);
 
                     _arcadeSave.ModsSaved = modMeta.Select(x => x.Name).ToList();
                 }
@@ -97,7 +97,7 @@ namespace SoG.Modding.GrindScriptMod
                 return;
             }
 
-            List<string> loadedMods = Globals.API.Loader.Mods.Select(x => x.NameID).ToList();
+            List<string> loadedMods = Globals.ModManager.Mods.Select(x => x.NameID).ToList();
             List<string> saveMods = _modSaves[slot].ModsSaved;
 
             List<string> missingMods = saveMods.Where(x => !loadedMods.Contains(x)).ToList();
@@ -120,7 +120,7 @@ namespace SoG.Modding.GrindScriptMod
                 return;
             }
 
-            List<string> loadedMods = Globals.API.Loader.Mods.Select(x => x.NameID).ToList();
+            List<string> loadedMods = Globals.ModManager.Mods.Select(x => x.NameID).ToList();
             List<string> saveMods = _arcadeSave.ModsSaved;
 
             List<string> missingMods = saveMods.Where(x => !loadedMods.Contains(x)).ToList();
@@ -193,7 +193,26 @@ namespace SoG.Modding.GrindScriptMod
             if (inputData.Action.bPressed && menuData.iTopMenuSelection == 4)
             {
                 audio.PlayInterfaceCue("Menu_Changed");
+
+                // TODO: Lol
+                Globals.ModManager.Loader.Reload();
             }
+        }
+
+        public void RenderReloadModsButton()
+        {
+            var menuData = Globals.Game.xGlobalData.xMainMenuData;
+
+            Color selected = Color.White;
+            Color notSelected = Color.Gray * 0.8f;
+
+            var text = "Reload Mods";
+            var font = FontManager.GetFont(FontManager.FontType.Verdana12);
+            Vector2 center = font.MeasureString(text) / 2f;
+
+            Color colorToUse = menuData.iTopMenuSelection == 4 ? selected : notSelected;
+
+            Globals.Game._RenderMaster_RenderTextWithOutline(font, text, new Vector2(160, 268) - center, Vector2.Zero, 1f, colorToUse, Color.Black);
         }
 
         public void RenderModMenuButton()
@@ -205,7 +224,7 @@ namespace SoG.Modding.GrindScriptMod
             Color notSelected = Color.Gray * 0.8f;
             float alpha = menuData.fCurrentMenuAlpha;
 
-            var texture = Globals.API.GrindScript.ModMenuText;
+            var texture = Globals.ModManager.GrindScript.ModMenuText;
             Vector2 center = new Vector2(texture.Width / 2, texture.Height / 2);
 
             Color colorToUse = menuData.iTopMenuSelection == 4 ? selected : notSelected;
@@ -221,7 +240,7 @@ namespace SoG.Modding.GrindScriptMod
 
         public void PostTopMenuRender()
         {
-            RenderModMenuButton();
+            RenderReloadModsButton();
         }
     }
 }

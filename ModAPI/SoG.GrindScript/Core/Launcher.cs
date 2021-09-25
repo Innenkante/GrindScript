@@ -33,8 +33,8 @@ namespace SoG.Modding
                     }
                 };
 
-                Globals.API = new ModCore();
-                Globals.API.Setup();
+                Globals.ModManager = new ModManager();
+                Globals.ModManager.Setup();
             }
         }
     }

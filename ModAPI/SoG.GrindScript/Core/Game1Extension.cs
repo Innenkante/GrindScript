@@ -96,6 +96,19 @@ namespace SoG.Modding
         }
 
         /// <summary>
+        /// Removes a miscellaneous text entry from the game.
+        /// Only use this for texts that you have created yourself.
+        /// </summary>
+        public static bool EXT_RemoveMiscText(this Game1 game, string group, string entry)
+        {
+            MiscTextCollection col;
+
+            game.xMiscTextGod_Default.dsxTextCollections.TryGetValue(group, out col);
+
+            return col?.dsxTexts.Remove(entry) ?? false;
+        }
+
+        /// <summary>
         /// Reads a world actor sent via a message.
         /// Similar to _EntityMaster_ReadActor, however it returns the ID and Entity Type read as out arguments.
         /// Unlike the vanilla function, you can use the read info to initialize a spell later, when the packet for the target entity arrives.

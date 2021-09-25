@@ -21,5 +21,15 @@ namespace SoG.Modding.LibraryEntries
             GameID = gameID;
             ModID = modID;
         }
+
+        public void Initialize()
+        {
+            // Nothing for now
+        }
+
+        public void Cleanup()
+        {
+            // Nothing for now
+        }
     }
 }

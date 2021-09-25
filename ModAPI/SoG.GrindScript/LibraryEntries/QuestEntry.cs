@@ -21,5 +21,20 @@ namespace SoG.Modding.LibraryEntries
             GameID = gameID;
             ModID = modID;
         }
+
+        public void Initialize()
+        {
+            Globals.Game.EXT_AddMiscText("Quests", QuestData.sQuestNameReference, Config.Name);
+            Globals.Game.EXT_AddMiscText("Quests", QuestData.sSummaryReference, Config.Summary);
+            Globals.Game.EXT_AddMiscText("Quests", QuestData.sDescriptionReference, Config.Description);
+
+        }
+
+        public void Cleanup()
+        {
+            Globals.Game.EXT_RemoveMiscText("Quests", QuestData.sQuestNameReference);
+            Globals.Game.EXT_RemoveMiscText("Quests", QuestData.sSummaryReference);
+            Globals.Game.EXT_RemoveMiscText("Quests", QuestData.sDescriptionReference);
+        }
     }
 }
