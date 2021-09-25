@@ -14,6 +14,10 @@ namespace SoG.Modding.GrindScriptMod
 
         public Texture2D ModMenuText { get; private set; }
 
+        public Texture2D ModListText { get; private set; }
+
+        public Texture2D ReloadModsText { get; private set; }
+
         public override void PostLevelLoad(Level.ZoneEnum level, Level.WorldRegion region, bool staticOnly)
         {
             if (_colliderRCActive)
@@ -30,13 +34,16 @@ namespace SoG.Modding.GrindScriptMod
             _colliderRC = new ColliderRC();
 
             ModUtils.TryLoadTex(Path.Combine(AssetPath, "NullTexGS"), Globals.Game.Content, out Texture2D tex);
-
             ErrorTexture = tex;
 
             ModUtils.TryLoadTex(Path.Combine(AssetPath, "ModMenu"), Globals.Game.Content, out tex);
-
             ModMenuText = tex;
 
+            ModUtils.TryLoadTex(Path.Combine(AssetPath, "ModList"), Globals.Game.Content, out tex);
+            ModListText = tex;
+
+            ModUtils.TryLoadTex(Path.Combine(AssetPath, "ReloadMods"), Globals.Game.Content, out tex);
+            ReloadModsText = tex;
 
             Dictionary<string, CommandParser> commands = new Dictionary<string, CommandParser>
             {
@@ -63,6 +70,12 @@ namespace SoG.Modding.GrindScriptMod
 
             ContentUtils.ForceUnloadAsset(Globals.Game.Content, Path.Combine(AssetPath, "ModMenu"));
             ModMenuText = null;
+
+            ContentUtils.ForceUnloadAsset(Globals.Game.Content, Path.Combine(AssetPath, "ModList"));
+            ModListText = null;
+
+            ContentUtils.ForceUnloadAsset(Globals.Game.Content, Path.Combine(AssetPath, "ReloadMods"));
+            ReloadModsText = null;
         }
 
         private ColliderRC _colliderRC;

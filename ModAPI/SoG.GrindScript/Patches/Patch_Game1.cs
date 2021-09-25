@@ -968,7 +968,7 @@ namespace SoG.Modding.Patches
         {
             HelperCallbacks.MainMenuWorker.CheckArcadeSaveCompatiblity();
 
-            HelperCallbacks.MainMenuWorker.PostTopMenuRender();
+            HelperCallbacks.MainMenuWorker.RenderModMenuButton();
         }
 
         [HarmonyPostfix]
@@ -978,11 +978,29 @@ namespace SoG.Modding.Patches
             HelperCallbacks.MainMenuWorker.PostTopMenuInterface();
         }
 
-        // TODO: Remove
-        [HarmonyPrefix]
-        [HarmonyPatch(nameof(Game1._RenderMaster_PrerenderDisplayView))]
-        internal static void _RenderMaster_PrerenderDisplayView_Prefix(GlobalData.MainMenu.CharacterDisplay xDisplay)
+        [HarmonyPostfix]
+        [HarmonyPatch(nameof(Game1._Menu_Update))]
+        internal static void _Menu_Update_Postfix()
         {
+            HelperCallbacks.MainMenuWorker.MenuUpdate();
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(nameof(Game1._Menu_Render))]
+        internal static void _Menu_Render_Postfix()
+        {
+            SpriteBatch spriteBatch = Globals.SpriteBatch;
+
+            spriteBatch.End();
+            spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.AnisotropicClamp, DepthStencilState.Default, null);
+
+            if (Globals.Game.xGlobalData.xMainMenuData.enMenuLevel == MainMenuWorker.ReservedModMenuID)
+            {
+                HelperCallbacks.MainMenuWorker.ModMenuRender();
+            }
+
+            spriteBatch.End();
+            spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, DepthStencilState.Default, null);
         }
     }
 }

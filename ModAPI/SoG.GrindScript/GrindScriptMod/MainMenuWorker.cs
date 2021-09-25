@@ -1,6 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using SoG.Modding.Patches;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -13,14 +14,32 @@ namespace SoG.Modding.GrindScriptMod
     /// </summary>
     internal class MainMenuWorker
     {
+        private class ModMenu
+        {
+            private int _selection = 0;
+            public int Selection
+            {
+                get => _selection;
+                set => _selection = Math.Min(Math.Max(value, MinSelection), MaxSelection);
+            }
+
+            public readonly int MinSelection = 0;
+
+            public readonly int MaxSelection = 1;
+        }
+
         public class ModSaveData
         {
             public List<string> ModsSaved = new List<string>();
         }
 
+        public static readonly GlobalData.MainMenu.MenuLevel ReservedModMenuID = (GlobalData.MainMenu.MenuLevel)300;
+
         private Dictionary<int, ModSaveData> _modSaves = new Dictionary<int, ModSaveData>();
 
         private ModSaveData _arcadeSave;
+
+        private ModMenu _modMenu = new ModMenu();
 
         private int _previousTopMenuSelection;
 
@@ -103,7 +122,7 @@ namespace SoG.Modding.GrindScriptMod
             List<string> missingMods = saveMods.Where(x => !loadedMods.Contains(x)).ToList();
             List<string> newMods = loadedMods.Where(x => !saveMods.Contains(x)).ToList();
 
-            RenderSaveCompatibility(missingMods, newMods, 444, 90 + 65);
+            RenderMessage(GetSaveCompatibiltyText(missingMods, newMods), 444, 90 + 65);
         }
 
         public void CheckArcadeSaveCompatiblity()
@@ -126,13 +145,11 @@ namespace SoG.Modding.GrindScriptMod
             List<string> missingMods = saveMods.Where(x => !loadedMods.Contains(x)).ToList();
             List<string> newMods = loadedMods.Where(x => !saveMods.Contains(x)).ToList();
 
-            RenderSaveCompatibility(missingMods, newMods, 422, 243);
+            RenderMessage(GetSaveCompatibiltyText(missingMods, newMods), 422, 243);
         }
 
-        public void RenderSaveCompatibility(List<string> missingMods, List<string> newMods, int x, int y)
+        private string GetSaveCompatibiltyText(List<string> missingMods, List<string> newMods)
         {
-            float alpha = Globals.Game.xGlobalData.xMainMenuData.fCurrentMenuAlpha;
-
             string message;
 
             if (missingMods.Count == 0 && newMods.Count == 0)
@@ -163,6 +180,13 @@ namespace SoG.Modding.GrindScriptMod
                     }
                 }
             }
+
+            return message;
+        }
+
+        public void RenderMessage(string message, int x, int y)
+        {
+            float alpha = Globals.Game.xGlobalData.xMainMenuData.fCurrentMenuAlpha;
 
             Vector2 measure = FontManager.GetFont(FontManager.FontType.Reg7).MeasureString(message);
 
@@ -195,7 +219,7 @@ namespace SoG.Modding.GrindScriptMod
                 audio.PlayInterfaceCue("Menu_Changed");
 
                 // TODO: Lol
-                Globals.ModManager.Loader.Reload();
+                Globals.Game.xGlobalData.xMainMenuData.Transition(ReservedModMenuID);
             }
         }
 
@@ -231,16 +255,98 @@ namespace SoG.Modding.GrindScriptMod
 
             spriteBatch.Draw(texture, new Vector2(160 - center.X, 245 - center.Y), null, colorToUse, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
 
-            var font = FontManager.GetFont(FontManager.FontType.Bold10);
-
-            center = font.MeasureString("(Unimplemented)") / 2f;
-
-            Globals.Game._RenderMaster_RenderTextWithOutline(font, "(Unimplemented)", new Vector2(160, 268) - center, Vector2.Zero, 1f, colorToUse, Color.Black);
+            //var font = FontManager.GetFont(FontManager.FontType.Bold10);
+            //center = font.MeasureString("(Unimplemented)") / 2f;
+            //Globals.Game._RenderMaster_RenderTextWithOutline(font, "(Unimplemented)", new Vector2(160, 268) - center, Vector2.Zero, 1f, colorToUse, Color.Black);
         }
 
-        public void PostTopMenuRender()
+        public void MenuUpdate()
         {
-            RenderReloadModsButton();
+            if (Globals.Game.xGlobalData.xMainMenuData.enTargetMenuLevel != GlobalData.MainMenu.MenuLevel.Null)
+            {
+                return;
+            }
+
+            if (Globals.Game.xGlobalData.xMainMenuData.enMenuLevel == ReservedModMenuID)
+            {
+                ModMenuInterface();
+            }
+        }
+
+        private void ModMenuInterface()
+        {
+            var input = Globals.Game.xInput_Menu;
+
+            var previousSelection = _modMenu.Selection;
+
+            if (input.Down.bPressed)
+            {
+                _modMenu.Selection++;
+            }
+            else if (input.Up.bPressed)
+            {
+                _modMenu.Selection--;
+            }
+
+            if (previousSelection != _modMenu.Selection)
+            {
+                Globals.Game.xSoundSystem.PlayInterfaceCue("Menu_Move");
+            }
+
+            if (input.Action.bPressed)
+            {
+                Globals.Game.xSoundSystem.PlayInterfaceCue("Menu_Change");
+
+                switch (_modMenu.Selection)
+                {
+                    case 0:
+                        Globals.ModManager.Loader.Reload();
+                        break;
+                    case 1:
+                        break;
+                }
+
+            }
+            else if (input.MenuBack.bPressed)
+            {
+                Globals.Game.xSoundSystem.PlayInterfaceCue("Menu_Cancel");
+
+                Globals.Game.xGlobalData.xMainMenuData.Transition(GlobalData.MainMenu.MenuLevel.TopMenu);
+            }
+        }
+
+        public void ModMenuRender()
+        {
+            float alpha = Globals.Game.xGlobalData.xMainMenuData.fCurrentMenuAlpha;
+            Color selected = Color.White;
+            Color notSelected = Color.Gray * 0.8f;
+
+            SpriteBatch spriteBatch = Globals.SpriteBatch;
+
+            Globals.Game._Menu_RenderContentBox(spriteBatch, alpha, new Rectangle(235, 189, 173, 138));
+
+
+            Texture2D reloadModsTex = Globals.ModManager.GrindScript.ReloadModsText;
+            Vector2 reloadModsCenter = new Vector2(reloadModsTex.Width / 2, reloadModsTex.Height / 2);
+            Color reloadModsColor = _modMenu.Selection == 0 ? selected : notSelected;
+
+            spriteBatch.Draw(reloadModsTex, new Vector2(320, 225), null, reloadModsColor, 0f, reloadModsCenter, 1f, SpriteEffects.None, 0f);
+
+            Texture2D modListTex = Globals.ModManager.GrindScript.ModListText;
+            Vector2 modListCenter = new Vector2(modListTex.Width / 2, modListTex.Height / 2);
+            Color modListColor = _modMenu.Selection == 1 ? selected : notSelected;
+            modListColor *= 0.6f;
+
+            spriteBatch.Draw(modListTex, new Vector2(320, 251), null, modListColor, 0f, modListCenter, 1f, SpriteEffects.None, 0f);
+
+            string message = "Mods loaded:\n";
+
+            foreach (Mod mod in Globals.ModManager.Mods)
+            {
+                message += mod.NameID + "\n";
+            }
+
+            RenderMessage(message.TrimEnd('\n'), 422, 243);
         }
     }
 }

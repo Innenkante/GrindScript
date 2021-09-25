@@ -74,7 +74,7 @@ namespace SoG.FeatureExample
 
         public override void Unload()
         {
-            Logger.Error($"Calling Unload!");
+            Logger.Info($"Calling Unload!");
         }
 
         public override void OnPlayerDamaged(PlayerView view, ref int damage, ref byte type)
