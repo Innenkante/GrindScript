@@ -25,7 +25,7 @@ namespace SoG.Modding.Patches
 
             if (__result.txDisplayImage == null)
             {
-                ModUtils.TryLoadTex(entry.Config.IconPath, Globals.Game.Content, out __result.txDisplayImage);
+                AssetUtils.TryLoadTexture(entry.Config.IconPath, Globals.Game.Content, out __result.txDisplayImage);
             }
 
             return false;
@@ -49,8 +49,8 @@ namespace SoG.Modding.Patches
                 bGiveToServer = xDesc.lenCategory.Contains(ItemCodex.ItemCategories.GrantToServer)
             };
 
-            ModUtils.TryLoadTex(entry.Config.IconPath, Globals.Game.xLevelMaster.contRegionContent, out __result.xRenderComponent.txTexture);
-            ModUtils.TryLoadTex(trueShadowTex, Globals.Game.xLevelMaster.contRegionContent, out __result.xRenderComponent.txShadowTexture);
+            AssetUtils.TryLoadTexture(entry.Config.IconPath, Globals.Game.xLevelMaster.contRegionContent, out __result.xRenderComponent.txTexture);
+            AssetUtils.TryLoadTexture(trueShadowTex, Globals.Game.xLevelMaster.contRegionContent, out __result.xRenderComponent.txShadowTexture);
 
             __result.xCollisionComponent.xMovementCollider = new SphereCollider(10f, Vector2.Zero, __result.xTransform, 1f, __result) { bCollideWithFlat = true };
 

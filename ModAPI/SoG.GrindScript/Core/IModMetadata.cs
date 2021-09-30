@@ -19,12 +19,7 @@ namespace SoG.Modding
         /// <summary>
         /// The mod's version.
         /// </summary>
-        Version Version { get; }
-
-        /// <summary>
-        /// The GrindScript version required by this mod.
-        /// </summary>
-        Version GrindScriptVersion { get; }
+        Version ModVersion { get; }
 
         /// <summary>
         /// If set to true, game object creation will be disallowed for this mod.
@@ -34,7 +29,7 @@ namespace SoG.Modding
         bool DisableObjectCreation { get; }
 
         /// <summary>
-        /// If set to true, other mods can query GrindScript for this mod.
+        /// If set to false, other mods can't query for this mod.
         /// </summary>
         bool AllowDiscoveryByMods { get; }
     }

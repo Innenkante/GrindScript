@@ -240,8 +240,8 @@ namespace SoG.Modding.Patches
             {
                 // It's actually just a crappy implementation of short circuiting for AND ¯\_(ツ)_/¯
 
-                Globals.Logger.Debug("Denying connection due to version discrepancy.");
-                Globals.Logger.Debug("Check if client is on the same game version, and is running GrindScript.");
+                Globals.Logger.Info("Denying connection due to vanilla version discrepancy.");
+                Globals.Logger.Info("Check if client is on the same game version, and is running GrindScript.");
                 return false;
             }
 
@@ -253,7 +253,25 @@ namespace SoG.Modding.Patches
 
             _ = msg.ReadByte(); // Game mode byte skipped
 
-            List<string> clientModNames = new List<string>();
+            bool readGSVersion = Version.TryParse(msg.ReadString(), out Version result);
+
+            if (readGSVersion)
+            {
+                Globals.Logger.Info("Received GS version from client: " + result);
+            }
+            else
+            {
+                Globals.Logger.Info("Couldn't parse GS version from client!");
+            }
+
+            if (!readGSVersion || result != Globals.ModManager.GrindScript.ModVersion)
+            {
+                Globals.Logger.Info("Denying connection due to GrindScript version discrepancy.");
+                Globals.Logger.Info("Check that server and client are running on the same GrindScript version.");
+                return false;
+            }
+
+            List<ModMetadata> clientMods = new List<ModMetadata>();
             var serverMods = Globals.ModManager.Mods;
 
             int clientModCount = msg.ReadInt32();
@@ -261,14 +279,23 @@ namespace SoG.Modding.Patches
 
             for (int index = 0; index < clientModCount; index++)
             {
-                clientModNames.Add(msg.ReadString());
+                clientMods.Add(new ModMetadata()
+                {
+                    NameID = msg.ReadString(),
+                    ModVersion = Version.Parse(msg.ReadString())
+                });
             }
 
             if (clientModCount == serverModCount)
             {
                 for (int index = 0; index < clientModCount; index++)
                 {
-                    if (clientModNames[index] != serverMods[index].NameID)
+                    if (serverMods[index].DisableObjectCreation)
+                    {
+                        continue;
+                    }
+
+                    if (clientMods[index].NameID != serverMods[index].NameID || clientMods[index].ModVersion != serverMods[index].ModVersion)
                     {
                         failReason = 2;
                         break;
@@ -281,15 +308,15 @@ namespace SoG.Modding.Patches
             }
 
             Globals.Logger.Debug($"Mods received from client: ");
-            foreach (var name in clientModNames)
+            foreach (var meta in clientMods)
             {
-                Globals.Logger.Debug("    " + name);
+                Globals.Logger.Debug("    " + meta.NameID + ", v" + (meta.ModVersion?.ToString() ?? "Unknown"));
             }
 
             Globals.Logger.Debug($"Mods on server: ");
             foreach (var mod in serverMods)
             {
-                Globals.Logger.Debug("    " + mod.NameID);
+                Globals.Logger.Debug("    " + mod.NameID + ", v" + (mod.ModVersion?.ToString() ?? "Unknown"));
             }
 
             if (failReason == 1)
@@ -298,7 +325,7 @@ namespace SoG.Modding.Patches
             }
             else if (failReason == 2)
             {
-                Globals.Logger.Debug($"Client's mod list doesn't compare equal to server's mod list.");
+                Globals.Logger.Debug($"Client's mod list doesn't seem compatible with server's mod list.");
             }
 
             if (failReason != 0)
@@ -319,11 +346,19 @@ namespace SoG.Modding.Patches
         {
             Globals.Logger.Debug("Writing mod list!");
 
+            msg.Write(Globals.ModManager.GrindScript.ModVersion.ToString());
+
             msg.Write(Globals.ModManager.Mods.Count);
 
             foreach (Mod mod in Globals.ModManager.Mods)
             {
+                if (mod.DisableObjectCreation)
+                {
+                    continue;
+                }
+
                 msg.Write(mod.NameID);
+                msg.Write(mod.ModVersion.ToString());
             }
 
             Globals.Logger.Debug("Done with mod list!");

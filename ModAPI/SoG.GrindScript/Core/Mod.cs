@@ -19,7 +19,7 @@ namespace SoG.Modding
     /// All mods need to implement the LoadContent method. GrindScript will call this method when modded content should be loaded. <para/>
     /// BaseScript has a few callbacks that can be overriden to add extra behavior to the game for certain events.
     /// </summary>
-    public abstract class Mod
+    public abstract class Mod : IModMetadata
     {
         public class ModPacket
         {
@@ -84,6 +84,12 @@ namespace SoG.Modding
         /// The default value is GetType().Name.
         /// </summary>
         public virtual string NameID => GetType().Name;
+
+        public virtual Version ModVersion => new Version(0, 0, 0, 0);
+
+        public virtual bool DisableObjectCreation => false;
+
+        public virtual bool AllowDiscoveryByMods => true;
 
         /// <summary>
         /// The default Logger for this mod.
@@ -275,19 +281,18 @@ namespace SoG.Modding
         #region Game Object Creation Methods
 
         /// <summary>
-        /// Creates a new quest from the given QuestConfig.
-        /// The quest must have a reward defined for it to be valid.
+        /// Creates a new quest from the given QuestConfig, and returns its game ID.
         /// </summary>
         public QuestCodex.QuestID CreateQuest(QuestConfig config)
         {
             if (config == null)
                 throw new ArgumentNullException(nameof(config));
 
-            if (config.Reward == null)
-                throw new ArgumentException("config's Reward must not be null!");
-
             if (!InLoad)
                 throw new InvalidOperationException(ErrorCodex.UseOnlyDuringLoad);
+
+            if (DisableObjectCreation)
+                throw new InvalidOperationException(ErrorCodex.ObjectCreationDisabled);
 
             bool duplicateID = GetLibrary().Quests.Any(x => x.Value.ModID == config.ModID);
 
@@ -296,6 +301,9 @@ namespace SoG.Modding
 
             QuestCodex.QuestID gameID = Manager.ID.QuestIDNext++;
 
+            SymbolicItemFlagReward noReward = new SymbolicItemFlagReward();
+            noReward.AddItem(ItemCodex.ItemTypes._Misc_BagLol, 1);
+
             QuestDescription questData = new QuestDescription()
             {
                 sQuestNameReference = $"Quest_{(int)gameID}_Name",
@@ -303,7 +311,7 @@ namespace SoG.Modding
                 sDescriptionReference = $"Quest_{(int)gameID}_Description",
                 iIntendedLevel = config.RecommendedPlayerLevel,
                 enType = config.Type,
-                xReward = config.Reward
+                xReward = config.Reward ?? noReward
             };
 
             QuestEntry entry = new QuestEntry(this, gameID, config.ModID)
@@ -319,11 +327,17 @@ namespace SoG.Modding
             return gameID;
         }
 
+        /// <summary>
+        /// Creates a new special quest objective, and returns its game ID.
+        /// </summary>
         public Objective_SpecialObjective.UniqueID CreateSpecialObjective()
         {
             return Manager.ID.SpecialObjectiveIDNext++;
         }
 
+        /// <summary>
+        /// Creates a new spell from the given SpellConfig, and returns its game ID.
+        /// </summary>
         public SpellCodex.SpellTypes CreateSpell(SpellConfig config)
         {
             if (config == null)
@@ -331,6 +345,9 @@ namespace SoG.Modding
 
             if (!InLoad)
                 throw new InvalidOperationException(ErrorCodex.UseOnlyDuringLoad);
+
+            if (DisableObjectCreation)
+                throw new InvalidOperationException(ErrorCodex.ObjectCreationDisabled);
 
             bool duplicateID = GetLibrary().Spells.Any(x => x.Value.ModID == config.ModID);
 
@@ -348,7 +365,7 @@ namespace SoG.Modding
         }
 
         /// <summary>
-        /// Creates a new world region, and returns its ID.
+        /// Creates a new world region, and returns its game ID.
         /// </summary>
         public Level.WorldRegion CreateWorldRegion(WorldRegionConfig config)
         {
@@ -357,6 +374,9 @@ namespace SoG.Modding
 
             if (!InLoad)
                 throw new InvalidOperationException(ErrorCodex.UseOnlyDuringLoad);
+
+            if (DisableObjectCreation)
+                throw new InvalidOperationException(ErrorCodex.ObjectCreationDisabled);
 
             bool duplicateID = GetLibrary().WorldRegions.Any(x => x.Value.ModID == config.ModID);
 
@@ -376,7 +396,7 @@ namespace SoG.Modding
         }
 
         /// <summary>
-        /// Creates a new level from the given LevelConfig.
+        /// Creates a new level from the given LevelConfig, and returns its game ID.
         /// </summary>
         public Level.ZoneEnum CreateLevel(LevelConfig config)
         {
@@ -385,6 +405,9 @@ namespace SoG.Modding
 
             if (!InLoad)
                 throw new InvalidOperationException(ErrorCodex.UseOnlyDuringLoad);
+
+            if (DisableObjectCreation)
+                throw new InvalidOperationException(ErrorCodex.ObjectCreationDisabled);
 
             bool duplicateID = GetLibrary().Levels.Any(x => x.Value.ModID == config.ModID);
 
@@ -406,7 +429,7 @@ namespace SoG.Modding
         }
 
         /// <summary> 
-        /// Creates an item from the given ItemConfig.
+        /// Creates a new item from the given ItemConfig, and returns its game ID.
         /// </summary>
         public ItemCodex.ItemTypes CreateItem(ItemConfig config)
         {
@@ -415,6 +438,9 @@ namespace SoG.Modding
 
             if (!InLoad)
                 throw new InvalidOperationException(ErrorCodex.UseOnlyDuringLoad);
+
+            if (DisableObjectCreation)
+                throw new InvalidOperationException(ErrorCodex.ObjectCreationDisabled);
 
             bool duplicateID = GetLibrary().Items.Any(x => x.Value.ModID == config.ModID);
 
@@ -548,13 +574,16 @@ namespace SoG.Modding
         }
 
         /// <summary>
-        /// Returns a SpecialEffect ID that you can use for your own equipment.
+        /// Creates a new equipment special effect, and returns its game ID.
         /// </summary>
         public EquipmentInfo.SpecialEffect CreateSpecialEffect()
         {
             return Manager.ID.ItemEffectIDNext++;
         }
 
+        /// <summary>
+        /// Creates a new enemy using the given EnemyConfig, and returns its game ID.
+        /// </summary>
         public EnemyCodex.EnemyTypes CreateEnemy(EnemyConfig config)
         {
             if (config == null)
@@ -565,6 +594,9 @@ namespace SoG.Modding
 
             if (!InLoad)
                 throw new InvalidOperationException(ErrorCodex.UseOnlyDuringLoad);
+
+            if (DisableObjectCreation)
+                throw new InvalidOperationException(ErrorCodex.ObjectCreationDisabled);
 
             bool duplicateID = GetLibrary().Enemies.Any(x => x.Value.ModID == config.ModID);
 
@@ -603,9 +635,8 @@ namespace SoG.Modding
         }
 
         /// <summary>
-        /// Adds a new command that executes the given parser when called.
-        /// The command can be executed by typing in chat "/(ModName):(command) (argList)". <para/>
-        /// The command must not have whitespace in it.
+        /// Creates a new command for this mod.
+        /// Modded commands can be called by typing /{Mod NameID}:{command} {args...} in chat.
         /// </summary>
         public void CreateCommand(string command, CommandParser parser)
         {
@@ -621,6 +652,9 @@ namespace SoG.Modding
             ModCommands[command] = parser ?? throw new ArgumentNullException(nameof(parser));
         }
 
+        /// <summary>
+        /// Creates a new status effect using the given StatusEffectConfig, and returns its game ID.
+        /// </summary>
         public BaseStats.StatusEffectSource CreateStatusEffect(StatusEffectConfig config)
         {
             if (config == null)
@@ -628,6 +662,9 @@ namespace SoG.Modding
 
             if (!InLoad)
                 throw new InvalidOperationException(ErrorCodex.UseOnlyDuringLoad);
+
+            if (DisableObjectCreation)
+                throw new InvalidOperationException(ErrorCodex.ObjectCreationDisabled);
 
             bool duplicateID = GetLibrary().StatusEffects.Any(x => x.Value.ModID == config.ModID);
 
@@ -649,8 +686,8 @@ namespace SoG.Modding
         }
 
         /// <summary>
-        /// Configures custom audio for the current mod, using the config provided. <para/>
-        /// Config must not be null.
+        /// Configures custom audio for the current mod, using the config provided.
+        /// This method may only be called once per mod.
         /// </summary>
         public void CreateAudio(AudioConfig config)
         {
@@ -682,12 +719,17 @@ namespace SoG.Modding
 
             string root = Path.Combine(Content.RootDirectory, AssetPath);
 
-            ModUtils.TryLoadWaveBank(Path.Combine(root, "Sound", NameID + "Effects.xwb"), audioEngine, out Audio.EffectsWB);
-            ModUtils.TryLoadSoundBank(Path.Combine(root, "Sound", NameID + "Effects.xsb"), audioEngine, out Audio.EffectsSB);
-            ModUtils.TryLoadSoundBank(Path.Combine(root, "Sound", NameID + "Music.xsb"), audioEngine, out Audio.MusicSB);
-            ModUtils.TryLoadWaveBank(Path.Combine(root, "Sound", NameID + ".xwb"), audioEngine, out Audio.UniversalWB);
+            // Non-unique sound / wave banks will cause audio conflicts
+            // This is why the file paths are set in stone
+            AssetUtils.TryLoadWaveBank(Path.Combine(root, "Sound", NameID + "Effects.xwb"), audioEngine, out Audio.EffectsWB);
+            AssetUtils.TryLoadSoundBank(Path.Combine(root, "Sound", NameID + "Effects.xsb"), audioEngine, out Audio.EffectsSB);
+            AssetUtils.TryLoadSoundBank(Path.Combine(root, "Sound", NameID + "Music.xsb"), audioEngine, out Audio.MusicSB);
+            AssetUtils.TryLoadWaveBank(Path.Combine(root, "Sound", NameID + ".xwb"), audioEngine, out Audio.UniversalWB);
         }
 
+        /// <summary>
+        /// Creates a new treat or curse using the given TreatCurseConfig, and returns its game ID.
+        /// </summary>
         public RogueLikeMode.TreatsCurses CreateTreatOrCurse(TreatCurseConfig config)
         {
             if (config == null)
@@ -695,6 +737,9 @@ namespace SoG.Modding
 
             if (!InLoad)
                 throw new InvalidOperationException(ErrorCodex.UseOnlyDuringLoad);
+
+            if (DisableObjectCreation)
+                throw new InvalidOperationException(ErrorCodex.ObjectCreationDisabled);
 
             bool duplicateID = GetLibrary().Curses.Any(x => x.Value.ModID == config.ModID);
 
@@ -717,6 +762,9 @@ namespace SoG.Modding
             return gameID;
         }
 
+        /// <summary>
+        /// Creates a new perk using the given PerkConfig, and returns its game ID.
+        /// </summary>
         public RogueLikeMode.Perks CreatePerk(PerkConfig config)
         {
             if (config == null)
@@ -724,6 +772,9 @@ namespace SoG.Modding
 
             if (!InLoad)
                 throw new InvalidOperationException(ErrorCodex.UseOnlyDuringLoad);
+
+            if (DisableObjectCreation)
+                throw new InvalidOperationException(ErrorCodex.ObjectCreationDisabled);
 
             bool duplicateID = GetLibrary().Perks.Any(x => x.Value.ModID == config.ModID);
 
@@ -745,6 +796,9 @@ namespace SoG.Modding
             return gameID;
         }
 
+        /// <summary>
+        /// Creates a new pin using the given PinConfig, and returns its game ID.
+        /// </summary>
         public PinCodex.PinType CreatePin(PinConfig config)
         {
             if (config == null)
@@ -752,6 +806,9 @@ namespace SoG.Modding
 
             if (!InLoad)
                 throw new InvalidOperationException(ErrorCodex.UseOnlyDuringLoad);
+
+            if (DisableObjectCreation)
+                throw new InvalidOperationException(ErrorCodex.ObjectCreationDisabled);
 
             bool duplicateID = GetLibrary().Pins.Any(x => x.Value.ModID == config.ModID);
 
@@ -779,7 +836,7 @@ namespace SoG.Modding
         /// <summary>
         /// Adds parsers for a modded packet.
         /// The parsers are called when a packet is received, allowing you to trigger certain actions.
-        /// The parsers can be null or empty if you don't want the server or client to process it.
+        /// If a parser is null, the packet is ignored by the respective end point (client or server).
         /// </summary>
         public void AddPacket(ushort packetID, ModPacket packet)
         {
@@ -791,6 +848,9 @@ namespace SoG.Modding
         /// </summary>
         public void AddRecipe(ItemCodex.ItemTypes result, Dictionary<ItemCodex.ItemTypes, ushort> ingredients)
         {
+            if (DisableObjectCreation)
+                throw new InvalidOperationException(ErrorCodex.ObjectCreationDisabled);
+
             if (ingredients == null)
                 throw new ArgumentNullException(nameof(ingredients));
 

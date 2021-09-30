@@ -12,5 +12,7 @@
         public static string AudioAlreadyInitialized => "Audio for this mod has already been created. Calling this method multiple times is not supported (yet).";
 
         public static string NoWhiteSpaceInCommand => "Commands must not have any whitespace.";
+
+        public static string ObjectCreationDisabled => "Creating game objects is now allowed for mods with disabled object creation.";
     }
 }

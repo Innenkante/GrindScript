@@ -1,14 +1,18 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
 using SoG.Modding.Utils;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 
 namespace SoG.Modding.GrindScriptMod
 {
     internal class GrindScript : Mod
     {
         public override string NameID => "GrindScript";
+
+        public override Version ModVersion => new Version("0.14");
 
         public Texture2D ErrorTexture { get; private set; }
 
@@ -33,16 +37,16 @@ namespace SoG.Modding.GrindScriptMod
         {
             _colliderRC = new ColliderRC();
 
-            ModUtils.TryLoadTex(Path.Combine(AssetPath, "NullTexGS"), Globals.Game.Content, out Texture2D tex);
+            AssetUtils.TryLoadTexture(Path.Combine(AssetPath, "NullTexGS"), Globals.Game.Content, out Texture2D tex);
             ErrorTexture = tex;
 
-            ModUtils.TryLoadTex(Path.Combine(AssetPath, "ModMenu"), Globals.Game.Content, out tex);
+            AssetUtils.TryLoadTexture(Path.Combine(AssetPath, "ModMenu"), Globals.Game.Content, out tex);
             ModMenuText = tex;
 
-            ModUtils.TryLoadTex(Path.Combine(AssetPath, "ModList"), Globals.Game.Content, out tex);
+            AssetUtils.TryLoadTexture(Path.Combine(AssetPath, "ModList"), Globals.Game.Content, out tex);
             ModListText = tex;
 
-            ModUtils.TryLoadTex(Path.Combine(AssetPath, "ReloadMods"), Globals.Game.Content, out tex);
+            AssetUtils.TryLoadTexture(Path.Combine(AssetPath, "ReloadMods"), Globals.Game.Content, out tex);
             ReloadModsText = tex;
 
             Dictionary<string, CommandParser> commands = new Dictionary<string, CommandParser>
@@ -65,16 +69,16 @@ namespace SoG.Modding.GrindScriptMod
         {
             _colliderRC = null;
 
-            ContentUtils.ForceUnloadAsset(Globals.Game.Content, Path.Combine(AssetPath, "NullTexGS"));
+            AssetUtils.UnloadAsset(Globals.Game.Content, Path.Combine(AssetPath, "NullTexGS"));
             ErrorTexture = null;
 
-            ContentUtils.ForceUnloadAsset(Globals.Game.Content, Path.Combine(AssetPath, "ModMenu"));
+            AssetUtils.UnloadAsset(Globals.Game.Content, Path.Combine(AssetPath, "ModMenu"));
             ModMenuText = null;
 
-            ContentUtils.ForceUnloadAsset(Globals.Game.Content, Path.Combine(AssetPath, "ModList"));
+            AssetUtils.UnloadAsset(Globals.Game.Content, Path.Combine(AssetPath, "ModList"));
             ModListText = null;
 
-            ContentUtils.ForceUnloadAsset(Globals.Game.Content, Path.Combine(AssetPath, "ReloadMods"));
+            AssetUtils.UnloadAsset(Globals.Game.Content, Path.Combine(AssetPath, "ReloadMods"));
             ReloadModsText = null;
         }
 
@@ -87,9 +91,8 @@ namespace SoG.Modding.GrindScriptMod
         private void Version(string message, int connection)
         {
             CAS.AddChatMessage(
-                "Short Version: " + Globals.GameShortVersion + "\n" +
-                "Long Version: " + Globals.GameLongVersion + "\n" +
-                "Vanilla Version: " + Globals.GameVanillaVersion
+                "SoG Version: " + Globals.GameLongVersion + "\n" +
+                "GrindScript Version:" + ModVersion.ToString()
                 );
         }
 

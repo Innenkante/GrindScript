@@ -30,7 +30,7 @@ namespace SoG.Modding.GrindScriptMod
 
         public class ModSaveData
         {
-            public List<string> ModsSaved = new List<string>();
+            public List<ModMetadata> ModMetaList = new List<ModMetadata>();
         }
 
         public static readonly GlobalData.MainMenu.MenuLevel ReservedModMenuID = (GlobalData.MainMenu.MenuLevel)300;
@@ -66,9 +66,9 @@ namespace SoG.Modding.GrindScriptMod
                 {
                     using (BinaryReader stream = new BinaryReader(new FileStream(path, FileMode.Open, FileAccess.Read)))
                     {
-                        var modMeta = Globals.ModManager.Saving.PeekGrindScriptData(stream);
+                        var saveData = Globals.ModManager.Saving.PeekMetadata(stream);
 
-                        _modSaves[index].ModsSaved = modMeta.Select(x => x.Name).ToList();
+                        _modSaves[index].ModMetaList.AddRange(saveData.Mods);
                     }
                 }
             }
@@ -92,9 +92,9 @@ namespace SoG.Modding.GrindScriptMod
             {
                 using (BinaryReader stream = new BinaryReader(new FileStream(path, FileMode.Open, FileAccess.Read)))
                 {
-                    var modMeta = Globals.ModManager.Saving.PeekGrindScriptData(stream);
+                    var saveData = Globals.ModManager.Saving.PeekMetadata(stream);
 
-                    _arcadeSave.ModsSaved = modMeta.Select(x => x.Name).ToList();
+                    _arcadeSave.ModMetaList.AddRange(saveData.Mods);
                 }
             }
         }
@@ -116,11 +116,11 @@ namespace SoG.Modding.GrindScriptMod
                 return;
             }
 
-            List<string> loadedMods = Globals.ModManager.Mods.Select(x => x.NameID).ToList();
-            List<string> saveMods = _modSaves[slot].ModsSaved;
+            List<ModMetadata> loadedMods = Globals.ModManager.Mods.Select(x => new ModMetadata(x)).ToList();
+            List<ModMetadata> saveMods = _modSaves[slot].ModMetaList;
 
-            List<string> missingMods = saveMods.Where(x => !loadedMods.Contains(x)).ToList();
-            List<string> newMods = loadedMods.Where(x => !saveMods.Contains(x)).ToList();
+            List<ModMetadata> missingMods = saveMods.Where(x => !loadedMods.Any(y => y.NameID == x.NameID)).ToList();
+            List<ModMetadata> newMods = loadedMods.Where(x => !saveMods.Any(y => y.NameID == x.NameID)).ToList();
 
             RenderMessage(GetSaveCompatibiltyText(missingMods, newMods), 444, 90 + 65);
         }
@@ -139,16 +139,16 @@ namespace SoG.Modding.GrindScriptMod
                 return;
             }
 
-            List<string> loadedMods = Globals.ModManager.Mods.Select(x => x.NameID).ToList();
-            List<string> saveMods = _arcadeSave.ModsSaved;
+            List<ModMetadata> loadedMods = Globals.ModManager.Mods.Select(x => new ModMetadata(x)).ToList();
+            List<ModMetadata> saveMods = _arcadeSave.ModMetaList;
 
-            List<string> missingMods = saveMods.Where(x => !loadedMods.Contains(x)).ToList();
-            List<string> newMods = loadedMods.Where(x => !saveMods.Contains(x)).ToList();
+            List<ModMetadata> missingMods = saveMods.Where(x => !loadedMods.Any(y => y.NameID == x.NameID)).ToList();
+            List<ModMetadata> newMods = loadedMods.Where(x => !saveMods.Any(y => y.NameID == x.NameID)).ToList();
 
             RenderMessage(GetSaveCompatibiltyText(missingMods, newMods), 422, 243);
         }
 
-        private string GetSaveCompatibiltyText(List<string> missingMods, List<string> newMods)
+        private string GetSaveCompatibiltyText(List<ModMetadata> missingMods, List<ModMetadata> newMods)
         {
             string message;
 
@@ -164,9 +164,9 @@ namespace SoG.Modding.GrindScriptMod
                 {
                     message += "\n" + "Missing mods:";
 
-                    foreach (var name in missingMods)
+                    foreach (var meta in missingMods)
                     {
-                        message += "\n" + "  " + name;
+                        message += "\n" + "  " + meta.NameID + " v." + (meta.ModVersion?.ToString() ?? "Unknown");
                     }
                 }
 
@@ -174,9 +174,9 @@ namespace SoG.Modding.GrindScriptMod
                 {
                     message += "\n" + "New mods:";
 
-                    foreach (var name in newMods)
+                    foreach (var meta in newMods)
                     {
-                        message += "\n" + "  " + name;
+                        message += "\n" + "  " + meta.NameID + " v." + (meta.ModVersion?.ToString() ?? "Unknown");
                     }
                 }
             }

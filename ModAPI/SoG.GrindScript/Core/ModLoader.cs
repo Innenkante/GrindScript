@@ -163,6 +163,9 @@ namespace SoG.Modding
             // Unloads some mod textures for enemies. Textures are always requeried, so it's allowed
             InGameMenu.contTempAssetManager?.Unload();
 
+            // Experimental / Risky. Unloads all mod assets
+            AssetUtils.UnloadModContentPathAssets(RenderMaster.contPlayerStuff);
+
             Crafting.CraftSystem.InitCraftSystem();
         }
     }

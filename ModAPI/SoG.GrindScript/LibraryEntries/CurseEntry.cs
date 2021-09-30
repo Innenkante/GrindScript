@@ -41,7 +41,10 @@ namespace SoG.Modding.LibraryEntries
             Globals.Game.EXT_RemoveMiscText("Menus", NameHandle);
             Globals.Game.EXT_RemoveMiscText("Menus", DescriptionHandle);
 
-            ContentUtils.ForceUnloadAsset(Globals.Game.Content, Config.TexturePath);
+            if (ModUtils.IsModContentPath(Config.TexturePath))
+            {
+                AssetUtils.UnloadAsset(Globals.Game.Content, Config.TexturePath);
+            }
         }
     }
 }

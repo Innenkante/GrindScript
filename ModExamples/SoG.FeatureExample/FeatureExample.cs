@@ -43,6 +43,8 @@ namespace SoG.FeatureExample
 
         public override string NameID => base.NameID;
 
+        public override Version ModVersion => new Version("0.14");
+
         public override void Load()
         {
             Logger.Info("Loading FeatureExample mod....");

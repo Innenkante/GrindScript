@@ -80,7 +80,7 @@ namespace SoG.Modding.Patches
                 return true;
             }
 
-            ModUtils.TryLoadTex(Globals.ModManager.Library.Enemies[enType].Config.DisplayIconPath, Content, out __result);
+            AssetUtils.TryLoadTexture(Globals.ModManager.Library.Enemies[enType].Config.DisplayIconPath, Content, out __result);
 
             return false;
         }
@@ -94,7 +94,7 @@ namespace SoG.Modding.Patches
                 return true;
             }
 
-            ModUtils.TryLoadTex(Globals.ModManager.Library.Enemies[enType].Config.DisplayBackgroundPath, Content, out __result);
+            AssetUtils.TryLoadTexture(Globals.ModManager.Library.Enemies[enType].Config.DisplayBackgroundPath, Content, out __result);
 
             return false;
         }

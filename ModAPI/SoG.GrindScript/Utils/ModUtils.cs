@@ -28,61 +28,11 @@ namespace SoG.Modding.Utils
         }
 
         /// <summary>
-        /// Tries to load a texture from the given path and ContentManager.
-        /// Returns true if the operation succeeded, false otherwise.
-        /// If the operation failed, result is set to RenderMaster.txNullTexture.
+        /// Returns true if the mod path starts with "ModContent\", false otherwise.
         /// </summary>
-        public static bool TryLoadTex(string path, ContentManager manager, out Texture2D result)
+        public static bool IsModContentPath(string assetPath)
         {
-            try
-            {
-                result = manager.Load<Texture2D>(path);
-                return true;
-            }
-            catch
-            {
-                result = RenderMaster.txNullTex;
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// Tries to load a WaveBank using the provided path and AudioEngine.
-        /// Returns true if the operation succeeded, false otherwise.
-        /// If the operation failed, result is set to null.
-        /// </summary>
-        public static bool TryLoadWaveBank(string assetPath, AudioEngine engine, out WaveBank result)
-        {
-            try
-            {
-                result =  new WaveBank(engine, assetPath);
-                return true;
-            }
-            catch
-            {
-                result = null;
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// Tries to load a SoundBank using the provided path and AudioEngine, and returns it if successful.
-        /// If an exception is thrown during load, null is returned, and a warning message is logged.
-        /// </summary>
-        public static bool TryLoadSoundBank(string assetPath, AudioEngine engine, out SoundBank result)
-        {
-            try
-            {
-                result = new SoundBank(engine, assetPath);
-                return true;
-            }
-            catch (Exception e)
-            {
-                Globals.Logger.Warn(ShortenModPaths(e.Message), source: nameof(TryLoadSoundBank));
-
-                result = null;
-                return false;
-            }
+            return assetPath.Trim().Replace('/', '\\').StartsWith("ModContent\\");
         }
 
         /// <summary>

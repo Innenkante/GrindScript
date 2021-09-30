@@ -38,7 +38,7 @@ namespace SoG.Modding.Patches
             {
                 if (__result.xDefaultSet.atxTextures[index] == null)
                 {
-                    ModUtils.TryLoadTex(Path.Combine(path, directions[index]), manager, out __result.xDefaultSet.atxTextures[index]);
+                    AssetUtils.TryLoadTexture(Path.Combine(path, directions[index]), manager, out __result.xDefaultSet.atxTextures[index]);
                 }
             }
 
@@ -52,7 +52,7 @@ namespace SoG.Modding.Patches
                 {
                     if (kvp.Value.atxTextures[index] == null)
                     {
-                        ModUtils.TryLoadTex(Path.Combine(altPath, directions[index]), manager, out kvp.Value.atxTextures[index]);
+                        AssetUtils.TryLoadTexture(Path.Combine(altPath, directions[index]), manager, out kvp.Value.atxTextures[index]);
                     }
                 }
             }

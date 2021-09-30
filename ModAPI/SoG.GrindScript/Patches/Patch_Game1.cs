@@ -69,7 +69,7 @@ namespace SoG.Modding.Patches
 
             __result = new PlayerAnimationTextureSet() { bWeaponOnTop = bWeaponOnTop };
 
-            ModUtils.TryLoadTex($"Sprites/Heroes/{sAnimation}/{sDirection}", VanillaContent, out __result.txBase);
+            AssetUtils.TryLoadTexture($"Sprites/Heroes/{sAnimation}/{sDirection}", VanillaContent, out __result.txBase);
 
             string resource = xPlayerView.xEquipment.DisplayShield?.sResourceName ?? "";
             if (bWithShield && resource != "")
@@ -80,11 +80,11 @@ namespace SoG.Modding.Patches
                 if (modItem)
                 {
                     // For mods, sResourceName is actually a partial path
-                    ModUtils.TryLoadTex($"{resource}/{sAnimation}/{sDirection}", VanillaContent, out __result.txShield);
+                    AssetUtils.TryLoadTexture($"{resource}/{sAnimation}/{sDirection}", VanillaContent, out __result.txShield);
                 }
                 else
                 {
-                    ModUtils.TryLoadTex($"Sprites/Heroes/{sAnimation}/Shields/{resource}/{sDirection}", VanillaContent, out __result.txShield);
+                    AssetUtils.TryLoadTexture($"Sprites/Heroes/{sAnimation}/Shields/{resource}/{sDirection}", VanillaContent, out __result.txShield);
                 }
             }
 
@@ -106,7 +106,7 @@ namespace SoG.Modding.Patches
 
             string path = Globals.ModManager.Library.Perks[enPerk].Config.TexturePath;
 
-            ModUtils.TryLoadTex(path, Globals.Game.Content, out __result);
+            AssetUtils.TryLoadTexture(path, Globals.Game.Content, out __result);
 
             return false;
         }
@@ -123,7 +123,7 @@ namespace SoG.Modding.Patches
 
             string path = Globals.ModManager.Library.Curses[enTreat].Config.TexturePath;
 
-            ModUtils.TryLoadTex(path, Globals.Game.Content, out __result);
+            AssetUtils.TryLoadTexture(path, Globals.Game.Content, out __result);
 
             return false;
         }

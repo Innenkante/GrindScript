@@ -11,11 +11,22 @@ namespace SoG.Modding
     /// </summary>
     public class ModMetadata : IModMetadata
     {
+        public ModMetadata()
+        {
+
+        }
+
+        public ModMetadata(IModMetadata meta)
+        {
+            NameID = meta.NameID;
+            ModVersion = meta.ModVersion;
+            DisableObjectCreation = meta.DisableObjectCreation;
+            AllowDiscoveryByMods = meta.AllowDiscoveryByMods;
+        }
+
         public string NameID { get; set; }
 
-        public Version Version { get; set; }
-
-        public Version GrindScriptVersion { get; set; }
+        public Version ModVersion { get; set; }
 
         public bool DisableObjectCreation { get; set; }
 

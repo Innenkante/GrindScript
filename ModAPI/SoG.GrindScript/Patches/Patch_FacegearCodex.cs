@@ -37,7 +37,7 @@ namespace SoG.Modding.Patches
             {
                 if (__result.atxTextures[index] == null)
                 {
-                    ModUtils.TryLoadTex(Path.Combine(path, directions[index]), manager, out __result.atxTextures[index]);
+                    AssetUtils.TryLoadTexture(Path.Combine(path, directions[index]), manager, out __result.atxTextures[index]);
                 }
             }
 

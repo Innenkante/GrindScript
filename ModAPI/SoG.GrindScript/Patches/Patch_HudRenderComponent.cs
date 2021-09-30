@@ -27,7 +27,7 @@ namespace SoG.Modding.Patches
             }
             else
             {
-                ModUtils.TryLoadTex(path, Globals.Game.Content, out __result);
+                AssetUtils.TryLoadTexture(path, Globals.Game.Content, out __result);
             }
         }
     }

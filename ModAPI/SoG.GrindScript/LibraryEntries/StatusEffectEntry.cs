@@ -27,7 +27,10 @@ namespace SoG.Modding.LibraryEntries
 
         public void Cleanup()
         {
-            ContentUtils.ForceUnloadAsset(Globals.Game.Content, Config.TexturePath);
+            if (ModUtils.IsModContentPath(Config.TexturePath))
+            {
+                AssetUtils.UnloadAsset(Globals.Game.Content, Config.TexturePath);
+            }
         }
     }
 }

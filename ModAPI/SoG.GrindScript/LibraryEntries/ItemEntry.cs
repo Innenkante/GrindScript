@@ -53,7 +53,10 @@ namespace SoG.Modding.LibraryEntries
 
             ContentManager manager = Globals.Game.Content;
 
-            ContentUtils.ForceUnloadAsset(Globals.Game.Content, Config.IconPath);
+            if (ModUtils.IsModContentPath(Config.IconPath))
+            {
+                AssetUtils.UnloadAsset(Globals.Game.Content, Config.IconPath);
+            }
 
             string[] directions = new string[]
             {
@@ -62,23 +65,33 @@ namespace SoG.Modding.LibraryEntries
 
             if (EquipData is HatInfo hatData)
             {
-                string path = Config.EquipResourcePath;
+                string basePath = Config.EquipResourcePath;
                 int index = -1;
 
                 while (++index < 4)
                 {
-                    ContentUtils.ForceUnloadAsset(manager, Path.Combine(path, directions[index]));
+                    string texPath = Path.Combine(basePath, directions[index]);
+
+                    if (ModUtils.IsModContentPath(texPath))
+                    {
+                        AssetUtils.UnloadAsset(manager, texPath);
+                    }
                 }
 
                 foreach (var kvp in hatData.denxAlternateVisualSets)
                 {
-                    string altPath = Path.Combine(path, HatAltSetResourcePaths[kvp.Key]);
+                    string altPath = Path.Combine(basePath, HatAltSetResourcePaths[kvp.Key]);
 
                     index = -1;
 
                     while (++index < 4)
                     {
-                        ContentUtils.ForceUnloadAsset(manager, Path.Combine(altPath, directions[index]));
+                        string texPath = Path.Combine(altPath, directions[index]);
+
+                        if (ModUtils.IsModContentPath(texPath))
+                        {
+                            AssetUtils.UnloadAsset(manager, texPath);
+                        }
                     }
                 }
             }
@@ -89,7 +102,7 @@ namespace SoG.Modding.LibraryEntries
 
                 while (++index < 4)
                 {
-                    ContentUtils.ForceUnloadAsset(manager, Path.Combine(path, directions[index]));
+                    AssetUtils.UnloadAsset(manager, Path.Combine(path, directions[index]));
                 }
             }
         }

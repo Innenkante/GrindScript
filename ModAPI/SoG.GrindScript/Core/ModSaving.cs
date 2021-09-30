@@ -13,6 +13,11 @@ namespace SoG.Modding
 
     public class ModSaving
     {
+        internal class SaveData
+        {
+            public List<ModMetadata> Mods { get; } = new List<ModMetadata>();
+        }
+
         public enum ModDataBlock : int
         {
             ModData_CharacterFile = 0,
@@ -28,12 +33,7 @@ namespace SoG.Modding
             CurseID = 1006,
         }
 
-        public class ModMetaData
-        {
-            public string Name;
-        }
-
-        public const int Version = 1;
+        public readonly int FileVersion = 1;
 
         public const string SaveFileExtension = ".gs";
 
@@ -57,11 +57,7 @@ namespace SoG.Modding
 
         internal void LoadModCharacter(BinaryReader file)
         {
-            LoadGrindScriptFile(file,
-                ModDataBlock.ItemID,
-                ModDataBlock.ModData_CharacterFile,
-                ModDataBlock.EnemyID
-                );
+            LoadGrindScriptFile(file);
         }
 
         internal void SaveModWorld(BinaryWriter file)
@@ -74,10 +70,7 @@ namespace SoG.Modding
 
         internal void LoadModWorld(BinaryReader file)
         {
-            LoadGrindScriptFile(file,
-                ModDataBlock.ModData_WorldFile,
-                ModDataBlock.QuestID_World
-                );
+            LoadGrindScriptFile(file);
         }
 
         internal void SaveModArcade(BinaryWriter file)
@@ -93,69 +86,31 @@ namespace SoG.Modding
 
         internal void LoadModArcade(BinaryReader file)
         {
-            LoadGrindScriptFile(file,
-                ModDataBlock.ItemID,
-                ModDataBlock.ModData_ArcadeFile,
-                ModDataBlock.PerkID,
-                ModDataBlock.CurseID,
-                ModDataBlock.EnemyID
-                );
-        }
-
-        internal List<ModMetaData> PeekGrindScriptData(BinaryReader file)
-        {
-            bool fileIsEmpty = file.PeekChar() == -1;
-
-            if (fileIsEmpty)
-                return null;
-
-            List<ModMetaData> modList = new List<ModMetaData>();
-
-            int previousVersion = file.ReadInt32();
-
-            int scriptCount = file.ReadInt32();
-
-            while (scriptCount-- > 0)
-            {
-                string modName = file.ReadString();
-
-                int blockCount = file.ReadInt32();
-
-                while (blockCount-- > 0)
-                {
-                    ModDataBlock blockType = ReadEnum<ModDataBlock>(file);
-
-                    int blockSize = file.ReadInt32();
-
-                    file.BaseStream.Position += blockSize;
-                }
-
-                modList.Add(new ModMetaData()
-                {
-                    Name = modName
-                });
-            }
-
-            return modList;
+            LoadGrindScriptFile(file);
         }
 
         #endregion
 
         #region Helper write and read logic
 
-        private void ReadModMetaData()
+        internal SaveData PeekMetadata(BinaryReader file)
         {
-
+            return LoadGrindScriptFile(file, true);
         }
 
-        private void LoadGrindScriptFile(BinaryReader file, params ModDataBlock[] blocks)
+        private SaveData LoadGrindScriptFile(BinaryReader file)
         {
-            HashSet<ModDataBlock> blockSet = new HashSet<ModDataBlock>(blocks);
+            return LoadGrindScriptFile(file, false);
+        }
 
+        private SaveData LoadGrindScriptFile(BinaryReader file, bool peekOnly)
+        {
             bool fileIsEmpty = file.PeekChar() == -1;
 
             if (fileIsEmpty)
-                return;
+                return null;
+
+            SaveData saveData = new SaveData();
 
             ItemCodex.ItemTypes itemShuffleIndex = ID.ItemIDEnd;
             RogueLikeMode.Perks perkShuffleIndex = ID.PerkIDEnd;
@@ -165,30 +120,24 @@ namespace SoG.Modding
 
             int previousVersion = file.ReadInt32();
 
-            if (previousVersion != Version)
+            if (previousVersion != FileVersion)
             {
-                Globals.Logger.Info($"Loading save file with mismatched version. GrindScript save version is {Version}, while file version is {previousVersion}.");
+                Globals.Logger.Info($"Loading save file with mismatched version. GrindScript save version is {FileVersion}, while file version is {previousVersion}.");
             }
 
             int scriptCount = file.ReadInt32();
 
             while (scriptCount-- > 0)
             {
-                bool skipLoading = false;
-
-                string modName = file.ReadString();
+                ModMetadata meta = ReadModMetadata(file);
 
                 int blockCount = file.ReadInt32();
 
-                Mod mod = _manager.Mods.FirstOrDefault(x => x.NameID == modName);
-
-                if (mod == null)
-                {
-                    Globals.Logger.Warn($"Encountered an unknown mod {modName} during save load! Will skip loading its data...");
-                    skipLoading = true;
-                }
+                Mod mod = _manager.Mods.FirstOrDefault(x => x.NameID == meta.NameID);
 
                 ModLibrary library = mod != null ? _manager.Library.GetLibraryOfMod(mod) : null;
+
+                bool skipLoading = peekOnly || mod == null;
 
                 while (blockCount-- > 0)
                 {
@@ -240,19 +189,28 @@ namespace SoG.Modding
                             break;
                     }
                 }
+
+                saveData.Mods.Add(meta);
             }
+
+            return saveData;
         }
 
         private void SaveGrindScriptFile(BinaryWriter file, params ModDataBlock[] blocks)
         {
             HashSet<ModDataBlock> blockSet = new HashSet<ModDataBlock>(blocks);
 
-            file.Write(Version);
+            file.Write(FileVersion);
 
             file.Write(_manager.Mods.Count);
             foreach (Mod mod in _manager.Mods)
             {
-                file.Write(mod.NameID);
+                if (mod.DisableObjectCreation)
+                {
+                    continue;
+                }
+
+                WriteModMetadata(file, mod);
 
                 file.Write(blockSet.Count);
 
@@ -307,6 +265,37 @@ namespace SoG.Modding
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Reads limited metadata for a mod.
+        /// </summary>
+        private ModMetadata ReadModMetadata(BinaryReader file)
+        {
+            ModMetadata meta = new ModMetadata();
+
+            meta.NameID = file.ReadString();
+
+            if (FileVersion >= 2)
+            {
+                meta.ModVersion = null;
+
+                if (Version.TryParse(file.ReadString(), out Version version))
+                {
+                    meta.ModVersion = version;
+                }
+            }
+
+            return meta;
+        }
+
+        /// <summary>
+        /// Writes limited metadata for a mod.
+        /// </summary>
+        private void WriteModMetadata(BinaryWriter file, IModMetadata meta)
+        {
+            file.Write(meta.NameID);
+            file.Write((meta.ModVersion ?? new Version(0, 0)).ToString());
         }
 
         private void WriteEnum<T>(BinaryWriter writer, T value) where T : struct, Enum
