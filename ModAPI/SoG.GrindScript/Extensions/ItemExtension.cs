@@ -1,6 +1,4 @@
 ﻿using Microsoft.Xna.Framework;
-using System;
-using SoG.Modding.Core;
 
 namespace SoG.Modding.Extensions
 {

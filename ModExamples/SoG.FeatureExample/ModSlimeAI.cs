@@ -1,18 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
-using SoG.Modding.Core;
+using SoG.Modding;
 using SoG.Modding.Extensions;
 
 namespace SoG.FeatureExample
 {
-	// This is pretty much a Ctrl+C / V of SlimeAI
-	// TO DO: Make the ModSlime act in a different way
+    // This is pretty much a Ctrl+C / V of SlimeAI
+    // TO DO: Make the ModSlime act in a different way
 
-	public class ModSlimeAI : Behaviours.EnemyBehaviour
+    public class ModSlimeAI : Behaviours.EnemyBehaviour
 	{
 		// For ease of use, we use some global variables that are set by FeatureExample.cs
 		// I suggest you find a better alternative in your own code, though

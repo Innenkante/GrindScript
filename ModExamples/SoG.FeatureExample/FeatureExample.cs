@@ -1,9 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
-using SoG.Modding.API;
-using SoG.Modding.API.Configs;
-using SoG.Modding.Core;
 using SoG.Modding.Extensions;
-using SoG.Modding.ModUtils;
+using SoG.Modding.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -11,6 +8,8 @@ using System.IO;
 namespace SoG.FeatureExample
 {
     using Quests;
+    using SoG.Modding;
+    using SoG.Modding.Configs;
     using CancelOptions = Animation.CancelOptions;
     using Criteria = AnimInsCriteria.Criteria;
     using EventType = AnimInsEvent.EventType;
@@ -42,6 +41,10 @@ namespace SoG.FeatureExample
         string audioClash = "";
         string audioDeafSilence = "";
 
+        public override string NameID => base.NameID;
+
+        public override Version ModVersion => new Version("0.14");
+
         public override void Load()
         {
             Logger.Info("Loading FeatureExample mod....");
@@ -69,6 +72,11 @@ namespace SoG.FeatureExample
                 return;
             }
             Logger.Info("Loaded Successfully!");
+        }
+
+        public override void Unload()
+        {
+            Logger.Info($"Calling Unload!");
         }
 
         public override void OnPlayerDamaged(PlayerView view, ref int damage, ref byte type)
@@ -258,16 +266,17 @@ namespace SoG.FeatureExample
                 },
             };
 
-            CreateItems(ItemLibrary.Values);
+            foreach (var item in ItemLibrary)
+                CreateItem(item.Value);
 
-            modShield = GetItemType(this, "_Mod_Item0001");
-            modAccessory = GetItemType(this, "_Mod_Item0002");
-            modHat = GetItemType(this, "_Mod_Item0003");
-            modFacegear = GetItemType(this, "_Mod_Item0004");
-            modOneHandedWeapon = GetItemType(this, "_Mod_Item0005");
-            modTwoHandedWeapon = GetItemType(this, "_Mod_Item0006");
-            modMisc1 = GetItemType(this, "_Mod_Item0007");
-            modMisc2 = GetItemType(this, "_Mod_Item0008");
+            modShield = GetItem("_Mod_Item0001");
+            modAccessory = GetItem("_Mod_Item0002");
+            modHat = GetItem("_Mod_Item0003");
+            modFacegear = GetItem("_Mod_Item0004");
+            modOneHandedWeapon = GetItem("_Mod_Item0005");
+            modTwoHandedWeapon = GetItem("_Mod_Item0006");
+            modMisc1 = GetItem("_Mod_Item0007");
+            modMisc2 = GetItem("_Mod_Item0008");
 
             AddRecipe(modOneHandedWeapon, new Dictionary<ItemCodex.ItemTypes, ushort>
             {
@@ -306,7 +315,7 @@ namespace SoG.FeatureExample
                 ["GiveItems"] = (argList, _) =>
                 {
                     string[] args = argList.Split(' ');
-                    if (NetUtils.IsLocal)
+                    if (NetUtils.IsLocalOrServer)
                     {
                         PlayerView localPlayer = Globals.Game.xLocalPlayer;
                         CAS.AddChatMessage("Dropping Items!");
@@ -396,7 +405,10 @@ namespace SoG.FeatureExample
                 },
             };
 
-            CreateCommands(parsers);
+            foreach (var command in parsers)
+            {
+                CreateCommand(command.Key, command.Value);
+            }
 
             Logger.Info("Commands set up successfully!");
         }

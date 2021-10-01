@@ -1,53 +1,60 @@
 ﻿using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
-using SoG.Modding.API;
-using SoG.Modding.Core;
-using SoG.Modding.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using SoG.Modding.ModUtils;
+using SoG.Modding.Utils;
 using System.IO;
+using SoG.Modding.LibraryEntries;
+using SoG.Modding.GrindScriptMod;
 
 namespace SoG.Modding.Patches
 {
-    public static class HelperCallbacks
+    internal static class HelperCallbacks
     {
         /// <summary>
-        /// Initializes all mod content.
+        /// Initializes all mod content. Checks arcade save for compatibility.
         /// </summary>
-        internal static void InContentLoad()
+        public static void DoModContentLoad()
         {
-            foreach (Mod mod in Globals.API.Loader.Mods)
-            {
-                Globals.API.Loader.CallWithContext(mod, x =>
-                {
-                    try
-                    {
-                        x.Load();
-                    }
-                    catch (Exception e)
-                    {
-                        Globals.Logger.Error($"Mod {mod.GetType().Name} threw an exception during LoadContent: {e.Message}");
-                    }
-                });
-            }
+            Globals.ModManager.Loader.Reload();
+
+            MainMenuWorker.AnalyzeStorySavesForCompatibility();
+            MainMenuWorker.AnalyzeArcadeSavesForCompatibility();
+        }
+
+        /// <summary>
+        /// Updates version so that we can tell that the game uses GrindScript.
+        /// </summary>
+        public static void UpdateVersionNumber()
+        {
+            Globals.Logger.Debug("Updating Version Number...");
+
+            Globals.GameVanillaVersion = Globals.Game.sVersionNumberOnly;
+
+            Globals.SetVersionTypeAsModded(true);
+
+            var versionDisplayField = typeof(Game1).GetField("sVersion", BindingFlags.NonPublic | BindingFlags.Instance);
+
+            versionDisplayField.SetValue(Globals.Game, Globals.GameVanillaVersion as string + " with GrindScript");
+
+            Globals.Logger.Debug("Game Long Version: " + Globals.GameLongVersion);
+            Globals.Logger.Debug("Game Short Version: " + Globals.GameShortVersion);
+            Globals.Logger.Debug("Game Vanilla Version: " + Globals.GameVanillaVersion);
         }
 
         /// <summary>
         /// Executes additional code after a level's blueprint has been processed.
         /// </summary>
-        internal static void InLevelLoadDoStuff(Level.ZoneEnum type, bool staticOnly)
+        public static void InLevelLoadDoStuff(Level.ZoneEnum type, bool staticOnly)
         {
             // Modifying vanilla levels not supported yet
 
             if (!type.IsFromMod())
                 return;
 
-            ModLevelEntry entry = Globals.API.Loader.Library.Levels[type];
+            LevelEntry entry = Globals.ModManager.Library.Levels[type];
 
             try
             {
@@ -62,7 +69,7 @@ namespace SoG.Modding.Patches
         /// <summary>
         /// Parses chat messages for custom commands.
         /// </summary>
-        internal static bool InChatParseCommand(string command, string message, int connection)
+        public static bool InChatParseCommand(string command, string message, int connection)
         {
             string[] words = command.Split(':');
             if (words.Length < 2)
@@ -71,11 +78,11 @@ namespace SoG.Modding.Patches
             string target = words[0];
             string trueCommand = command.Substring(command.IndexOf(':') + 1);
 
-            Mod mod = Globals.API.Loader.Mods.FirstOrDefault(x => x.Name == target);
+            Mod mod = Globals.ModManager.Mods.FirstOrDefault(x => x.NameID == target);
 
             if (mod == null)
             {
-                CAS.AddChatMessage($"[{Globals.API.CoreMod.Name}] Unknown mod!");
+                CAS.AddChatMessage($"[{Globals.ModManager.GrindScript.NameID}] Unknown mod!");
                 return true;
             }
 
@@ -83,7 +90,7 @@ namespace SoG.Modding.Patches
             {
                 if (trueCommand == "Help")
                 {
-                    InChatParseCommand($"{Globals.API.CoreMod.Name}:Help", target, connection);
+                    InChatParseCommand($"{Globals.ModManager.GrindScript.NameID}:Help", target, connection);
                     return true;
                 }
 
@@ -100,7 +107,7 @@ namespace SoG.Modding.Patches
         /// <summary>
         /// For modded enemies, creates an enemy and runs its "constructor".
         /// </summary>
-        internal static Enemy InGetEnemyInstance(EnemyCodex.EnemyTypes gameID, Level.WorldRegion assetRegion)
+        public static Enemy InGetEnemyInstance(EnemyCodex.EnemyTypes gameID, Level.WorldRegion assetRegion)
         {
             if (!gameID.IsFromMod())
                 return new Enemy(); // Switch case will take care of vanilla enemies
@@ -109,7 +116,7 @@ namespace SoG.Modding.Patches
 
             enemy.xRenderComponent.xOwnerObject = enemy;
 
-            Globals.API.Loader.Library.Enemies[gameID].Config.Constructor?.Invoke(enemy);
+            Globals.ModManager.Library.Enemies[gameID].Config.Constructor?.Invoke(enemy);
 
             return enemy;
         }
@@ -120,12 +127,12 @@ namespace SoG.Modding.Patches
         /// Returns true if the enemy was made elite, false otherwise.
         /// The return value is used for subsequent vanilla code.
         /// </summary>
-        internal static bool InEnemyMakeElite(Enemy enemy)
+        public static bool InEnemyMakeElite(Enemy enemy)
         {
             if (!enemy.enType.IsFromMod())
                 return false;
 
-            var eliteScaler = Globals.API.Loader.Library.Enemies[enemy.enType].Config.EliteScaler;
+            var eliteScaler = Globals.ModManager.Library.Enemies[enemy.enType].Config.EliteScaler;
 
             if (eliteScaler != null)
             {
@@ -141,7 +148,7 @@ namespace SoG.Modding.Patches
         /// <summary>
         /// Called when a server parses a client message. The message type's parser also receives the connection ID of the sender.
         /// </summary>
-        internal static void InNetworkParseClientMessage(InMessage msg, byte messageType)
+        public static void InNetworkParseClientMessage(InMessage msg, byte messageType)
         {
             if (messageType != NetUtils.ModPacketType)
             {
@@ -171,7 +178,7 @@ namespace SoG.Modding.Patches
         /// <summary>
         /// Called when a client parses a server message.
         /// </summary>
-        internal static void InNetworkParseServerMessage(InMessage msg, byte messageType)
+        public static void InNetworkParseServerMessage(InMessage msg, byte messageType)
         {
             if (messageType != NetUtils.ModPacketType)
             {
@@ -197,15 +204,15 @@ namespace SoG.Modding.Patches
             }
         }
 
-        internal static void GauntletEnemySpawned(Enemy enemy)
+        public static void GauntletEnemySpawned(Enemy enemy)
         {
-            foreach (Mod mod in Globals.API.Loader.Mods)
+            foreach (Mod mod in Globals.ModManager.Mods)
                 mod.PostArcadeGauntletEnemySpawned(enemy);
         }
 
-        internal static void AddModdedPinsToList(List<PinCodex.PinType> list)
+        public static void AddModdedPinsToList(List<PinCodex.PinType> list)
         {
-            foreach (ModPinEntry entry in Globals.API.Loader.Library.Pins.Values)
+            foreach (PinEntry entry in Globals.ModManager.Library.Pins.Values)
             {
                 if (entry.Config.ConditionToDrop == null || entry.Config.ConditionToDrop.Invoke())
                 {
@@ -214,14 +221,150 @@ namespace SoG.Modding.Patches
             }
         }
 
-        public static string GetCueName(string ID) => Globals.API.Loader.GetCueName(ID);
+        public static string GetCueName(string ID) => Globals.ModManager.GetCueName(ID);
 
-        public static SoundBank GetEffectSoundBank(string ID) => Globals.API.Loader.GetEffectSoundBank(ID);
+        public static SoundBank GetEffectSoundBank(string ID) => Globals.ModManager.GetEffectSoundBank(ID);
 
-        public static SoundBank GetMusicSoundBank(string ID) => Globals.API.Loader.GetMusicSoundBank(ID);
+        public static SoundBank GetMusicSoundBank(string ID) => Globals.ModManager.GetMusicSoundBank(ID);
 
-        public static SpriteBatch SpriteBatch => typeof(Game1).GetField("spriteBatch", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(Globals.Game) as SpriteBatch;
+        public static SpriteBatch SpriteBatch => Globals.SpriteBatch;
 
         public static TCMenuWorker TCMenuWorker { get; } = new TCMenuWorker();
+
+        public static MainMenuWorker MainMenuWorker { get; } = new MainMenuWorker();
+
+        #region Delicate Versioning and Mod List Comparison callbacks
+
+        public static bool CheckModListCompatibility(bool didVersionCheckPass, InMessage msg)
+        {
+            if (!didVersionCheckPass)
+            {
+                // It's actually just a crappy implementation of short circuiting for AND ¯\_(ツ)_/¯
+
+                Globals.Logger.Info("Denying connection due to vanilla version discrepancy.");
+                Globals.Logger.Info("Check if client is on the same game version, and is running GrindScript.");
+                return false;
+            }
+
+            int failReason = 0;
+
+            Globals.Logger.Debug("Reading mod list!");
+
+            long savedStreamPosition = msg.BaseStream.Position;
+
+            _ = msg.ReadByte(); // Game mode byte skipped
+
+            bool readGSVersion = Version.TryParse(msg.ReadString(), out Version result);
+
+            if (readGSVersion)
+            {
+                Globals.Logger.Info("Received GS version from client: " + result);
+            }
+            else
+            {
+                Globals.Logger.Info("Couldn't parse GS version from client!");
+            }
+
+            if (!readGSVersion || result != Globals.ModManager.GrindScript.ModVersion)
+            {
+                Globals.Logger.Info("Denying connection due to GrindScript version discrepancy.");
+                Globals.Logger.Info("Check that server and client are running on the same GrindScript version.");
+                return false;
+            }
+
+            List<ModMetadata> clientMods = new List<ModMetadata>();
+            var serverMods = Globals.ModManager.Mods;
+
+            int clientModCount = msg.ReadInt32();
+            int serverModCount = serverMods.Count;
+
+            for (int index = 0; index < clientModCount; index++)
+            {
+                clientMods.Add(new ModMetadata()
+                {
+                    NameID = msg.ReadString(),
+                    ModVersion = Version.Parse(msg.ReadString())
+                });
+            }
+
+            if (clientModCount == serverModCount)
+            {
+                for (int index = 0; index < clientModCount; index++)
+                {
+                    if (serverMods[index].DisableObjectCreation)
+                    {
+                        continue;
+                    }
+
+                    if (clientMods[index].NameID != serverMods[index].NameID || clientMods[index].ModVersion != serverMods[index].ModVersion)
+                    {
+                        failReason = 2;
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                failReason = 1;
+            }
+
+            Globals.Logger.Debug($"Mods received from client: ");
+            foreach (var meta in clientMods)
+            {
+                Globals.Logger.Debug("    " + meta.NameID + ", v" + (meta.ModVersion?.ToString() ?? "Unknown"));
+            }
+
+            Globals.Logger.Debug($"Mods on server: ");
+            foreach (var mod in serverMods)
+            {
+                Globals.Logger.Debug("    " + mod.NameID + ", v" + (mod.ModVersion?.ToString() ?? "Unknown"));
+            }
+
+            if (failReason == 1)
+            {
+                Globals.Logger.Debug($"Client has {clientModCount} mods, while server has {serverModCount}.");
+            }
+            else if (failReason == 2)
+            {
+                Globals.Logger.Debug($"Client's mod list doesn't seem compatible with server's mod list.");
+            }
+
+            if (failReason != 0)
+            {
+                Globals.Logger.Debug("Denying connection due to mod discrepancy.");
+            }
+            else
+            {
+                Globals.Logger.Debug("Client mod list seems compatible!");
+            }
+
+            msg.BaseStream.Position = savedStreamPosition;
+
+            return failReason == 0;
+        }
+
+        public static void WriteModList(OutMessage msg)
+        {
+            Globals.Logger.Debug("Writing mod list!");
+
+            msg.Write(Globals.ModManager.GrindScript.ModVersion.ToString());
+
+            msg.Write(Globals.ModManager.Mods.Count);
+
+            foreach (Mod mod in Globals.ModManager.Mods)
+            {
+                if (mod.DisableObjectCreation)
+                {
+                    continue;
+                }
+
+                msg.Write(mod.NameID);
+                msg.Write(mod.ModVersion.ToString());
+            }
+
+            Globals.Logger.Debug("Done with mod list!");
+        }
+
+        #endregion
     }
 }

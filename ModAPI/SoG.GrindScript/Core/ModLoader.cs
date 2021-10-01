@@ -1,316 +1,170 @@
 ﻿using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Content;
-using SoG.Modding.API;
-using SoG.Modding.ModUtils;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using SoG.Modding.CoreScript;
+using SoG.Modding.GrindScriptMod;
+using SoG.Modding.Utils;
+using SoG.Modding.Patches;
 
-namespace SoG.Modding.Core
+namespace SoG.Modding
 {
     internal class ModLoader
     {
-        internal Mod LoadContext { get; private set; }
+        private ModManager _manager;
 
-        internal List<Mod> Mods { get; } = new List<Mod>();
+        private List<Mod> _loadOrder = new List<Mod>();
 
-        internal ModLibrary Library { get; } = new ModLibrary();
+        public Mod ModInLoad { get; private set; }
 
-        internal ID ID { get; } = new ID();
-
-        /// <summary>
-        /// Sets the given mod as the current load context, and calls the given method.
-        /// GrindScript uses this method when calling each mod's LoadContent() method.
-        /// </summary>
-        internal void CallWithContext(Mod mod, Action<Mod> call)
+        public ModLoader(ModManager manager)
         {
-            Mod previous = LoadContext;
-            LoadContext = mod;
-
-            try
-            {
-                call?.Invoke(mod);
-            }
-            finally
-            {
-                LoadContext = previous;
-            }
+            _manager = manager;
         }
+
+        public void Reload()
+        {
+            if (Globals.Game.xStateMaster.enGameState != StateMaster.GameStates.MainMenu)
+            {
+                Globals.Logger.Warn("Reloading mods outside of the main menu!");
+            }
+
+            UnloadMods();
+            LoadAssemblies(_manager.GetLoadableMods(), _manager.GrindScript);
+            LoadMods();
+        }
+
 
         /// <summary>
         /// Loads all mods found in the "/Mods" directory
         /// </summary>
-        internal void LoadMods(List<string> ignoredMods, GrindScript coreMod)
+        private void LoadAssemblies(List<string> modList, GrindScript coreMod)
         {
-            Mods.Clear();
+            _manager.Mods.Clear();
+            _loadOrder.Clear();
 
-            Mods.Add(coreMod);
+            _manager.Mods.Add(coreMod);
+            _loadOrder.Add(coreMod);
             SetupMod(coreMod);
 
-            var currentDir = Directory.GetCurrentDirectory();
-
-            var dir = Path.Combine(currentDir, "Mods");
-
-            List<string> fullPathIgnored = ignoredMods.Select(x => Path.Combine(dir, x)).ToList();
-
-            var candidates = Directory.GetFiles(dir)
-                .Where(x => x.EndsWith(".dll"))
-                .ToList();
-
-            var selected = candidates
-                .Where(x => !fullPathIgnored.Contains(x))
-                .ToList();
-
-            int ignoreCount = candidates.Count - selected.Count;
-
-            Globals.Logger.Info($"Loading {selected.Count} mods (ignored {ignoreCount} mods from ignore list)...");
-
-            foreach (var file in selected)
+            foreach (var file in modList)
             {
-                LoadMod(file);
+                LoadAssembly(file);
             }
 
-            Mods.Sort((x, y) => string.Compare(x.Name, y.Name));
+            _manager.Mods.Sort((x, y) => string.Compare(x.NameID, y.NameID));
 
-            for (int i = 0; i < Mods.Count; i++)
+            for (int i = 0; i < _manager.Mods.Count; i++)
             {
-                Mods[i].ModIndex = i;
+                _manager.Mods[i].ModIndex = i;
             }
         }
 
         /// <summary>
         /// Loads a mod and instantiates its BaseScript derived class (if any).
         /// </summary>
-        private void LoadMod(string path)
+        private void LoadAssembly(string path)
         {
-            Globals.Logger.Info("Loading mod " + Utils.ShortenModPaths(path));
+            string shortPath = ModUtils.ShortenModPaths(path);
+
+            Globals.Logger.Info("Loading mod " + shortPath);
 
             try
             {
-                Assembly assembly = Assembly.LoadFile(path);
+                Assembly assembly = Assembly.LoadFrom(path);
                 Type type = assembly.DefinedTypes.First(t => t.BaseType == typeof(Mod));
                 Mod mod = Activator.CreateInstance(type) as Mod;
 
+                bool conflictingID = _manager.Mods.Any(x => x.NameID == mod.NameID);
+
+                if (conflictingID)
+                {
+                    Globals.Logger.Error($"Mod {shortPath} with NameID {mod.NameID} conflicts with a previously loaded mod.");
+                    return;
+                }
+
                 SetupMod(mod);
 
-                Mods.Add(mod);
+                _loadOrder.Add(mod);
+                _manager.Mods.Add(mod);
             }
             catch (BadImageFormatException) { /* Ignore non-managed DLLs */ }
             catch (Exception e)
             {
-                Globals.Logger.Error($"Failed to load mod {Utils.ShortenModPaths(path)}. Exception message: {Utils.ShortenModPaths(e.Message)}");
+                Globals.Logger.Error($"Failed to load mod {ModUtils.ShortenModPaths(path)}. Exception message: {ModUtils.ShortenModPaths(e.Message)}");
             }
         }
 
         private void SetupMod(Mod mod)
         {
-            mod.Registry = this;
+            mod.Manager = _manager;
             mod.Logger.LogLevel = Globals.Logger.LogLevel;
 
             mod.Content = new ContentManager(Globals.Game.Content.ServiceProvider, Globals.Game.Content.RootDirectory);
         }
 
-        /// <summary>
-        /// Gets the ID of the effect that has the given cue name. <para/>
-        /// This ID can be used to play effects with methods such as SoundSystem.PlayCue.
-        /// </summary>
-
-        public string GetEffectID(Mod owner, string cueName)
+        private void LoadMods()
         {
-            var effects = owner.Audio.IndexedEffectCues;
+            Globals.Logger.Debug("Loading mods...");
 
-            for (int i = 0; i < effects.Count; i++)
+            foreach (Mod mod in _manager.Mods)
             {
-                if (effects[i] == cueName)
+                ModInLoad = mod;
+                try
                 {
-                    return $"GS_{owner.ModIndex}_S{i}";
+                    mod.Load();
                 }
+                catch (Exception e)
+                {
+                    Globals.Logger.Error($"Mod {mod.GetType().Name} threw an exception during mod content loading: {e.Message}");
+                }
+                ModInLoad = null;
             }
 
-            return "";
+            // Reloads menu characters for new textures and item descriptions
+            Globals.Game._Menu_CharacterSelect_Init();
         }
 
         /// <summary>
-        /// Gets the ID of the effect that has the given cue name. <para/>
-        /// This ID can be used to play effects with methods such as SoundSystem.PlayCue.
+        /// Unloads mods and their game content.
+        /// NOTE: Unloading is currently poorly implemented.
+        /// Expect the game to behave well only on first load.
         /// </summary>
-
-        public string GetEffectID(int modIndex, string cueName)
+        private void UnloadMods()
         {
-            if (modIndex < 0 || modIndex >= Mods.Count)
+            string currentMusic = Globals.Game.xSoundSystem.xMusicVolumeMods.sCurrentSong;
+
+            Globals.Logger.Debug("Unloading mods...");
+
+            List<Mod> unloadOrder = _loadOrder.AsEnumerable().Reverse().ToList();
+
+            Globals.Game.xSoundSystem.StopSong(false);
+
+            foreach (Mod mod in unloadOrder)
             {
-                Globals.Logger.Warn("Sound ID is invalid!");
-                return "";
-            }
-            return GetEffectID(Mods[modIndex], cueName);
-        }
-
-        /// <summary>
-        /// Gets the ID of the music that has the given cue name. <para/>
-        /// This ID can be used to play effects with <see cref="SoundSystem.PlaySong"/>.
-        /// </summary>
-
-        public string GetMusicID(Mod owner, string cueName)
-        {
-            var music = owner.Audio.IndexedMusicCues;
-
-            for (int i = 0; i < music.Count; i++)
-            {
-                if (music[i] == cueName)
-                    return $"GS_{owner.ModIndex}_M{i}";
+                mod.Unload();
+                mod.Audio.Cleanup();
             }
 
-            return "";
-        }
+            Globals.Game.xSoundSystem.PlaySong(currentMusic, true);
 
-        /// <summary>
-        /// Gets the ID of the music that has the given cue name. <para/>
-        /// This ID can be used to play effects with <see cref="SoundSystem.PlaySong"/>.
-        /// </summary>
+            _manager.Library.Unload();
 
-        public string GetMusicID(int modIndex, string cueName)
-        {
-            if (modIndex < 0 || modIndex >= Mods.Count)
-            {
-                Globals.Logger.Warn("Music ID is invalid!");
-                return "";
-            }
-            return GetMusicID(Mods[modIndex], cueName);
-        }
+            _manager.ID.Reset();
 
-        /// <summary>
-        /// Gets the cue name based on the modded ID. <para/>
-        /// </summary>
+            _loadOrder.Clear();
 
-        public string GetCueName(string GSID)
-        {
-            if (!Utils.SplitAudioID(GSID, out int entryID, out bool isMusic, out int cueID))
-                return "";
-            var entry = Mods[entryID].Audio;
-            return isMusic ? entry.IndexedMusicCues[cueID] : entry.IndexedEffectCues[cueID];
-        }
+            _manager.Mods.Clear();
 
-        /// <summary>
-        /// Retrieves a new Cue for the given modded audio ID.
-        /// </summary>
+            // Unloads some mod textures for enemies. Textures are always requeried, so it's allowed
+            InGameMenu.contTempAssetManager?.Unload();
 
-        public Cue GetEffectCue(string audioID)
-        {
-            bool success = Utils.SplitAudioID(audioID, out int entryID, out bool isMusic, out int cueID);
-            if (!(success && !isMusic))
-                return null;
+            // Experimental / Risky. Unloads all mod assets
+            AssetUtils.UnloadModContentPathAssets(RenderMaster.contPlayerStuff);
 
-            var entry = Mods[entryID].Audio;
-            return entry.EffectsSB.GetCue(entry.IndexedEffectCues[cueID]);
-        }
-
-        /// <summary>
-        /// Retrieves the SoundBank associated with the given modded audio ID.
-        /// </summary>
-
-        public SoundBank GetEffectSoundBank(string audioID)
-        {
-            bool success = Utils.SplitAudioID(audioID, out int entryID, out bool isMusic, out _);
-            if (!(success && !isMusic))
-                return null;
-
-            var entry = Mods[entryID].Audio;
-
-            if (entry == null)
-                return null;
-
-            return entry.EffectsSB;
-        }
-
-        /// <summary>
-        /// Retrieves the WaveBank associated with the given modded audio ID.
-        /// </summary>
-
-        public WaveBank GetEffectWaveBank(string audioID)
-        {
-            bool success = Utils.SplitAudioID(audioID, out int entryID, out bool isMusic, out _);
-            if (!(success && !isMusic))
-                return null;
-
-            return Mods[entryID].Audio?.EffectsWB;
-        }
-
-        /// <summary>
-        /// Retrieves the SoundBank associated with the given modded audio ID.
-        /// </summary>
-
-        public SoundBank GetMusicSoundBank(string audioID)
-        {
-            bool success = Utils.SplitAudioID(audioID, out int entryID, out bool isMusic, out _);
-            if (!(success && isMusic))
-                return null;
-
-            return Mods[entryID].Audio?.MusicSB;
-        }
-
-        /// <summary>
-        /// Retrieves the WaveBank associated with the given modded audio ID.
-        /// </summary>
-
-        public string GetMusicWaveBank(string audioID)
-        {
-            bool success = Utils.SplitAudioID(audioID, out int entryID, out bool isMusic, out int cueID);
-            if (!(success && isMusic))
-                return null;
-
-            var entry = Mods[entryID].Audio;
-
-            if (cueID < 0 || cueID > entry.IndexedMusicBanks.Count)
-                return null;
-
-            return entry.IndexedMusicBanks[cueID];
-        }
-
-        /// <summary>
-        /// Checks whenever the given name may represent a persistent WaveBank. <para/>
-        /// Persistent WaveBanks are never unloaded.
-        /// </summary>
-
-        public bool IsUniversalMusicBank(string bank)
-        {
-            if (bank == "UniversalMusic")
-                return true;
-
-            foreach (var mod in Mods)
-            {
-                if (mod.Name == bank)
-                    return true;
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// Checks whenever the given WaveBank is persistent. <para/>
-        /// Persistent WaveBanks are never unloaded.
-        /// </summary>
-
-        public bool IsUniversalMusicBank(WaveBank bank)
-        {
-            if (bank == null)
-                return false;
-
-            foreach (var mod in Mods)
-            {
-                if (mod.Audio.UniversalWB == bank)
-                    return true;
-            }
-
-            FieldInfo universalWaveBankField = typeof(SoundSystem).GetTypeInfo().GetField("universalMusicWaveBank", BindingFlags.NonPublic | BindingFlags.Instance);
-            if (bank == universalWaveBankField.GetValue(Globals.Game.xSoundSystem))
-                return true;
-
-            return false;
+            Crafting.CraftSystem.InitCraftSystem();
         }
     }
 }
