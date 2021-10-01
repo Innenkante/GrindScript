@@ -269,14 +269,14 @@ namespace SoG.FeatureExample
             foreach (var item in ItemLibrary)
                 CreateItem(item.Value);
 
-            modShield = GetItemType(this, "_Mod_Item0001");
-            modAccessory = GetItemType(this, "_Mod_Item0002");
-            modHat = GetItemType(this, "_Mod_Item0003");
-            modFacegear = GetItemType(this, "_Mod_Item0004");
-            modOneHandedWeapon = GetItemType(this, "_Mod_Item0005");
-            modTwoHandedWeapon = GetItemType(this, "_Mod_Item0006");
-            modMisc1 = GetItemType(this, "_Mod_Item0007");
-            modMisc2 = GetItemType(this, "_Mod_Item0008");
+            modShield = GetItem("_Mod_Item0001");
+            modAccessory = GetItem("_Mod_Item0002");
+            modHat = GetItem("_Mod_Item0003");
+            modFacegear = GetItem("_Mod_Item0004");
+            modOneHandedWeapon = GetItem("_Mod_Item0005");
+            modTwoHandedWeapon = GetItem("_Mod_Item0006");
+            modMisc1 = GetItem("_Mod_Item0007");
+            modMisc2 = GetItem("_Mod_Item0008");
 
             AddRecipe(modOneHandedWeapon, new Dictionary<ItemCodex.ItemTypes, ushort>
             {
@@ -315,7 +315,7 @@ namespace SoG.FeatureExample
                 ["GiveItems"] = (argList, _) =>
                 {
                     string[] args = argList.Split(' ');
-                    if (NetUtils.IsLocal)
+                    if (NetUtils.IsLocalOrServer)
                     {
                         PlayerView localPlayer = Globals.Game.xLocalPlayer;
                         CAS.AddChatMessage("Dropping Items!");

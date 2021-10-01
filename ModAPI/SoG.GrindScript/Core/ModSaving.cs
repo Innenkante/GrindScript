@@ -11,7 +11,7 @@ namespace SoG.Modding
     using Quests;
     using SoG.Modding.LibraryEntries;
 
-    public class ModSaving
+    internal class ModSaving
     {
         internal class SaveData
         {
@@ -33,7 +33,7 @@ namespace SoG.Modding
             CurseID = 1006,
         }
 
-        public readonly int FileVersion = 1;
+        public readonly int FileVersion = 2;
 
         public const string SaveFileExtension = ".gs";
 
@@ -129,7 +129,7 @@ namespace SoG.Modding
 
             while (scriptCount-- > 0)
             {
-                ModMetadata meta = ReadModMetadata(file);
+                ModMetadata meta = ReadModMetadata(file, previousVersion);
 
                 int blockCount = file.ReadInt32();
 
@@ -270,13 +270,13 @@ namespace SoG.Modding
         /// <summary>
         /// Reads limited metadata for a mod.
         /// </summary>
-        private ModMetadata ReadModMetadata(BinaryReader file)
+        private ModMetadata ReadModMetadata(BinaryReader file, int previousVersion)
         {
             ModMetadata meta = new ModMetadata();
 
             meta.NameID = file.ReadString();
 
-            if (FileVersion >= 2)
+            if (previousVersion >= 2)
             {
                 meta.ModVersion = null;
 

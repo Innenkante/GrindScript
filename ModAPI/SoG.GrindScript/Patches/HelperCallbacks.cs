@@ -20,6 +20,7 @@ namespace SoG.Modding.Patches
         {
             Globals.ModManager.Loader.Reload();
 
+            MainMenuWorker.AnalyzeStorySavesForCompatibility();
             MainMenuWorker.AnalyzeArcadeSavesForCompatibility();
         }
 

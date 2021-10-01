@@ -831,6 +831,136 @@ namespace SoG.Modding
 
         #endregion
 
+        #region Game Object Getters
+
+        /// <summary>
+        /// Gets an item ID previously defined by this mod.
+        /// If nothing is found, ItemCodex.ItemTypes.Null is returned.
+        /// </summary>
+        public ItemCodex.ItemTypes GetItem(string uniqueID)
+        {
+            return GetLibrary().Items.Values.FirstOrDefault(x => x.ModID == uniqueID)?.GameID ?? ItemCodex.ItemTypes.Null;
+        }
+
+        /// <summary>
+        /// Gets a curse ID previously defined by this mod.
+        /// If nothing is found, RogueLikeMode.TreatsCurses.None is returned.
+        /// </summary>
+        public RogueLikeMode.TreatsCurses GetTreatOrCurse(string uniqueID)
+        {
+            return GetLibrary().Curses.Values.FirstOrDefault(x => x.ModID == uniqueID)?.GameID ?? RogueLikeMode.TreatsCurses.None;
+        }
+
+        /// <summary>
+        /// Gets a perk ID previously defined by a mod.
+        /// If nothing is found, RogueLikeMode.Perks.None is returned.
+        /// </summary>
+        public RogueLikeMode.Perks GetPerk(string uniqueID)
+        {
+            return GetLibrary().Perks.Values.FirstOrDefault(x => x.ModID == uniqueID)?.GameID ?? RogueLikeMode.Perks.None;
+        }
+
+        /// <summary>
+        /// Gets an enemy ID previously defined by this mod.
+        /// If nothing is found, EnemyCodex.EnemyTypes.None is returned.
+        /// </summary>
+        public EnemyCodex.EnemyTypes GetEnemy(string uniqueID)
+        {
+            return GetLibrary().Enemies.Values.FirstOrDefault(x => x.ModID == uniqueID)?.GameID ?? EnemyCodex.EnemyTypes.Null;
+        }
+
+        /// <summary>
+        /// Gets a quest ID previously defined by this mod.
+        /// If nothing is found, QuestCodex.QuestID.None is returned.
+        /// </summary>
+        public QuestCodex.QuestID GetQuest(string uniqueID)
+        {
+            return GetLibrary().Quests.Values.FirstOrDefault(x => x.ModID == uniqueID)?.GameID ?? QuestCodex.QuestID.None;
+        }
+
+        /// <summary>
+        /// Gets a quest ID previously defined by this mod.
+        /// If nothing is found, SpellCodex.SpellTypes.NULL is returned.
+        /// </summary>
+        public SpellCodex.SpellTypes GetSpell(string uniqueID)
+        {
+            return GetLibrary().Spells.Values.FirstOrDefault(x => x.ModID == uniqueID)?.GameID ?? SpellCodex.SpellTypes.NULL;
+        }
+
+        /// <summary>
+        /// Gets a pin ID previously defined by this mod.
+        /// If nothing is found, PinCodex.PinType.EmptySlot is returned.
+        /// </summary>
+        public PinCodex.PinType GetPin(string uniqueID)
+        {
+            return GetLibrary().Pins.Values.FirstOrDefault(x => x.ModID == uniqueID)?.GameID ?? PinCodex.PinType.EmptySlot;
+        }
+
+        /// <summary>
+        /// Gets a status effect ID previously defined by this mod.
+        /// If nothing is found, BaseStats.StatusEffectSource.SlowLv1 is returned.
+        /// </summary>
+        public BaseStats.StatusEffectSource GetStatusEffect(string uniqueID)
+        {
+            return GetLibrary().StatusEffects.Values.FirstOrDefault(x => x.ModID == uniqueID)?.GameID ?? BaseStats.StatusEffectSource.SlowLv1;
+        }
+
+        /// <summary>
+        /// Gets a level ID previously defined by this mod.
+        /// If nothing is found, Level.ZoneEnum.None is returned.
+        /// </summary>
+        public Level.ZoneEnum GetLevel(string uniqueID)
+        {
+            return GetLibrary().Levels.Values.FirstOrDefault(x => x.ModID == uniqueID)?.GameID ?? Level.ZoneEnum.None;
+        }
+
+        /// <summary>
+        /// Gets a world region ID previously defined by this mod.
+        /// If nothing is found, Level.WorldRegion.NotLoaded is returned.
+        /// </summary>
+        public Level.WorldRegion GetWorldRegion(string uniqueID)
+        {
+            return GetLibrary().WorldRegions.Values.FirstOrDefault(x => x.ModID == uniqueID)?.GameID ?? Level.WorldRegion.NotLoaded;
+        }
+
+        /// <summary>
+        /// Gets the ID of the effect that has the given cue name. <para/>
+        /// This ID can be used to play effects with methods such as SoundSystem.PlayCue.
+        /// </summary>
+        public string GetEffectID(string cueName)
+        {
+            var effects = Audio.IndexedEffectCues;
+
+            for (int i = 0; i < effects.Count; i++)
+            {
+                if (effects[i] == cueName)
+                {
+                    return $"GS_{ModIndex}_S{i}";
+                }
+            }
+
+            return "";
+        }
+
+        /// <summary>
+        /// Gets the ID of the music that has the given cue name. <para/>
+        /// This ID can be used to play effects with <see cref="SoundSystem.PlaySong"/>.
+        /// </summary>
+        public string GetMusicID(string cueName)
+        {
+            var music = Audio.IndexedMusicCues;
+
+            for (int i = 0; i < music.Count; i++)
+            {
+                if (music[i] == cueName)
+                    return $"GS_{ModIndex}_M{i}";
+            }
+
+            return "";
+        }
+
+        #endregion
+
         #region Other Methods
 
         /// <summary>
@@ -867,17 +997,6 @@ namespace SoG.Modding
             }
 
             Globals.Logger.Info($"Added recipe for item {result}!");
-        }
-
-        /// <summary>
-        /// Gets an ItemType previously defined by a mod.
-        /// If nothing is found, ItemCodex.ItemTypes.Null is returned.
-        /// </summary>
-        public ItemCodex.ItemTypes GetItemType(Mod owner, string uniqueID)
-        {
-            var entry = Manager.Library.Items.Values.FirstOrDefault(x => x.Owner == owner && x.ModID == uniqueID);
-
-            return entry?.GameID ?? ItemCodex.ItemTypes.Null;
         }
 
         /// <summary>
@@ -918,44 +1037,6 @@ namespace SoG.Modding
                 Globals.Logger.Info($"Song {vanilla} is now redirected to {redirect} ({cueName}). {(replacing ? $"Previous redirect was {redirectedSongs[vanilla]}" : "")}");
                 redirectedSongs[vanilla] = redirect;
             }
-        }
-
-        /// <summary>
-        /// Gets the ID of the effect that has the given cue name. <para/>
-        /// This ID can be used to play effects with methods such as SoundSystem.PlayCue.
-        /// </summary>
-
-        public string GetEffectID(string cueName)
-        {
-            var effects = Audio.IndexedEffectCues;
-
-            for (int i = 0; i < effects.Count; i++)
-            {
-                if (effects[i] == cueName)
-                {
-                    return $"GS_{ModIndex}_S{i}";
-                }
-            }
-
-            return "";
-        }
-
-        /// <summary>
-        /// Gets the ID of the music that has the given cue name. <para/>
-        /// This ID can be used to play effects with <see cref="SoundSystem.PlaySong"/>.
-        /// </summary>
-
-        public string GetMusicID(string cueName)
-        {
-            var music = Audio.IndexedMusicCues;
-
-            for (int i = 0; i < music.Count; i++)
-            {
-                if (music[i] == cueName)
-                    return $"GS_{ModIndex}_M{i}";
-            }
-
-            return "";
         }
 
         /// <summary>

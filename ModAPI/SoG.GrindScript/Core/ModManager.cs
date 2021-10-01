@@ -14,91 +14,13 @@ namespace SoG.Modding
     /// <summary>
     /// Provides access to the objects used for modding, and some miscellaneous functionality.
     /// </summary>
-    internal class ModManager
+    public class ModManager
     {
         private Harmony _harmony;
 
         private int _launchState = 0;
 
-        public ILogger Logger { get; }
-
-        public ModSaving Saving { get; private set; }
-
-        public ModLoader Loader { get; private set; }
-
-        public GrindScript GrindScript { get; private set; }
-
-        public ModLibrary Library { get; } = new ModLibrary();
-
-        public ID ID { get; } = new ID();
-
-        public List<Mod> Mods { get; } = new List<Mod>();
-
-        public List<string> PlayerContentTextures { get; } = new List<string>();
-
-        public ModManager()
-        {
-            Logger = Globals.Logger;
-
-            Loader = new ModLoader(this);
-            Saving = new ModSaving(this);
-
-            GrindScript = new GrindScript();
-
-            Logger.Debug("GrindScript instantiated!");
-        }
-
-        /// <remarks> This method contains code that must run before SoG's Main() method, such as Harmony patching. </remarks>
-        public void Setup()
-        {
-            Debug.Assert(_launchState == 0, $"Expected status 0 (= not set up) in {nameof(Setup)}, but got {_launchState}!");
-
-            _launchState = 1;
-
-            ReadConfig();
-
-            if (AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name == "Secrets Of Grindea") == null)
-            {
-                throw new InvalidOperationException("Couldn't find Secrets of Grindea.exe in current AppDomain!");
-            }
-
-            ModUtils.TryCreateDirectory("Mods");
-            ModUtils.TryCreateDirectory("Content/ModContent");
-
-            _harmony = new Harmony("GrindScriptPatcher");
-
-            Logger.Info("Applying Patches...");
-
-            try
-            {
-                _harmony.PatchAll(typeof(ModManager).Assembly);
-            }
-            catch
-            {
-                Logger.Fatal("Harmony crashed during patching!");
-                throw;
-            }
-
-            Logger.Info($"Patched {_harmony.GetPatchedMethods().Count()} methods!");
-        }
-
-        /// <remarks> This method contains code that must run before any "critical" game code (such as content and save loading). </remarks>
-        public void Start()
-        {
-            Debug.Assert(_launchState == 1, $"Expected status 1 (= set up, not started) in {nameof(Start)}, but got {_launchState}!");
-
-            _launchState = 2;
-
-            Assembly gameAssembly = AppDomain.CurrentDomain.GetAssemblies().First(a => a.GetName().Name == "Secrets Of Grindea");
-
-            Globals.Game = (Game1)gameAssembly.GetType("SoG.Program").GetField("game").GetValue(null);
-            Globals.Game.sAppData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "/GrindScript/";
-            Globals.Game.xGameSessionData.xRogueLikeSession.bTemporaryHighScoreBlock = true;
-
-            //Loader.LoadAssemblies(GetLoadableMods(), GrindScript);
-        }
-
-        #region Misc Audio Methods
+        #region Public Methods
 
         /// <summary>
         /// Gets the cue name based on the modded ID. <para/>
@@ -222,7 +144,94 @@ namespace SoG.Modding
             return false;
         }
 
+        /// <summary>
+        /// Gets a loaded mod.
+        /// If the mod has disabled discovery, this method will return null.
+        /// </summary>
+        public Mod GetMod(string nameID)
+        {
+            Mod mod = Mods.First(x => x.NameID == nameID);
+
+            return mod.AllowDiscoveryByMods ? mod : null;
+        }
+
         #endregion
+
+        internal ILogger Logger { get; }
+
+        internal ModSaving Saving { get; private set; }
+
+        internal ModLoader Loader { get; private set; }
+
+        internal GrindScript GrindScript { get; private set; }
+
+        internal ModLibrary Library { get; } = new ModLibrary();
+
+        internal ID ID { get; } = new ID();
+
+        internal List<Mod> Mods { get; } = new List<Mod>();
+
+        internal ModManager()
+        {
+            Logger = Globals.Logger;
+
+            Loader = new ModLoader(this);
+            Saving = new ModSaving(this);
+
+            GrindScript = new GrindScript();
+
+            Logger.Debug("GrindScript instantiated!");
+        }
+
+        /// <remarks> This method contains code that must run before SoG's Main() method, such as Harmony patching. </remarks>
+        internal void Setup()
+        {
+            Debug.Assert(_launchState == 0, $"Expected status 0 (= not set up) in {nameof(Setup)}, but got {_launchState}!");
+
+            _launchState = 1;
+
+            ReadConfig();
+
+            if (AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name == "Secrets Of Grindea") == null)
+            {
+                throw new InvalidOperationException("Couldn't find Secrets of Grindea.exe in current AppDomain!");
+            }
+
+            ModUtils.TryCreateDirectory("Mods");
+            ModUtils.TryCreateDirectory("Content/ModContent");
+
+            _harmony = new Harmony("GrindScriptPatcher");
+
+            Logger.Info("Applying Patches...");
+
+            try
+            {
+                _harmony.PatchAll(typeof(ModManager).Assembly);
+            }
+            catch
+            {
+                Logger.Fatal("Harmony crashed during patching!");
+                throw;
+            }
+
+            Logger.Info($"Patched {_harmony.GetPatchedMethods().Count()} methods!");
+        }
+
+        /// <remarks> This method contains code that must run before any "critical" game code (such as content and save loading). </remarks>
+        internal void Start()
+        {
+            Debug.Assert(_launchState == 1, $"Expected status 1 (= set up, not started) in {nameof(Start)}, but got {_launchState}!");
+
+            _launchState = 2;
+
+            Assembly gameAssembly = AppDomain.CurrentDomain.GetAssemblies().First(a => a.GetName().Name == "Secrets Of Grindea");
+
+            Globals.Game = (Game1)gameAssembly.GetType("SoG.Program").GetField("game").GetValue(null);
+            Globals.Game.sAppData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "/GrindScript/";
+            Globals.Game.xGameSessionData.xRogueLikeSession.bTemporaryHighScoreBlock = true;
+
+            //Loader.LoadAssemblies(GetLoadableMods(), GrindScript);
+        }
 
         private List<string> ReadIgnoredMods()
         {
@@ -343,7 +352,7 @@ namespace SoG.Modding
             }
         }
 
-        public List<string> GetLoadableMods()
+        internal List<string> GetLoadableMods()
         {
             var ignoredMods = ReadIgnoredMods();
 

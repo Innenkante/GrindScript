@@ -343,7 +343,7 @@ namespace SoG.Modding.GrindScriptMod
 
             foreach (Mod mod in Globals.ModManager.Mods)
             {
-                message += mod.NameID + "\n";
+                message += mod.NameID + " v." + (mod.ModVersion?.ToString() ?? "Unknown") + "\n";
             }
 
             RenderMessage(message.TrimEnd('\n'), 422, 243);

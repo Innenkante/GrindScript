@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System;
 
 namespace SoG.Modding
 {
@@ -132,6 +133,24 @@ namespace SoG.Modding
 			Levels.Clear();
 			VanillaMusicRedirects.Clear();
 			WorldRegions.Clear();
+        }
+
+		public Dictionary<IDType, Entry> GetEntries<IDType, Entry>() where Entry : IEntry<IDType> where IDType : struct
+        {
+			object[] containers = new object[]
+			{
+				Items, Curses, Perks, Enemies, Quests, Spells, Pins, StatusEffects, Levels, WorldRegions
+			};
+
+			foreach (var con in containers)
+            {
+				if (con is Dictionary<IDType, Entry> entries)
+                {
+					return entries;
+                }
+            }
+
+			return null;
         }
 	}
 }

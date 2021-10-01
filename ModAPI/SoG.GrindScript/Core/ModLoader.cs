@@ -125,8 +125,6 @@ namespace SoG.Modding
 
             // Reloads menu characters for new textures and item descriptions
             Globals.Game._Menu_CharacterSelect_Init();
-
-            HelperCallbacks.MainMenuWorker.AnalyzeArcadeSavesForCompatibility();
         }
 
         /// <summary>

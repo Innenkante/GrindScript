@@ -18,6 +18,10 @@ namespace SoG.Modding.Patches
             {
                 HelperCallbacks.MainMenuWorker.AnalyzeStorySavesForCompatibility();
             }
+            else if (enTarget == GlobalData.MainMenu.MenuLevel.TopMenu)
+            {
+                HelperCallbacks.MainMenuWorker.AnalyzeArcadeSavesForCompatibility();
+            }
         }
     }
 }
