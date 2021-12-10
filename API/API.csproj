@@ -1,176 +1,69 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">x32</Platform>
-    <ProjectGuid>{BF53E634-5546-4344-90E7-30260A516769}</ProjectGuid>
-    <OutputType>Library</OutputType>
     <RootNamespace>SoG.Modding</RootNamespace>
     <AssemblyName>GrindScript</AssemblyName>
-    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <Deterministic>true</Deterministic>
-    <PublishUrl>publish\</PublishUrl>
-    <Install>true</Install>
-    <InstallFrom>Disk</InstallFrom>
-    <UpdateEnabled>false</UpdateEnabled>
-    <UpdateMode>Foreground</UpdateMode>
-    <UpdateInterval>7</UpdateInterval>
-    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
-    <UpdatePeriodically>false</UpdatePeriodically>
-    <UpdateRequired>false</UpdateRequired>
-    <MapFileExtensions>true</MapFileExtensions>
+    <TargetFramework>net472</TargetFramework>
+
     <ApplicationRevision>0</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
-    <IsWebBootstrapper>false</IsWebBootstrapper>
-    <UseApplicationTrust>false</UseApplicationTrust>
-    <BootstrapperEnabled>true</BootstrapperEnabled>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
-    <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <DebugType>full</DebugType>
-    <PlatformTarget>x86</PlatformTarget>
+
+    <AssemblyTitle>GrindScript</AssemblyTitle>
+    <Company>The GrindScript Team</Company>
+    <Product>SoG.Modding.Properties</Product>
+    <Description>Modding API for Secrets of Grindea</Description>
+    <Copyright>Copyright ©  2021</Copyright>
+
+    
     <LangVersion>7.3</LangVersion>
-    <ErrorReport>prompt</ErrorReport>
-    <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <Optimize>true</Optimize>
-    <DebugType>pdbonly</DebugType>
-    <PlatformTarget>x86</PlatformTarget>
-    <LangVersion>7.3</LangVersion>
-    <ErrorReport>prompt</ErrorReport>
-    <Prefer32Bit>true</Prefer32Bit>
-  </PropertyGroup>
-  <PropertyGroup>
-    <StartupObject />
-  </PropertyGroup>
+
+
+  <!-- Nuget -->
   <ItemGroup>
-    <Reference Include="0Harmony, Version=2.1.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Lib.Harmony.2.1.1\lib\net472\0Harmony.dll</HintPath>
-    </Reference>
+    <PackageReference Include="Lib.Harmony" Version="2.1.1" />
+  </ItemGroup>
+
+
+  <!-- Custom  -->
+  <ItemGroup>
     <Reference Include="Lidgren.Network, Version=2012.1.7.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\vanilla\Lidgren.Network.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Xna.Framework, Version=4.0.0.0, Culture=neutral, PublicKeyToken=842cf8be1de50553, processorArchitecture=x86" />
-    <Reference Include="Microsoft.Xna.Framework.Content.Pipeline, Version=4.0.0.0, Culture=neutral, PublicKeyToken=842cf8be1de50553, processorArchitecture=x86" />
-    <Reference Include="Microsoft.Xna.Framework.Game, Version=4.0.0.0, Culture=neutral, PublicKeyToken=842cf8be1de50553, processorArchitecture=x86" />
-    <Reference Include="Microsoft.Xna.Framework.Graphics, Version=4.0.0.0, Culture=neutral, PublicKeyToken=842cf8be1de50553, processorArchitecture=x86" />
-    <Reference Include="Microsoft.Xna.Framework.Xact, Version=4.0.0.0, Culture=neutral, PublicKeyToken=842cf8be1de50553, processorArchitecture=x86" />
-    <Reference Include="Secrets Of Grindea, Version=1.0.0.0, Culture=neutral, processorArchitecture=x86">
       <SpecificVersion>False</SpecificVersion>
+    </Reference>
+    <Reference Include="Microsoft.Xna.Framework, Version=4.0.0.0, Culture=neutral, processorArchitecture=x86">
+      <HintPath>..\vanilla\xna\Microsoft.Xna.Framework.dll</HintPath>
+      <SpecificVersion>False</SpecificVersion>
+    </Reference>
+    <Reference Include="Microsoft.Xna.Framework.Content.Pipeline, Version=4.0.0.0, Culture=neutral, processorArchitecture=x86" >
+      <HintPath>..\vanilla\xna\Microsoft.Xna.Framework.Content.Pipeline.dll</HintPath>
+      <SpecificVersion>False</SpecificVersion>
+    </Reference>
+    <Reference Include="Microsoft.Xna.Framework.Game, Version=4.0.0.0, Culture=neutral, processorArchitecture=x86" >
+      <HintPath>..\vanilla\xna\Microsoft.Xna.Framework.Game.dll</HintPath>
+      <SpecificVersion>False</SpecificVersion>
+    </Reference>
+    <Reference Include="Microsoft.Xna.Framework.Graphics, Version=4.0.0.0, Culture=neutral, processorArchitecture=x86" >
+      <HintPath>..\vanilla\xna\Microsoft.Xna.Framework.Graphics.dll</HintPath>
+      <SpecificVersion>False</SpecificVersion>
+    </Reference>
+    <Reference Include="Microsoft.Xna.Framework.Xact, Version=4.0.0.0, Culture=neutral, processorArchitecture=x86">
+      <HintPath>..\vanilla\xna\Microsoft.Xna.Framework.XAct.dll</HintPath>
+      <SpecificVersion>False</SpecificVersion>
+    </Reference>
+    <Reference Include="Secrets Of Grindea, Version=1.0.0.0, Culture=neutral, processorArchitecture=x86">
       <HintPath>..\vanilla\Secrets Of Grindea.exe</HintPath>
+      <SpecificVersion>False</SpecificVersion>
     </Reference>
     <Reference Include="Steamworks.NET, Version=11.0.0.0, Culture=neutral, processorArchitecture=x86">
-      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\vanilla\Steamworks.NET.dll</HintPath>
+      <SpecificVersion>False</SpecificVersion>
     </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
+  </ItemGroup>
+  
+  <!-- System packages -->
+<ItemGroup>
     <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Net.Http" />
-    <Reference Include="System.Xml" />
-    <Reference Include="System.Xml.Linq" />
   </ItemGroup>
-  <ItemGroup>
-    <BootstrapperPackage Include=".NETFramework,Version=v4.7.2">
-      <Visible>False</Visible>
-      <ProductName>Microsoft .NET Framework 4.7.2 %28x86 and x64%29</ProductName>
-      <Install>true</Install>
-    </BootstrapperPackage>
-    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
-      <Visible>False</Visible>
-      <ProductName>.NET Framework 3.5 SP1</ProductName>
-      <Install>false</Install>
-    </BootstrapperPackage>
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="src\Content\EquipmentEffectEntry.cs" />
-    <Compile Include="src\Core\Delegates.cs" />
-    <Compile Include="src\Content\CommandEntry.cs" />
-    <Compile Include="src\Content\NetworkEntry.cs" />
-    <Compile Include="src\Core\GameObjectStuff.cs" />
-    <Compile Include="src\Core\Enums.cs" />
-    <Compile Include="src\Core\ErrorHelper.cs" />
-    <Compile Include="src\Core\Game1Extension.cs" />
-    <Compile Include="src\Core\Globals.cs" />
-    <Compile Include="src\Core\IDAllocator.cs" />
-    <Compile Include="src\Core\Entry.cs" />
-    <Compile Include="src\Core\IModMetadata.cs" />
-    <Compile Include="src\Core\Launcher.cs" />
-    <Compile Include="src\Core\Library.cs" />
-    <Compile Include="src\Content\AudioEntry.cs" />
-    <Compile Include="src\Content\CurseEntry.cs" />
-    <Compile Include="src\Content\EnemyEntry.cs" />
-    <Compile Include="src\Content\ItemEntry.cs" />
-    <Compile Include="src\Content\LevelEntry.cs" />
-    <Compile Include="src\Content\PerkEntry.cs" />
-    <Compile Include="src\Content\PinEntry.cs" />
-    <Compile Include="src\Content\QuestEntry.cs" />
-    <Compile Include="src\Content\SpellEntry.cs" />
-    <Compile Include="src\Content\StatusEffectEntry.cs" />
-    <Compile Include="src\Content\WorldRegionEntry.cs" />
-    <Compile Include="src\Core\Mod.cs" />
-    <Compile Include="src\Core\ModDependencyAttribute.cs" />
-    <Compile Include="src\Core\ModLoader.cs" />
-    <Compile Include="src\Core\ModManager.cs" />
-    <Compile Include="src\Core\ModMetadata.cs" />
-    <Compile Include="src\Core\ModSaving.cs" />
-    <Compile Include="src\Extensions\AnimationExtension.cs" />
-    <Compile Include="src\Extensions\ItemExtension.cs" />
-    <Compile Include="src\Extensions\LevelExtension.cs" />
-    <Compile Include="src\Extensions\SpellExtension.cs" />
-    <Compile Include="src\GrindScriptMod\ColliderRC.cs" />
-    <Compile Include="src\GrindScriptMod\GrindScript.cs" />
-    <Compile Include="src\GrindScriptMod\MainMenuWorker.cs" />
-    <Compile Include="src\GrindScriptMod\TCMenuWorker.cs" />
-    <Compile Include="src\Patching\Patches\Patches_MonsterSpawnInArenaTrials.cs" />
-    <Compile Include="src\Patching\Patches\Patch_ArcadeModeGauntletSpawnWatcher.cs" />
-    <Compile Include="src\Patching\Patches\Patch_BaseStats.cs" />
-    <Compile Include="src\Patching\Patches\Patch_CardCodex.cs" />
-    <Compile Include="src\Patching\Patches\Patch_EnemyCodex.cs" />
-    <Compile Include="src\Patching\Patches\Patch_EquipmentCodex.cs" />
-    <Compile Include="src\Patching\Patches\Patch_FacegearCodex.cs" />
-    <Compile Include="src\Patching\Patches\Patch_Game1.cs" />
-    <Compile Include="src\Patching\Patches\Patch_GlobalData_MainMenu.cs" />
-    <Compile Include="src\Patching\Patches\Patch_HatCodex.cs" />
-    <Compile Include="src\Patching\Patches\Patch_HudRenderComponent.cs" />
-    <Compile Include="src\Patching\Patches\Patch_ItemCodex.cs" />
-    <Compile Include="src\Patching\Patches\Patch_LevelBlueprint.cs" />
-    <Compile Include="src\Patching\Patches\Patch_OpenGatesAtRoomClear.cs" />
-    <Compile Include="src\Patching\Patches\Patch_PinCodex.cs" />
-    <Compile Include="src\Patching\Patches\Patch_QuestCodex.cs" />
-    <Compile Include="src\Patching\Patches\Patch_RogueLikeMode_PerkInfo.cs" />
-    <Compile Include="src\Patching\Patches\Patch_ShopMenu_TreatCurseMenu.cs" />
-    <Compile Include="src\Patching\Patches\Patch_SoundSystem.cs" />
-    <Compile Include="src\Patching\Patches\Patch_SpellCodex.cs" />
-    <Compile Include="src\Patching\Patches\Patch_WeaponCodex.cs" />
-    <Compile Include="src\Patching\Patches\Patch_WeaponContentManager.cs" />
-    <Compile Include="src\Patching\PatchHelper.cs" />
-    <Compile Include="src\Utils\AssetUtils.cs" />
-    <Compile Include="src\Utils\KVPConfig.cs" />
-    <Compile Include="src\Utils\ConsoleLogger.cs" />
-    <Compile Include="src\Utils\FileLogger.cs" />
-    <Compile Include="src\Utils\ILogger.cs" />
-    <Compile Include="src\Utils\ModUtils.cs" />
-    <Compile Include="src\Utils\NetUtils.cs" />
-    <Compile Include="src\Utils\PatchUtils.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="src\Patching\MegaPatches\" />
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
