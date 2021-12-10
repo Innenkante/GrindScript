@@ -4,8 +4,8 @@
     <AssemblyName>GrindScript</AssemblyName>
     <TargetFramework>net472</TargetFramework>
 
-    <ApplicationRevision>0</ApplicationRevision>
-    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    
+    <ApplicationVersion>1.0.0.0</ApplicationVersion>
 
     <AssemblyTitle>GrindScript</AssemblyTitle>
     <Company>The GrindScript Team</Company>
@@ -15,6 +15,9 @@
 
     
     <LangVersion>7.3</LangVersion>
+
+    
+    <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
 
 
@@ -34,15 +37,15 @@
       <HintPath>..\vanilla\xna\Microsoft.Xna.Framework.dll</HintPath>
       <SpecificVersion>False</SpecificVersion>
     </Reference>
-    <Reference Include="Microsoft.Xna.Framework.Content.Pipeline, Version=4.0.0.0, Culture=neutral, processorArchitecture=x86" >
+    <Reference Include="Microsoft.Xna.Framework.Content.Pipeline, Version=4.0.0.0, Culture=neutral, processorArchitecture=x86">
       <HintPath>..\vanilla\xna\Microsoft.Xna.Framework.Content.Pipeline.dll</HintPath>
       <SpecificVersion>False</SpecificVersion>
     </Reference>
-    <Reference Include="Microsoft.Xna.Framework.Game, Version=4.0.0.0, Culture=neutral, processorArchitecture=x86" >
+    <Reference Include="Microsoft.Xna.Framework.Game, Version=4.0.0.0, Culture=neutral, processorArchitecture=x86">
       <HintPath>..\vanilla\xna\Microsoft.Xna.Framework.Game.dll</HintPath>
       <SpecificVersion>False</SpecificVersion>
     </Reference>
-    <Reference Include="Microsoft.Xna.Framework.Graphics, Version=4.0.0.0, Culture=neutral, processorArchitecture=x86" >
+    <Reference Include="Microsoft.Xna.Framework.Graphics, Version=4.0.0.0, Culture=neutral, processorArchitecture=x86">
       <HintPath>..\vanilla\xna\Microsoft.Xna.Framework.Graphics.dll</HintPath>
       <SpecificVersion>False</SpecificVersion>
     </Reference>
