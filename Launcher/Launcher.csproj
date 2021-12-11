@@ -7,7 +7,7 @@
     <AssemblyName>GrindScriptLauncher</AssemblyName>
     <TargetFramework>net472</TargetFramework>
 
-    
+
     <AssemblyTitle>GrindScript Launcher</AssemblyTitle>
     <Company>The GrindScript Team</Company>
     <Description>Launches GrindScript - the modding tool for Secrets of Grindea</Description>
@@ -15,8 +15,10 @@
     <ApplicationVersion>1.0.0.0</ApplicationVersion>
 
     <LangVersion>7.3</LangVersion>
-  
-      <PlatformTarget>x86</PlatformTarget>
+
+    <PlatformTarget>x86</PlatformTarget>
+
+    <BaseOutputPath>$(SolutionDir)build</BaseOutputPath>
   </PropertyGroup>
   <PropertyGroup>
     <ApplicationIcon>WoodenSword.ico</ApplicationIcon>
@@ -28,5 +30,11 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="WoodenSword.ico" />
-  </ItemGroup> 
+  </ItemGroup>
+
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="call &quot;$(SolutionDir)copy_files_to_steam_dir.bat&quot;" />
+  </Target>
+
 </Project>

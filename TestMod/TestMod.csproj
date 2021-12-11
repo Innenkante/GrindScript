@@ -12,6 +12,8 @@
     <LangVersion>7.3</LangVersion>
 
     <PlatformTarget>x86</PlatformTarget>
+
+    <BaseOutputPath>$(SolutionDir)build</BaseOutputPath>
   </PropertyGroup>  
  
   
@@ -63,5 +65,10 @@
     <ProjectReference Include="..\Addons\ModGoodies\ModGoodies.csproj" />
     <ProjectReference Include="..\API\API.csproj" />
   </ItemGroup>
+
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="call &quot;$(SolutionDir)copy_files_to_steam_dir.bat&quot;" />
+  </Target>
 
 </Project>

@@ -15,7 +15,7 @@ namespace SoG.Modding.TestMod
     using LoopSettings = Animation.LoopSettings;
 
     [ModDependency("GrindScript", "0.14")]
-    [ModDependency("Addons.ModGoodies")]
+    [ModDependency("Addons.ModGoodies", "0.14")]
     public class TestMod: Mod
     {
         int levelUpsSoFar = 0;
