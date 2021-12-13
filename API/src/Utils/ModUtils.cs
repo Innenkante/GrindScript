@@ -29,7 +29,7 @@ namespace SoG.Modding.Utils
         /// </summary>
         public static bool IsModContentPath(string assetPath)
         {
-            return assetPath.Trim().Replace('/', '\\').StartsWith("ModContent\\");
+            return assetPath != null && assetPath.Trim().Replace('/', '\\').StartsWith("ModContent\\");
         }
 
         /// <summary>

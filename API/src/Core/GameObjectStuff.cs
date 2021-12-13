@@ -33,15 +33,127 @@ namespace SoG.Modding
 	/// </summary>
 	public static class IDExtension
 	{
-		private static IDAllocator GetID()
-		{
-			return Globals.ModManager.ID;
+		private static Dictionary<Type, object> s_vanillaIDs = new Dictionary<Type, object>();
+
+		static IDExtension()
+        {
+			AddVanillaIDs<ItemID>();
+			AddVanillaIDs<ItemEffectID>();
+			AddVanillaIDs<LevelID>();
+			AddVanillaIDs<WorldID>();
+			AddVanillaIDs<PerkID>();
+			AddVanillaIDs<CurseID>();
+			AddVanillaIDs<EnemyID>();
+			AddVanillaIDs<QuestID>();
+			AddVanillaIDs<SpecialObjectiveID>();
+			AddVanillaIDs<SpellID>();
+			AddVanillaIDs<StatusEffectID>();
+			AddVanillaIDs<PinID>();
+
+			// Some IDs should be removed
+			// They're either unimplemented, not used, or whatever
+
+			RemoveVanillaIDs(
+				CurseID.None, CurseID.Curse_Hard, CurseID.Treat_Easy
+				);
+
+			// Do not remove card entries, or else kaboom!
+			RemoveVanillaIDs(
+				EnemyID.Null, EnemyID.YellowSlime, EnemyID.SeasonWarden, 
+				EnemyID.MtBloom_Troll, EnemyID.GhostShip_Placeholder4, 
+				EnemyID.Lood_Placeholder, EnemyID.Lood_Placeholder2, EnemyID.Lood_Placeholder3
+				);
+
+			RemoveVanillaIDs(
+				ItemID.Null, ItemID._Furniture_Decoration_CompletedPlant_OneHandWeaponPlant_Empty,
+				ItemID._ChaosModeUpgrade_HPUp,
+				ItemID._ChaosModeUpgrade_ATKUp,
+				ItemID._ChaosModeUpgrade_CSPDUp,
+				ItemID._ChaosModeUpgrade_EPRegUp,
+				ItemID._ChaosModeUpgrade_MaxEPUp,
+				ItemID._ChaosModeUpgrade_TalentPoints,
+				ItemID._ChaosModeUpgrade_LastDroppableGeneric,
+				ItemID._ChaosModeUpgrade_SpellStart,
+				ItemID._ChaosModeUpgrade_SpellEnd
+				);
+
+			RemoveVanillaIDs(
+				LevelID.SeasonChange_F4_LAST,
+				LevelID.TimeTown_ENDOFREGION,
+				LevelID.Desert_ENDOFREGION,
+				LevelID.GhostShip_ENDOFREGION,
+				LevelID.Endgame_ENDOFREGION,
+				LevelID.MarinoMansion_Cellar,  // Not used
+				LevelID.WinterLand_ToyFactory_PreBossRoom,  // Not used
+				LevelID.MountBloom_PoisonObstacleRoom,  // Not used
+				LevelID.TimeTown_Map03_BossRoom,  // Not used
+				LevelID.GhostShip_F1OutsideEntrance,  // Not used
+				LevelID.Lobby,
+				LevelID.None
+				);
+
+			RemoveVanillaIDs(PerkID.None,
+				PerkID.MoreNormalItems,  // Not implemented
+				PerkID.StartAtLvlTwo,  // Not implemented fully
+				PerkID.MoreRegenAfterFloors,  // Not implemented
+				PerkID.RegenAfterRooms  // Not implemented
+				);
+
+			RemoveVanillaIDs(
+				QuestID._SideQuest_Knark,
+				QuestID.None,
+				QuestID._SideQuest_TheSpectralBall_OBSOLETE,
+				QuestID._SideQuest_TheSpectralBall_MK2_OBSOLETE,
+				QuestID._RogueLikeQuest_GrindeaChallenge03,
+				QuestID._RogueLikeQuest_GrindeaChallenge04
+				);
 		}
 
-		public static bool IsFromSoG<T>(this T id) where T : Enum => Enum.IsDefined(typeof(T), id);
+		private static void AddVanillaIDs<T>()
+			where T : struct, Enum
+		{
+			s_vanillaIDs[typeof(T)] = new HashSet<T>((T[])Enum.GetValues(typeof(T)));
+        }
+
+		private static void RemoveVanillaIDs<T>(params T[] ids)
+			where T : struct, Enum
+		{
+			if (!s_vanillaIDs.TryGetValue(typeof(T), out _))
+            {
+				s_vanillaIDs[typeof(T)] = new HashSet<T>();
+            }
+
+			((HashSet<T>)s_vanillaIDs[typeof(T)]).ExceptWith(ids);
+		}
+
+		private static IDAllocator GetID()
+		{
+			return Globals.Manager.ID;
+		}
+
+		public static bool IsFromSoG<T>(this T id)
+			where T : struct, Enum
+		{
+			if (s_vanillaIDs.ContainsKey(typeof(T)))
+            {
+				return ((HashSet<T>)s_vanillaIDs[typeof(T)]).Contains(id);
+            }
+
+			return false;
+		}
+
+		public static IEnumerable<T> GetAllSoGIDs<T>()
+        {
+			if (s_vanillaIDs.ContainsKey(typeof(T)))
+			{
+				return (IEnumerable<T>)s_vanillaIDs[typeof(T)];
+			}
+
+			return Array.Empty<T>();
+		}
 
 		public static bool IsFromMod<IDType>(this IDType id)
-			where IDType : struct, Enum, IComparable
+			where IDType : struct, Enum
 		{
 			return GetID().GetIDStart<IDType>().CompareTo(id) <= 0 && id.CompareTo(GetID().GetIDNext<IDType>()) < 0;
 		}
@@ -52,8 +164,13 @@ namespace SoG.Modding
 	/// </summary>
 	internal static class GameObjectStuff
     {
+		static GameObjectStuff()
+        {
+			_originalPinCollection = new List<PinID>(PinCodex.SortedPinEntries);
+        }
+
         public static EntryType CreateEntry<IDType, EntryType>()
-            where IDType : struct
+            where IDType : struct, Enum
             where EntryType : Entry<IDType>
         {
             if (typeof(EntryType) == typeof(AudioEntry)) return new AudioEntry() as EntryType;
@@ -73,7 +190,7 @@ namespace SoG.Modding
             return null;
         }
 
-        public static Dictionary<Type, object> CreateIDStart()
+		public static Dictionary<Type, object> CreateIDStart()
         {
 			return new Dictionary<Type, object>()
 			{
@@ -136,9 +253,16 @@ namespace SoG.Modding
 			library.CreateStorage<WorldID, WorldRegionEntry>();
 		}
 
-        #region ID Constants
+		private static List<PinID> _originalPinCollection;
 
-        public const ItemID ItemIDStart = (ItemID)700000;
+		public static List<PinID> GetOriginalPinCollection()
+        {
+			return _originalPinCollection;
+		}
+
+		#region ID Constants
+
+		public const ItemID ItemIDStart = (ItemID)700000;
 		public const ItemID ItemIDEnd = ItemIDStart + 100000;
 
 		public const ItemEffectID ItemEffectIDStart = (ItemEffectID)700;
@@ -171,7 +295,7 @@ namespace SoG.Modding
 		public const StatusEffectID StatusEffectIDStart = (StatusEffectID)10000;
 		public const StatusEffectID StatusEffectIDEnd = StatusEffectIDStart + 10000;
 
-		public const PinID PinIDStart = (PinID)10000;
+		public const PinID PinIDStart = (PinID)35000;
 		public const PinID PinIDEnd = PinIDStart + 10000;
 
 		// GrindScript IDs

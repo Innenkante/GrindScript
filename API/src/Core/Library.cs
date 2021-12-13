@@ -54,8 +54,6 @@ namespace SoG.Modding
                 }
             }
 
-            TryGetEntry(ItemCodex.ItemTypes.Null, out ItemEntry lol);
-
             entry = default;
             return false;
         }
@@ -155,7 +153,7 @@ namespace SoG.Modding
         /// </summary>
         public void RemoveMod(Mod mod)
         {
-            foreach (var pair in _typeStorage)
+            foreach (var pair in new Dictionary<Type, IDictionary>(_typeStorage))
             {
                 s_unloadFromMod.MakeGenericMethod(pair.Key.GenericTypeArguments).Invoke(this, new object[] { mod });
             }

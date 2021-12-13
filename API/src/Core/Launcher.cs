@@ -26,15 +26,11 @@ namespace SoG.Modding
 
                 Globals.Logger = new ConsoleLogger(LogLevels.Debug, "GrindScript")
                 {
-                    SourceColor = ConsoleColor.Yellow,
-                    NextLogger = new FileLogger(LogLevels.Debug, "GrindScript")
-                    {
-                        FilePath = Path.Combine("Logs", $"ConsoleLog_{time.Year}.{time.Month}.{time.Day}_{time.Hour}.{time.Minute}.{time.Second}.txt")
-                    }
+                    SourceColor = ConsoleColor.Yellow
                 };
 
-                Globals.ModManager = new ModManager();
-                Globals.ModManager.Setup();
+                Globals.Manager = new ModManager();
+                Globals.Manager.Setup();
             }
         }
     }

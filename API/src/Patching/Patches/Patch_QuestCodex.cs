@@ -11,32 +11,43 @@ namespace SoG.Modding.Patching.Patches
         [HarmonyPatch(nameof(QuestCodex.GetQuestDescription))]
         public static bool GetQuestDescription_Prefix(ref QuestDescription __result, QuestCodex.QuestID p_enID)
         {
-            if (!p_enID.IsFromMod())
+            Globals.Manager.Library.TryGetEntry(p_enID, out QuestEntry entry);
+
+            if (entry == null)
             {
-                return true;
+                return true;  // Unknown mod entry?!
             }
 
-            var storage = Globals.ModManager.Library.GetStorage<QuestCodex.QuestID, QuestEntry>();
-
-            __result = storage[p_enID].vanilla;
+            __result = entry.vanilla;
 
             return false;
         }
 
-        [HarmonyPostfix]
+        [HarmonyPrefix]
         [HarmonyPatch(nameof(QuestCodex.GetQuestInstance))]
-        public static void GetQuestInstance_Postfix(ref Quest __result, QuestCodex.QuestID p_enID)
+        public static bool GetQuestInstance_Prefix(ref Quest __result, QuestCodex.QuestID p_enID)
         {
-            if (!p_enID.IsFromMod())
+            Globals.Manager.Library.TryGetEntry(p_enID, out QuestEntry entry);
+
+            if (entry == null)
             {
-                return;
+                return true;  // Unknown mod entry?!
             }
 
-            var storage = Globals.ModManager.Library.GetStorage<QuestCodex.QuestID, QuestEntry>();
+            if (entry.constructor == null && entry.IsVanilla)
+            {
+                __result = OriginalMethods.GetQuestInstance(p_enID);
+                return false;
+            }
 
-            storage[p_enID].constructor?.Invoke(__result);
+            __result = new Quest() { enQuestID = p_enID };
+            __result.xDescription = entry.vanilla;
 
-            __result.xReward = storage[p_enID].vanilla.xReward;
+            entry.constructor.Invoke(__result);
+
+            __result.xReward = entry.vanilla.xReward;
+
+            return false;
         }
 
     }

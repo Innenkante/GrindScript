@@ -10,13 +10,16 @@ namespace SoG.Modding.Patching.Patches
         [HarmonyPatch(nameof(CardCodex.GetIllustrationPath))]
         public static bool GetIllustrationPath_Prefix(ref string __result, EnemyCodex.EnemyTypes enEnemy)
         {
-            if (!enEnemy.IsFromMod())
-            {
-                return true;
-            }
+            var storage = Globals.Manager.Library.GetStorage<EnemyCodex.EnemyTypes, EnemyEntry>();
 
-            var storage = Globals.ModManager.Library.GetStorage<EnemyCodex.EnemyTypes, EnemyEntry>();
-            __result = storage[enEnemy].cardIllustrationPath;
+            if (storage.TryGetValue(enEnemy, out EnemyEntry entry))
+            {
+                __result = entry.cardIllustrationPath;
+            }
+            else
+            {
+                __result = "";
+            }
 
             return false;
         }

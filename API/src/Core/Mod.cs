@@ -79,10 +79,12 @@ namespace SoG.Modding
         {
             var time = Launcher.LaunchTime;
 
+            bool noFileLogger = !(Globals.Logger.NextLogger is FileLogger);  // TODO: Replace this - Mario
+
             Logger = new ConsoleLogger(Globals.Logger?.LogLevel ?? LogLevels.Debug, NameID)
             {
                 SourceColor = ConsoleColor.Yellow,
-                NextLogger = new FileLogger(Globals.Logger?.LogLevel ?? LogLevels.Debug, NameID)
+                NextLogger = noFileLogger ? null : new FileLogger(Globals.Logger?.LogLevel ?? LogLevels.Debug, NameID)
                 {
                     FilePath = Path.Combine("Logs", $"ConsoleLog_{time.Year}.{time.Month}.{time.Day}_{time.Hour}.{time.Minute}.{time.Second}.txt")
                 }
@@ -425,6 +427,11 @@ namespace SoG.Modding
 
         public void AddCraftingRecipe(ItemCodex.ItemTypes result, Dictionary<ItemCodex.ItemTypes, ushort> ingredients)
         {
+            if (Manager.Loader.ModInLoad != null)
+            {
+                throw new InvalidOperationException(ErrorHelper.UseThisAfterLoad);
+            }
+
             if (ingredients == null)
                 throw new ArgumentNullException(nameof(ingredients));
 

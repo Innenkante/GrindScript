@@ -34,15 +34,15 @@
       <HintPath>..\vanilla\xna\Microsoft.Xna.Framework.dll</HintPath>
       <SpecificVersion>False</SpecificVersion>
     </Reference>
-    <Reference Include="Microsoft.Xna.Framework.Content.Pipeline, Version=4.0.0.0, Culture=neutral, processorArchitecture=x86" >
+    <Reference Include="Microsoft.Xna.Framework.Content.Pipeline, Version=4.0.0.0, Culture=neutral, processorArchitecture=x86">
       <HintPath>..\vanilla\xna\Microsoft.Xna.Framework.Content.Pipeline.dll</HintPath>
       <SpecificVersion>False</SpecificVersion>
     </Reference>
-    <Reference Include="Microsoft.Xna.Framework.Game, Version=4.0.0.0, Culture=neutral, processorArchitecture=x86" >
+    <Reference Include="Microsoft.Xna.Framework.Game, Version=4.0.0.0, Culture=neutral, processorArchitecture=x86">
       <HintPath>..\vanilla\xna\Microsoft.Xna.Framework.Game.dll</HintPath>
       <SpecificVersion>False</SpecificVersion>
     </Reference>
-    <Reference Include="Microsoft.Xna.Framework.Graphics, Version=4.0.0.0, Culture=neutral, processorArchitecture=x86" >
+    <Reference Include="Microsoft.Xna.Framework.Graphics, Version=4.0.0.0, Culture=neutral, processorArchitecture=x86">
       <HintPath>..\vanilla\xna\Microsoft.Xna.Framework.Graphics.dll</HintPath>
       <SpecificVersion>False</SpecificVersion>
     </Reference>

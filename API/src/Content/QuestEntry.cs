@@ -135,14 +135,7 @@ namespace SoG.Modding.Content
 
         #endregion
 
-        internal QuestEntry() { }
-
-        internal QuestEntry(Mod owner, Quests.QuestCodex.QuestID gameID, string modID)
-        {
-            Mod = owner;
-            GameID = gameID;
-            ModID = modID;
-
+        internal QuestEntry() {
             SymbolicItemFlagReward noReward = new SymbolicItemFlagReward();
             noReward.AddItem(ItemCodex.ItemTypes._Misc_BagLol, 1);
 
@@ -151,9 +144,12 @@ namespace SoG.Modding.Content
 
         internal override void Initialize()
         {
-            vanilla.sQuestNameReference = $"Quest_{(int)GameID}_Name";
-            vanilla.sSummaryReference = $"Quest_{(int)GameID}_Summary";
-            vanilla.sDescriptionReference = $"Quest_{(int)GameID}_Description";
+            if (!IsVanilla)
+            {
+                vanilla.sQuestNameReference = $"Quest_{(int)GameID}_Name";
+                vanilla.sSummaryReference = $"Quest_{(int)GameID}_Summary";
+                vanilla.sDescriptionReference = $"Quest_{(int)GameID}_Description";
+            }
 
             Globals.Game.EXT_AddMiscText("Quests", vanilla.sQuestNameReference, name);
             Globals.Game.EXT_AddMiscText("Quests", vanilla.sSummaryReference, summary);

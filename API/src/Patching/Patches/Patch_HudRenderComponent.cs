@@ -8,24 +8,32 @@ namespace SoG.Modding.Patching.Patches
     [HarmonyPatch(typeof(HudRenderComponent))]
     internal static class Patch_HudRenderComponent
     {
-        [HarmonyPostfix]
+        [HarmonyPrefix]
         [HarmonyPatch(nameof(HudRenderComponent.GetBuffTexture))]
-        internal static void GetBuffTexture_Postfix(ref Texture2D __result, BaseStats.StatusEffectSource en)
+        internal static bool GetBuffTexture_Prefix(ref Texture2D __result, BaseStats.StatusEffectSource en)
         {
-            if (!en.IsFromMod())
-                return;
+            Globals.Manager.Library.TryGetEntry(en, out StatusEffectEntry entry);
 
-            var storage = Globals.ModManager.Library.GetStorage<BaseStats.StatusEffectSource, StatusEffectEntry>();
-            string path = storage[en].texturePath;
+            if (entry == null)
+            {
+                __result = RenderMaster.txNullTex;  // Unknown mod entry?
+                return false;
+            }
 
-            if (string.IsNullOrEmpty(path))
+            if (entry.texturePath == null)
             {
-                __result = null;
+                if (entry.IsVanilla)
+                {
+                    __result = OriginalMethods.GetBuffTexture(Globals.Game.xHUD, en);
+                    return false;
+                }
+
+                __result = Globals.Manager.GrindScript.ErrorTexture;  // Bad texture
+                return false;
             }
-            else
-            {
-                AssetUtils.TryLoadTexture(path, Globals.Game.Content, out __result);
-            }
+
+            AssetUtils.TryLoadTexture(entry.texturePath, Globals.Game.Content, out __result);
+            return false;
         }
     }
 }

@@ -10,12 +10,9 @@ namespace SoG.Modding.Patching.Patches
         [HarmonyPatch(nameof(EquipmentCodex.GetArmorInfo))]
         internal static bool GetArmorInfo_Prefix(ref EquipmentInfo __result, ItemCodex.ItemTypes enType)
         {
-            if (!enType.IsFromMod())
-                return true;
+            Globals.Manager.Library.TryGetEntry(enType, out ItemEntry entry);
 
-            var storage = Globals.ModManager.Library.GetStorage<ItemCodex.ItemTypes, ItemEntry>();
-
-            __result = storage[enType].vanillaEquip;
+            __result = entry?.vanillaEquip;
 
             return false;
         }
@@ -29,7 +26,7 @@ namespace SoG.Modding.Patching.Patches
 
         [HarmonyPrefix]
         [HarmonyPatch(nameof(EquipmentCodex.GetShieldInfo))]
-        internal static bool GetShieldInf_Prefix(ref EquipmentInfo __result, ItemCodex.ItemTypes enType)
+        internal static bool GetShieldInfo_Prefix(ref EquipmentInfo __result, ItemCodex.ItemTypes enType)
         {
             return GetArmorInfo_Prefix(ref __result, enType);
         }

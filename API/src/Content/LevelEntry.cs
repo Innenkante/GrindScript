@@ -76,7 +76,6 @@
 
         #endregion
 
-
         internal LevelEntry() { }
 
         internal LevelEntry(Mod owner, Level.ZoneEnum gameID, string modID)

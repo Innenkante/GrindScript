@@ -10,31 +10,41 @@ namespace SoG.Modding.Patching.Patches
         /// <summary>
         /// Inserts custom curses in the Curse shop menu.
         /// </summary>
-        [HarmonyPostfix]
+        [HarmonyPrefix]
         [HarmonyPatch(nameof(TreatCurseMenu.FillCurseList))]
-        internal static void FillCurseList_Postfix(TreatCurseMenu __instance)
+        internal static bool FillCurseList_Prefix(TreatCurseMenu __instance)
         {
-            var storage = Globals.ModManager.Library.GetStorage<RogueLikeMode.TreatsCurses, CurseEntry>();
+            var storage = Globals.Manager.Library.GetStorage<RogueLikeMode.TreatsCurses, CurseEntry>();
+
+            __instance.lenTreatCursesAvailable.Clear();
+
             foreach (var kvp in storage)
             {
                 if (!kvp.Value.isTreat)
                     __instance.lenTreatCursesAvailable.Add(kvp.Value.GameID);
             }
+
+            return false;
         }
 
         /// <summary>
         /// Inserts custom curses in the Treat shop menu.
         /// </summary>
-        [HarmonyPostfix]
+        [HarmonyPrefix]
         [HarmonyPatch(nameof(TreatCurseMenu.FillTreatList))]
-        internal static void FillTreatList_Postfix(TreatCurseMenu __instance)
+        internal static bool FillTreatList_Prefix(TreatCurseMenu __instance)
         {
-            var storage = Globals.ModManager.Library.GetStorage<RogueLikeMode.TreatsCurses, CurseEntry>();
+            var storage = Globals.Manager.Library.GetStorage<RogueLikeMode.TreatsCurses, CurseEntry>();
+
+            __instance.lenTreatCursesAvailable.Clear();
+
             foreach (var kvp in storage)
             {
                 if (kvp.Value.isTreat)
                     __instance.lenTreatCursesAvailable.Add(kvp.Value.GameID);
             }
+
+            return false;
         }
     }
 }

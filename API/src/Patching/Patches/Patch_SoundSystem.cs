@@ -183,7 +183,7 @@ namespace SoG.Modding.Patching.Patches
         [HarmonyPatch(nameof(SoundSystem.PlaySong))]
         internal static void PlaySong_Prefix(ref string sSongName, bool bFadeIn)
         {
-            var redirects = Globals.ModManager.Library.VanillaMusicRedirects;
+            var redirects = Globals.Manager.Library.VanillaMusicRedirects;
             string audioIDToUse = sSongName;
 
             if (!audioIDToUse.StartsWith("GS_") && redirects.ContainsKey(audioIDToUse))
@@ -283,7 +283,7 @@ namespace SoG.Modding.Patching.Patches
 
             if (currentIsModded)
             {
-                Globals.ModManager.Library.TryGetEntry((GrindScriptID.AudioID)entryID, out entry);
+                Globals.Manager.Library.TryGetEntry((GrindScriptID.AudioID)entryID, out entry);
                 mod = entry.Mod;
             }
 

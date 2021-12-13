@@ -13,49 +13,61 @@ namespace SoG.Modding.Patching.Patches
         [HarmonyPatch(nameof(LevelBlueprint.GetBlueprint))]
         internal static bool GetBlueprint_Prefix(ref LevelBlueprint __result, Level.ZoneEnum enZoneToGet)
         {
-            if (!enZoneToGet.IsFromMod())
+            Globals.Manager.Library.TryGetEntry(enZoneToGet, out LevelEntry entry);
+
+            if (entry == null)
+            {
                 return true;
+            }
 
-            LevelBlueprint bprint = new LevelBlueprint();
+            if (entry.IsVanilla && entry.builder == null)
+            {
+                return true;  // Go with vanilla method
+            }
+            else if (entry.IsUnknown)
+            {
+                __result = new LevelBlueprint();
+                __result.CheckForConsistency();
 
-            bprint.CheckForConsistency();
+                return false;  // This will either crash the game or softlock it
+            }
 
-            var storage = Globals.ModManager.Library.GetStorage<Level.ZoneEnum, LevelEntry>();
-            LevelEntry entry = storage[enZoneToGet];
+            LevelBlueprint blueprint = new LevelBlueprint();
+
+            blueprint.CheckForConsistency();
 
             try
             {
-                entry.builder?.Invoke(bprint);
+                entry.builder?.Invoke(blueprint);
             }
             catch (Exception e)
             {
                 Globals.Logger.Error($"Builder threw an exception for level {enZoneToGet}! Exception: {e}");
-                bprint = new LevelBlueprint();
+                blueprint = new LevelBlueprint();
             }
 
-            bprint.CheckForConsistency(true);
+            blueprint.CheckForConsistency(true);
 
             // Enforce certain values
 
-            bprint.enRegion = entry.worldRegion;
-            bprint.enZone = entry.GameID;
-            bprint.sDefaultMusic = ""; // TODO Custom music
-            bprint.sDialogueFiles = ""; // TODO Dialogue Files
-            bprint.sMenuBackground = "bg01_mountainvillage"; // TODO Proper custom backgrounds. Transpiling _Level_Load is a good idea.
-            bprint.sZoneName = ""; // TODO Zone titles
-
+            blueprint.enRegion = entry.worldRegion;
+            blueprint.enZone = entry.GameID;
+            blueprint.sDefaultMusic = ""; // TODO Custom music
+            blueprint.sDialogueFiles = ""; // TODO Dialogue Files
+            blueprint.sMenuBackground = "bg01_mountainvillage"; // TODO Proper custom backgrounds. Transpiling _Level_Load is a good idea.
+            blueprint.sZoneName = ""; // TODO Zone titles
 
             // Loader setup
 
-            Loader.afCurrentHeightLayers = new float[bprint.aiLayerDefaultHeight.Length];
-            for (int i = 0; i < bprint.aiLayerDefaultHeight.Length; i++)
-                Loader.afCurrentHeightLayers[i] = bprint.aiLayerDefaultHeight[i];
+            Loader.afCurrentHeightLayers = new float[blueprint.aiLayerDefaultHeight.Length];
+            for (int i = 0; i < blueprint.aiLayerDefaultHeight.Length; i++)
+                Loader.afCurrentHeightLayers[i] = blueprint.aiLayerDefaultHeight[i];
 
-            Loader.lxCurrentSC = bprint.lxInvisibleWalls;
+            Loader.lxCurrentSC = blueprint.lxInvisibleWalls;
 
             // Return from method
 
-            __result = bprint;
+            __result = blueprint;
             return false;
         }
 

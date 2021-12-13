@@ -24,7 +24,7 @@
         LogLevels LogLevel { get; set; }
 
         /// <summary> Returns the next logger in the log chain, if any. </summary>
-        ILogger NextLogger { get; }
+        ILogger NextLogger { get; set; }
 
         /// <summary> Logs a message at the Trace level. </summary>
         void Trace(string msg, string source = "");

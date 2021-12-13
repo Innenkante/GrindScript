@@ -5,6 +5,7 @@ using SoG.Modding.GrindScriptMod;
 using SoG.Modding.Utils;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -18,7 +19,7 @@ namespace SoG.Modding.Patching
         /// </summary>
         public static void DoModContentLoad()
         {
-            Globals.ModManager.Loader.Reload();
+            Globals.Manager.Loader.Reload();
 
             MainMenuWorker.AnalyzeStorySavesForCompatibility();
             MainMenuWorker.AnalyzeArcadeSavesForCompatibility();
@@ -49,12 +50,9 @@ namespace SoG.Modding.Patching
         /// </summary>
         public static void InLevelLoadDoStuff(Level.ZoneEnum type, bool staticOnly)
         {
-            // Modifying vanilla levels not supported yet
+            Globals.Manager.Library.TryGetEntry(type, out LevelEntry entry);
 
-            if (!type.IsFromMod())
-                return;
-
-            LevelEntry entry = Globals.ModManager.Library.GetStorage<Level.ZoneEnum, LevelEntry>()[type];
+            Debug.Assert(entry != null && entry.IsModded);
 
             try
             {
@@ -64,6 +62,34 @@ namespace SoG.Modding.Patching
             {
                 Globals.Logger.Error($"Loader threw an exception for level {type}! Exception: {e}");
             }
+        }
+
+        // If this method returns true, the vanilla switch case is skipped
+        public static bool InActivatePerk(PlayerView view, RogueLikeMode.Perks perk)
+        {
+            Globals.Manager.Library.TryGetEntry(perk, out PerkEntry entry);
+
+            if (entry == null)
+            {
+                return false;  // Unknown mod entry??
+            }
+
+            // This callback accepts vanilla perks because the vanilla activators are in a for loop
+            if (entry.IsVanilla && entry.runStartActivator == null)
+            {
+                return false;
+            }
+
+            try
+            {
+                entry.runStartActivator?.Invoke(view);
+            }
+            catch (Exception e)
+            {
+                Globals.Logger.Error($"Run start activator threw an exception for perk {perk}! Exception: {e}");
+            }
+
+            return true;
         }
 
         /// <summary>
@@ -78,21 +104,21 @@ namespace SoG.Modding.Patching
             string target = words[0];
             string trueCommand = command.Substring(command.IndexOf(':') + 1);
 
-            Mod mod = Globals.ModManager.ActiveMods.FirstOrDefault(x => x.NameID == target);
+            Mod mod = Globals.Manager.ActiveMods.FirstOrDefault(x => x.NameID == target);
 
             if (mod == null)
             {
-                CAS.AddChatMessage($"[{Globals.ModManager.GrindScript.NameID}] Unknown mod!");
+                CAS.AddChatMessage($"[{Globals.Manager.GrindScript.NameID}] Unknown mod!");
                 return true;
             }
 
-            Globals.ModManager.Library.TryGetModEntry<GrindScriptID.CommandID, CommandEntry>(mod, "", out CommandEntry entry);
+            Globals.Manager.Library.TryGetModEntry<GrindScriptID.CommandID, CommandEntry>(mod, "", out CommandEntry entry);
 
             if (entry == null || !entry.commands.TryGetValue(trueCommand, out var parser))
             {
                 if (trueCommand == "Help")
                 {
-                    InChatParseCommand($"{Globals.ModManager.GrindScript.NameID}:Help", target, connection);
+                    InChatParseCommand($"{Globals.Manager.GrindScript.NameID}:Help", target, connection);
                     return true;
                 }
 
@@ -113,14 +139,15 @@ namespace SoG.Modding.Patching
         /// </summary>
         public static Enemy InGetEnemyInstance(EnemyCodex.EnemyTypes gameID, Level.WorldRegion assetRegion)
         {
-            if (!gameID.IsFromMod())
-                return new Enemy(); // Switch case will take care of vanilla enemies
+            Globals.Manager.Library.TryGetEntry(gameID, out EnemyEntry entry);
+
+            Debug.Assert(entry != null && entry.IsModded);
 
             Enemy enemy = new Enemy() { enType = gameID };
 
             enemy.xRenderComponent.xOwnerObject = enemy;
 
-            Globals.ModManager.Library.GetStorage<EnemyCodex.EnemyTypes, EnemyEntry>()[gameID].constructor?.Invoke(enemy);
+            entry.constructor?.Invoke(enemy);
 
             return enemy;
         }
@@ -133,14 +160,13 @@ namespace SoG.Modding.Patching
         /// </summary>
         public static bool InEnemyMakeElite(Enemy enemy)
         {
-            if (!enemy.enType.IsFromMod())
-                return false;
+            Globals.Manager.Library.TryGetEntry(enemy.enType, out EnemyEntry entry);
 
-            var eliteScaler = Globals.ModManager.Library.GetStorage<EnemyCodex.EnemyTypes, EnemyEntry>()[enemy.enType].eliteScaler;
+            Debug.Assert(entry != null && entry.IsModded);
 
-            if (eliteScaler != null)
+            if (entry.eliteScaler != null)
             {
-                eliteScaler.Invoke(enemy);
+                entry.eliteScaler.Invoke(enemy);
                 return true;
             }
             else
@@ -215,13 +241,13 @@ namespace SoG.Modding.Patching
 
         public static void GauntletEnemySpawned(Enemy enemy)
         {
-            foreach (Mod mod in Globals.ModManager.ActiveMods)
+            foreach (Mod mod in Globals.Manager.ActiveMods)
                 mod.PostArcadeGauntletEnemySpawned(enemy);
         }
 
         public static void AddModdedPinsToList(List<PinCodex.PinType> list)
         {
-            foreach (PinEntry entry in Globals.ModManager.Library.GetStorage<PinCodex.PinType, PinEntry>().Values)
+            foreach (PinEntry entry in Globals.Manager.Library.GetStorage<PinCodex.PinType, PinEntry>().Values)
             {
                 if (entry.conditionToDrop == null || entry.conditionToDrop.Invoke())
                 {
@@ -235,7 +261,7 @@ namespace SoG.Modding.Patching
             if (!ModUtils.SplitAudioID(GSID, out int entryID, out bool isMusic, out int cueID))
                 return "";
 
-            if (!Globals.ModManager.Library.TryGetEntry<GrindScriptID.AudioID, AudioEntry>((GrindScriptID.AudioID)entryID, out var entry))
+            if (!Globals.Manager.Library.TryGetEntry<GrindScriptID.AudioID, AudioEntry>((GrindScriptID.AudioID)entryID, out var entry))
             {
                 return "";
             }
@@ -249,7 +275,7 @@ namespace SoG.Modding.Patching
             if (!(success && !isMusic))
                 return null;
 
-            Globals.ModManager.Library.TryGetEntry<GrindScriptID.AudioID, AudioEntry>((GrindScriptID.AudioID)entryID, out var entry);
+            Globals.Manager.Library.TryGetEntry<GrindScriptID.AudioID, AudioEntry>((GrindScriptID.AudioID)entryID, out var entry);
 
             return entry?.effectsSB;
         }
@@ -261,7 +287,7 @@ namespace SoG.Modding.Patching
             if (!(success && isMusic))
                 return null;
 
-            Globals.ModManager.Library.TryGetEntry<GrindScriptID.AudioID, AudioEntry>((GrindScriptID.AudioID)entryID, out var entry);
+            Globals.Manager.Library.TryGetEntry<GrindScriptID.AudioID, AudioEntry>((GrindScriptID.AudioID)entryID, out var entry);
 
             return entry?.musicSB;
         }
@@ -271,7 +297,7 @@ namespace SoG.Modding.Patching
             if (bank == "UniversalMusic")
                 return true;
 
-            foreach (var mod in Globals.ModManager.ActiveMods)
+            foreach (var mod in Globals.Manager.ActiveMods)
             {
                 if (mod.NameID == bank)
                     return true;
@@ -289,9 +315,9 @@ namespace SoG.Modding.Patching
             if (bank == null)
                 return false;
 
-            foreach (var mod in Globals.ModManager.ActiveMods)
+            foreach (var mod in Globals.Manager.ActiveMods)
             {
-                Globals.ModManager.Library.TryGetModEntry<GrindScriptID.AudioID, AudioEntry>(mod, "", out var entry);
+                Globals.Manager.Library.TryGetModEntry<GrindScriptID.AudioID, AudioEntry>(mod, "", out var entry);
                 if (entry != null && entry.universalWB == bank)
                     return true;
             }
@@ -342,7 +368,7 @@ namespace SoG.Modding.Patching
                 Globals.Logger.Info("Couldn't parse GS version from client!");
             }
 
-            if (!readGSVersion || result != Globals.ModManager.GrindScript.ModVersion)
+            if (!readGSVersion || result != Globals.Manager.GrindScript.ModVersion)
             {
                 Globals.Logger.Info("Denying connection due to GrindScript version discrepancy.");
                 Globals.Logger.Info("Check that server and client are running on the same GrindScript version.");
@@ -350,7 +376,7 @@ namespace SoG.Modding.Patching
             }
 
             List<ModMetadata> clientMods = new List<ModMetadata>();
-            var serverMods = Globals.ModManager.ActiveMods;
+            var serverMods = Globals.Manager.ActiveMods;
 
             int clientModCount = msg.ReadInt32();
             int serverModCount = serverMods.Count;
@@ -424,11 +450,11 @@ namespace SoG.Modding.Patching
         {
             Globals.Logger.Debug("Writing mod list!");
 
-            msg.Write(Globals.ModManager.GrindScript.ModVersion.ToString());
+            msg.Write(Globals.Manager.GrindScript.ModVersion.ToString());
 
-            msg.Write(Globals.ModManager.ActiveMods.Count);
+            msg.Write(Globals.Manager.ActiveMods.Count);
 
-            foreach (Mod mod in Globals.ModManager.ActiveMods)
+            foreach (Mod mod in Globals.Manager.ActiveMods)
             {
                 if (mod.DisableObjectCreation)
                 {

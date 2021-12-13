@@ -6,6 +6,7 @@ using Quests;
 using SoG.Modding.Content;
 using SoG.Modding.Utils;
 using SoG.Modding.Extensions;
+using Microsoft.Xna.Framework.Graphics;
 
 namespace SoG.Modding.TestMod
 {
@@ -88,6 +89,13 @@ namespace SoG.Modding.TestMod
         {
             // In here goes anything that can't be done during Load
             // For instance, Audio IDs are only available once Load() exits
+
+            AddCraftingRecipe(GetItem(modOneHandedWeapon).GameID, new Dictionary<ItemCodex.ItemTypes, ushort>
+            {
+                [GetItem(modMisc1).GameID] = 5,
+                [GetItem(modMisc2).GameID] = 10,
+                [GetItem(modTwoHandedWeapon).GameID] = 1
+            });
 
             GetAudio().RedirectVanillaMusic("BossBattle01", "Clash");
             GetAudio().RedirectVanillaMusic("BishopBattle", "Ripped");
@@ -268,13 +276,6 @@ namespace SoG.Modding.TestMod
             item.IconPath = AssetPath + "Items/Common/Icon";
             item.AddCategory(ItemCodex.ItemCategories.Misc);
 
-            AddCraftingRecipe(GetItem(modOneHandedWeapon).GameID, new Dictionary<ItemCodex.ItemTypes, ushort>
-            {
-                [GetItem(modMisc1).GameID] = 5,
-                [GetItem(modMisc2).GameID] = 10,
-                [GetItem(modTwoHandedWeapon).GameID] = 1
-            });
-
             Logger.Info("Done with Creating Items!");
         }
 
@@ -427,6 +428,20 @@ namespace SoG.Modding.TestMod
             curse02.ScoreModifier = -0.15f;
             curse02.TexturePath = "";
 
+            PinEntry pin01 = CreatePin("_Mod_Pin001");
+            pin01.CreateCollectionEntry = true;
+            pin01.Description = "Omg it's a P I N";
+            pin01.EquipAction = (player) =>
+            {
+                player.xEntity.xBaseStats.iBaseMaxHP += 150;
+                player.xEntity.xBaseStats._ichkHPBalance += 150 * 2;
+            };
+            pin01.UnequipAction = (player) =>
+            {
+                player.xEntity.xBaseStats.iBaseMaxHP -= 150;
+                player.xEntity.xBaseStats._ichkHPBalance -= 150 * 2;
+            };
+
             Logger.Info("Done with Roguelike stuff!");
         }
 
@@ -445,6 +460,11 @@ namespace SoG.Modding.TestMod
             enemy.Category = EnemyDescription.Category.Regular;
             enemy.CardDropChance = 50f;
             enemy.CardInfo = "Boosts your bamboozling by 420%";
+            enemy.DefaultAnimation = (Content) => new Animation(1, 0, Content.Load<Texture2D>("Sprites/Monster/Pillar Mountains/Slime/Run/Up"), new Vector2(14f, 20f), 4, 14, 25, 23, 0, 0, 14, LoopSettings.Looping, CancelOptions.IgnoreIfPlaying, true, true);
+            enemy.CardIllustrationPath = "GUI/InGameMenu/Journal/CardAlbum/Cards/slime_green";
+            enemy.DisplayBackgroundPath = "GUI/InGameMenu/Journal/journalBG_FlyingFortress";
+            enemy.OnHitSound = "LoodDamage";
+            enemy.OnHitSound = "Slime_Death";
 
             enemy.LootTable.Add(new EnemyEntry.Drop(100f, ItemCodex.ItemTypes._Misc_GiftBox_Consumable));
             enemy.LootTable.Add(new EnemyEntry.Drop(75f, ItemCodex.ItemTypes._Misc_GiftBox_Consumable));

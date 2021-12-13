@@ -7,14 +7,22 @@ namespace SoG.Modding.Patching.Patches
     [HarmonyPatch(typeof(SpellCodex))]
     internal static class Patch_SpellCodex
     {
-        [HarmonyPostfix]
+        [HarmonyPrefix]
         [HarmonyPatch(nameof(SpellCodex.GetSpellInstance), typeof(SpellCodex.SpellTypes), typeof(int), typeof(Level.WorldRegion))]
-        internal static void GetSpellInstance_Postfix(ref ISpellInstance __result, SpellCodex.SpellTypes enType, int iPowerLevel, Level.WorldRegion enOverrideRegion)
+        internal static bool GetSpellInstance_Prefix(ref ISpellInstance __result, SpellCodex.SpellTypes enType, int iPowerLevel, Level.WorldRegion enOverrideRegion)
         {
-            if (!enType.IsFromMod())
-                return;
+            Globals.Manager.Library.TryGetEntry(enType, out SpellEntry entry);
 
-            Globals.ModManager.Library.TryGetEntry(enType, out SpellEntry entry);
+            if (entry == null)
+            {
+                __result = null;
+                return true;  // Unknown mod item?
+            }
+
+            if (entry.builder == null && entry.IsVanilla)
+            {
+                return true;  // Get from vanilla
+            }
 
             __result = entry.builder(iPowerLevel, enOverrideRegion);
 
@@ -32,8 +40,11 @@ namespace SoG.Modding.Patching.Patches
             {
                 arc.dixAnimations.Add(0, new Animation(0, 0, RenderMaster.txNullTex, new Vector2(8f, 6f), 4, 1, 17, 32, 0, 0, 6, Animation.LoopSettings.Looping, Animation.CancelOptions.IgnoreIfPlaying, true, true));
             }
+
+            return false;
         }
 
+        /*
         [HarmonyPostfix]
         [HarmonyPatch(nameof(SpellCodex.IsEPBlocking))]
         internal static void IsEPBlocking_Postfix(SpellCodex.SpellTypes enType, ref bool __result)
@@ -55,42 +66,6 @@ namespace SoG.Modding.Patching.Patches
         }
 
         [HarmonyPostfix]
-        [HarmonyPatch(nameof(SpellCodex.IsMagicSkill))]
-        internal static void IsMagicSkill_Postfix(SpellCodex.SpellTypes enType, ref bool __result)
-        {
-            if (!enType.IsFromMod())
-                return;
-
-            Globals.ModManager.Library.TryGetEntry(enType, out SpellEntry entry);
-
-            __result = entry.isMagicSkill;
-        }
-
-        [HarmonyPostfix]
-        [HarmonyPatch(nameof(SpellCodex.IsMeleeSkill))]
-        internal static void IsMeleeSkill_Postfix(SpellCodex.SpellTypes enType, ref bool __result)
-        {
-            if (!enType.IsFromMod())
-                return;
-
-            Globals.ModManager.Library.TryGetEntry(enType, out SpellEntry entry);
-
-            __result = entry.isMeleeSkill;
-        }
-
-        [HarmonyPostfix]
-        [HarmonyPatch(nameof(SpellCodex.IsUtilitySkill))]
-        internal static void IsUtilitySkill_Postfix(SpellCodex.SpellTypes enType, ref bool __result)
-        {
-            if (!enType.IsFromMod())
-                return;
-
-            Globals.ModManager.Library.TryGetEntry(enType, out SpellEntry entry);
-
-            __result = entry.isUtilitySkill;
-        }
-
-        [HarmonyPostfix]
         [HarmonyPatch(nameof(SpellCodex.IsTalent))]
         internal static void IsTalent_Postfix(SpellCodex.SpellTypes enType, ref bool __result)
         {
@@ -99,6 +74,60 @@ namespace SoG.Modding.Patching.Patches
 
             __result = false;
         }
+        */
 
+        [HarmonyPrefix]
+        [HarmonyPatch(nameof(SpellCodex.IsMagicSkill))]
+        internal static bool IsMagicSkill_Prefix(SpellCodex.SpellTypes enType, ref bool __result)
+        {
+            Globals.Manager.Library.TryGetEntry(enType, out SpellEntry entry);
+
+            if (entry == null)
+            {
+                __result = false;
+            }
+            else
+            {
+                __result = entry.isMagicSkill;
+            }
+
+            return false;
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(nameof(SpellCodex.IsMeleeSkill))]
+        internal static bool IsMeleeSkill_Prefix(SpellCodex.SpellTypes enType, ref bool __result)
+        {
+            Globals.Manager.Library.TryGetEntry(enType, out SpellEntry entry);
+
+            if (entry == null)
+            {
+                __result = false;
+            }
+            else
+            {
+                __result = entry.isMeleeSkill;
+            }
+
+            return false;
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(nameof(SpellCodex.IsUtilitySkill))]
+        internal static bool IsUtilitySkill_Prefix(SpellCodex.SpellTypes enType, ref bool __result)
+        {
+            Globals.Manager.Library.TryGetEntry(enType, out SpellEntry entry);
+
+            if (entry == null)
+            {
+                __result = false;
+            }
+            else
+            {
+                __result = entry.isUtilitySkill;
+            }
+
+            return false;
+        }
     }
 }

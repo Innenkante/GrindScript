@@ -1,4 +1,5 @@
-﻿using SoG.Modding.Utils;
+﻿using Microsoft.Xna.Framework.Graphics;
+using SoG.Modding.Utils;
 
 namespace SoG.Modding.Content
 {
@@ -120,13 +121,6 @@ namespace SoG.Modding.Content
         #endregion
 
         internal CurseEntry() { }
-
-        internal CurseEntry(Mod owner, RogueLikeMode.TreatsCurses gameID, string modID)
-        {
-            Mod = owner;
-            GameID = gameID;
-            ModID = modID;
-        }
 
         internal override void Initialize()
         {

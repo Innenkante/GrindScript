@@ -10,11 +10,14 @@ namespace SoG.Modding.Patching.Patches
         [HarmonyPatch(nameof(WeaponCodex.GetWeaponInfo))]
         internal static bool GetWeaponInfo_Prefix(ref WeaponInfo __result, ItemCodex.ItemTypes enType)
         {
-            if (!enType.IsFromMod())
-                return true;
+            Globals.Manager.Library.TryGetEntry(enType, out ItemEntry entry);
 
-            Globals.ModManager.Library.TryGetEntry(enType, out ItemEntry entry);
-            __result = entry.vanillaEquip as WeaponInfo;
+            __result = null;
+
+            if (entry != null && entry.vanillaEquip is WeaponInfo info)
+            {
+                __result = info;
+            }
 
             return false;
         }

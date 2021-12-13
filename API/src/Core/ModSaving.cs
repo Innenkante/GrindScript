@@ -162,7 +162,7 @@ namespace SoG.Modding
 
                 int blockCount = file.ReadInt32();
 
-                Mod mod = _manager.ActiveMods.FirstOrDefault(x => x.NameID == meta.NameID);
+                Mod mod = _manager.SaveableMods.FirstOrDefault(x => x.NameID == meta.NameID);
 
                 Library library = mod != null ? _manager.Library.GetModView(mod) : null;
 
@@ -203,14 +203,9 @@ namespace SoG.Modding
 
             file.Write(FileVersion);
 
-            file.Write(_manager.ActiveMods.Count);
-            foreach (Mod mod in _manager.ActiveMods)
+            file.Write(_manager.SaveableMods.Count);
+            foreach (Mod mod in _manager.SaveableMods)
             {
-                if (mod.DisableObjectCreation)
-                {
-                    continue;
-                }
-
                 WriteModMetadata(file, mod);
 
                 file.Write(blockSet.Count);

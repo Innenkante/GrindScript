@@ -7,16 +7,21 @@ namespace SoG.Modding.Patching.Patches
     [HarmonyPatch(typeof(PerkInfo))]
     internal static class Patch_RogueLikeMode_PerkInfo
     {
-        /// <summary>
-        /// Inserts custom perks in the Perk shop menu.
-        /// </summary>
-        [HarmonyPostfix]
+        [HarmonyPrefix]
         [HarmonyPatch(nameof(PerkInfo.Init))]
-        internal static void Init_Postfix()
+        internal static bool InitPrefix()
         {
-            var storage = Globals.ModManager.Library.GetStorage<RogueLikeMode.Perks, PerkEntry>();
-            foreach (var perk in storage.Values)
-                PerkInfo.lxAllPerks.Add(new PerkInfo(perk.GameID, perk.essenceCost, perk.textEntry));
+            PerkInfo.lxAllPerks.Clear();
+
+            foreach (var pair in Globals.Manager.Library.GetStorage<RogueLikeMode.Perks, PerkEntry>())
+            {
+                if (pair.Value.unlockCondition == null || pair.Value.unlockCondition.Invoke())
+                {
+                    PerkInfo.lxAllPerks.Add(new PerkInfo(pair.Key, pair.Value.essenceCost, pair.Value.textEntry));
+                }
+            }
+
+            return false;
         }
     }
 }

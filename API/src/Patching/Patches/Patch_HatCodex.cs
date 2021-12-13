@@ -13,42 +13,55 @@ namespace SoG.Modding.Patching.Patches
         [HarmonyPatch(nameof(HatCodex.GetHatInfo))]
         internal static bool GetHatInfo_Prefix(ref HatInfo __result, ItemCodex.ItemTypes enType)
         {
-            if (!enType.IsFromMod())
-                return true;
+            Globals.Manager.Library.TryGetEntry(enType, out ItemEntry entry);
 
-            var storage = Globals.ModManager.Library.GetStorage<ItemCodex.ItemTypes, ItemEntry>();
-            ItemEntry entry = storage[enType];
-            ContentManager manager = Globals.Game.Content;
-            string path = entry.equipResourcePath;
+            __result = null;
 
-            __result = entry.vanillaEquip as HatInfo;
-
-            string[] directions = new string[]
+            if (entry != null && entry.vanillaEquip is HatInfo info)
             {
-                "Up", "Right", "Down", "Left"
-            };
+                __result = info;
 
-            int index = -1;
+                string path = entry.equipResourcePath;
 
-            while (++index < 4)
-            {
-                if (__result.xDefaultSet.atxTextures[index] == null)
-                {
-                    AssetUtils.TryLoadTexture(Path.Combine(path, directions[index]), manager, out __result.xDefaultSet.atxTextures[index]);
-                }
-            }
+                string[] directions = new string[] { "Up", "Right", "Down", "Left" };
 
-            foreach (var kvp in __result.denxAlternateVisualSets)
-            {
-                string altPath = Path.Combine(path, entry.hatAltSetResourcePaths[kvp.Key]);
-
-                index = -1;
+                int index = -1;
 
                 while (++index < 4)
                 {
-                    if (kvp.Value.atxTextures[index] == null)
+                    if (__result.xDefaultSet.atxTextures[index] == null)
                     {
-                        AssetUtils.TryLoadTexture(Path.Combine(altPath, directions[index]), manager, out kvp.Value.atxTextures[index]);
+                        if (path != null)
+                        {
+                            AssetUtils.TryLoadTexture(Path.Combine(path, directions[index]), Globals.Game.Content, out __result.xDefaultSet.atxTextures[index]);
+                        }
+                        else
+                        {
+                            __result.xDefaultSet.atxTextures[index] = Globals.Manager.GrindScript.ErrorTexture;
+                        }
+                    }
+                }
+
+                foreach (var kvp in entry.hatAltSetResourcePaths)
+                {
+                    index = -1;
+
+                    while (++index < 4)
+                    {
+                        var altSet = __result.denxAlternateVisualSets[kvp.Key];
+
+                        if (altSet.atxTextures[index] == null)
+                        {
+                            if (path != null && kvp.Value != null)
+                            {
+                                string altPath = Path.Combine(path, kvp.Value);
+                                AssetUtils.TryLoadTexture(Path.Combine(altPath, directions[index]), Globals.Game.Content, out altSet.atxTextures[index]);
+                            }
+                            else
+                            {
+                                altSet.atxTextures[index] = Globals.Manager.GrindScript.ErrorTexture;
+                            }
+                        }
                     }
                 }
             }

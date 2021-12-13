@@ -12,46 +12,65 @@ namespace SoG.Modding.Patching.Patches
         [HarmonyPatch(nameof(ItemCodex.GetItemDescription))]
         internal static bool GetItemDescription_Prefix(ref ItemDescription __result, ItemCodex.ItemTypes enType)
         {
-            if (!enType.IsFromMod())
-                return true;
+            Globals.Manager.Library.TryGetEntry(enType, out ItemEntry entry);
 
-            var storage = Globals.ModManager.Library.GetStorage<ItemCodex.ItemTypes, ItemEntry>();
-            ItemEntry entry = storage[enType];
-            __result = entry.vanillaItem;
-
-            if (__result.txDisplayImage == null)
+            if (entry != null)
             {
-                AssetUtils.TryLoadTexture(entry.iconPath, Globals.Game.Content, out __result.txDisplayImage);
+                __result = entry.vanillaItem;
+
+                if (entry.iconPath != null)
+                {
+                    AssetUtils.TryLoadTexture(entry.iconPath, Globals.Game.Content, out __result.txDisplayImage);
+                }
+                else
+                {
+                    if (__result.txDisplayImage == null)
+                    {
+                        __result.txDisplayImage = Globals.Manager.GrindScript.ErrorTexture;
+                    }
+                }
+            }
+            else
+            {
+                __result = new ItemDescription() { enType = enType };
             }
 
             return false;
         }
 
-        [HarmonyPrefix]
+        [HarmonyPostfix]
         [HarmonyPatch(nameof(ItemCodex.GetItemInstance))]
-        internal static bool GetItemInstance_Prefix(ref Item __result, ItemCodex.ItemTypes enType)
+        internal static void GetItemInstance_Postfix(ref Item __result, ItemCodex.ItemTypes enType)
         {
-            if (!enType.IsFromMod())
-                return true;
+            Globals.Manager.Library.TryGetEntry(enType, out ItemEntry entry);
 
-            var storage = Globals.ModManager.Library.GetStorage<ItemCodex.ItemTypes, ItemEntry>();
-            ItemEntry entry = storage[enType];
-            string trueShadowTex = entry.shadowPath != "" ? entry.shadowPath : "Items/DropAppearance/hartass02";
-            ItemDescription xDesc = entry.vanillaItem;
+            __result.enType = entry.vanillaItem.enType;
+            __result.sFullName = entry.vanillaItem.sFullName;
+            __result.bGiveToServer = entry.vanillaItem.lenCategory.Contains(ItemCodex.ItemCategories.GrantToServer);
 
-            __result = new Item()
+            if (entry.iconPath != null)
             {
-                enType = enType,
-                sFullName = xDesc.sFullName,
-                bGiveToServer = xDesc.lenCategory.Contains(ItemCodex.ItemCategories.GrantToServer)
-            };
+                AssetUtils.TryLoadTexture(entry.iconPath, Globals.Game.xLevelMaster.contRegionContent, out __result.xRenderComponent.txTexture);
+            }
+            else
+            {
+                if (__result.xRenderComponent.txTexture == null)
+                {
+                    __result.xRenderComponent.txTexture = entry.vanillaItem.txDisplayImage;
+                }
+            }
 
-            AssetUtils.TryLoadTexture(entry.iconPath, Globals.Game.xLevelMaster.contRegionContent, out __result.xRenderComponent.txTexture);
-            AssetUtils.TryLoadTexture(trueShadowTex, Globals.Game.xLevelMaster.contRegionContent, out __result.xRenderComponent.txShadowTexture);
-
-            __result.xCollisionComponent.xMovementCollider = new SphereCollider(10f, Vector2.Zero, __result.xTransform, 1f, __result) { bCollideWithFlat = true };
-
-            return false;
+            if (entry.shadowPath != null)
+            {
+                AssetUtils.TryLoadTexture(entry.shadowPath, Globals.Game.xLevelMaster.contRegionContent, out __result.xRenderComponent.txShadowTexture);
+            }
+            else
+            {
+                if (__result.xRenderComponent.txShadowTexture == null)
+                {
+                    AssetUtils.TryLoadTexture("Items/DropAppearance/hartass02", Globals.Game.xLevelMaster.contRegionContent, out __result.xRenderComponent.txShadowTexture);
+                }
+            }
         }
     }
 }

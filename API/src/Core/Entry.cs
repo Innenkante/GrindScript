@@ -20,6 +20,12 @@
         /// </summary>
         public abstract IDType GameID { get; internal set; }
 
+        public bool IsVanilla => Mod == Globals.Manager.VanillaMod;
+
+        public bool IsModded => !IsVanilla && Globals.Manager.ActiveMods.Contains(Mod);
+
+        public bool IsUnknown => !(IsVanilla || IsModded);
+
         internal abstract void Initialize();
 
         internal abstract void Cleanup();

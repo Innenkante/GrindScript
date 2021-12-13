@@ -22,35 +22,11 @@ namespace SoG.Modding.Content
 
         #region Internal Data
 
-        internal bool isBuff = true;
-
         internal string texturePath = "";
 
         #endregion
 
         #region Public Interface
-
-        /// <summary>
-        /// Gets or sets whenever this status effect is a buff or a debuff.
-        /// </summary>
-        public bool IsBuff
-        {
-            get => isBuff;
-            set
-            {
-                ErrorHelper.ThrowIfNotLoading(Mod);
-                isBuff = value;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets whenever this status effect is a buff or a debuff.
-        /// </summary>
-        public bool IsDebuff
-        {
-            get => !IsBuff;
-            set => IsBuff = !value;
-        }
 
         /// <summary>
         /// Gets or sets the icon's texture path. The texture path is relative to "Config/".

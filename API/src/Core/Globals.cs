@@ -51,7 +51,7 @@ namespace SoG.Modding
 
         private static ModManager _modManager = null;
 
-        internal static ModManager ModManager
+        internal static ModManager Manager
         {
             get
             {

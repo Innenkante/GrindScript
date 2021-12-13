@@ -5,6 +5,7 @@ using System.IO;
 using Microsoft.Xna.Framework;
 using Stat = SoG.EquipmentInfo.StatEnum;
 using System;
+using Microsoft.Xna.Framework.Graphics;
 
 namespace SoG.Modding.Content
 {
@@ -184,7 +185,7 @@ namespace SoG.Modding.Content
 
         internal string equipResourcePath = "";
 
-        internal Dictionary<Stat, int> stats  = new Dictionary<Stat, int>();
+        internal Dictionary<Stat, int> stats = new Dictionary<Stat, int>();
 
         internal EquipmentType equipType = EquipmentType.None;
 
@@ -211,6 +212,9 @@ namespace SoG.Modding.Content
         internal ItemDescription vanillaItem = new ItemDescription();
 
         internal EquipmentInfo vanillaEquip;
+
+        // This is pretty important for vanilla items!
+        internal bool useVanillaResourceFormat = false;
 
         #endregion
 
@@ -265,6 +269,20 @@ namespace SoG.Modding.Content
             {
                 ErrorHelper.ThrowIfNotLoading(Mod);
                 shadowPath = value;
+            }
+        }
+
+        /// <summary> 
+        /// Gets or sets whenever to use the SoG resource format for loading.
+        /// By default, this value is set to false, and custom paths are used.
+        /// </summary>
+        public bool UseVanillaResourceFormat
+        {
+            get => useVanillaResourceFormat;
+            set
+            {
+                ErrorHelper.ThrowIfNotLoading(Mod);
+                useVanillaResourceFormat = value;
             }
         }
 
@@ -380,7 +398,11 @@ namespace SoG.Modding.Content
         /// </summary>
         public int HP 
         { 
-            get => stats[Stat.HP]; 
+            get
+            {
+                stats.TryGetValue(Stat.HP, out int value);
+                return value;
+            } 
             set => ErrorHelper.AssertLoading(Mod, () => stats[Stat.HP] = value); 
         }
 
@@ -389,7 +411,11 @@ namespace SoG.Modding.Content
         /// </summary>
         public int EP
         {
-            get => stats[Stat.EP];
+            get
+            {
+                stats.TryGetValue(Stat.EP, out int value);
+                return value;
+            }
             set => ErrorHelper.AssertLoading(Mod, () => stats[Stat.EP] = value);
         }
 
@@ -398,7 +424,11 @@ namespace SoG.Modding.Content
         /// </summary>
         public int ATK
         {
-            get => stats[Stat.ATK];
+            get
+            {
+                stats.TryGetValue(Stat.ATK, out int value);
+                return value;
+            }
             set => ErrorHelper.AssertLoading(Mod, () => stats[Stat.ATK] = value);
         }
 
@@ -407,7 +437,11 @@ namespace SoG.Modding.Content
         /// </summary>
         public int MATK
         {
-            get => stats[Stat.MATK];
+            get
+            {
+                stats.TryGetValue(Stat.MATK, out int value);
+                return value;
+            }
             set => ErrorHelper.AssertLoading(Mod, () => stats[Stat.MATK] = value);
         }
 
@@ -416,7 +450,11 @@ namespace SoG.Modding.Content
         /// </summary>
         public int DEF
         {
-            get => stats[Stat.DEF];
+            get
+            {
+                stats.TryGetValue(Stat.DEF, out int value);
+                return value;
+            }
             set => ErrorHelper.AssertLoading(Mod, () => stats[Stat.DEF] = value);
         }
 
@@ -425,7 +463,11 @@ namespace SoG.Modding.Content
         /// </summary>
         public int ASPD
         {
-            get => stats[Stat.ASPD];
+            get
+            {
+                stats.TryGetValue(Stat.ASPD, out int value);
+                return value;
+            }
             set => ErrorHelper.AssertLoading(Mod, () => stats[Stat.ASPD] = value);
         }
 
@@ -434,7 +476,11 @@ namespace SoG.Modding.Content
         /// </summary>
         public int CSPD
         {
-            get => stats[Stat.CSPD];
+            get
+            {
+                stats.TryGetValue(Stat.CSPD, out int value);
+                return value;
+            }
             set => ErrorHelper.AssertLoading(Mod, () => stats[Stat.CSPD] = value);
         }
 
@@ -443,7 +489,11 @@ namespace SoG.Modding.Content
         /// </summary>
         public int Crit
         {
-            get => stats[Stat.Crit];
+            get
+            {
+                stats.TryGetValue(Stat.Crit, out int value);
+                return value;
+            }
             set => ErrorHelper.AssertLoading(Mod, () => stats[Stat.Crit] = value);
         }
 
@@ -452,7 +502,11 @@ namespace SoG.Modding.Content
         /// </summary>
         public int CritDMG
         {
-            get => stats[Stat.CritDMG];
+            get
+            {
+                stats.TryGetValue(Stat.CritDMG, out int value);
+                return value;
+            }
             set => ErrorHelper.AssertLoading(Mod, () => stats[Stat.CritDMG] = value);
         }
 
@@ -462,7 +516,11 @@ namespace SoG.Modding.Content
         /// </summary>
         public int ShldHP
         {
-            get => stats[Stat.ShldHP];
+            get
+            {
+                stats.TryGetValue(Stat.ShldHP, out int value);
+                return value;
+            }
             set => ErrorHelper.AssertLoading(Mod, () => stats[Stat.ShldHP] = value);
         }
 
@@ -471,7 +529,11 @@ namespace SoG.Modding.Content
         /// </summary>
         public int EPRegen
         {
-            get => stats[Stat.EPRegen];
+            get
+            {
+                stats.TryGetValue(Stat.EPRegen, out int value);
+                return value;
+            }
             set => ErrorHelper.AssertLoading(Mod, () => stats[Stat.EPRegen] = value);
         }
 
@@ -482,7 +544,11 @@ namespace SoG.Modding.Content
         /// </summary>
         public int ShldRegen
         {
-            get => stats[Stat.ShldRegen];
+            get
+            {
+                stats.TryGetValue(Stat.ShldRegen, out int value);
+                return value;
+            }
             set => ErrorHelper.AssertLoading(Mod, () => stats[Stat.ShldRegen] = value);
         }
 
@@ -828,31 +894,37 @@ namespace SoG.Modding.Content
             if (vanillaEquip is HatInfo hatData)
             {
                 string basePath = equipResourcePath;
-                int index = -1;
 
-                while (++index < 4)
+                if (basePath != null)
                 {
-                    string texPath = Path.Combine(basePath, directions[index]);
-
-                    if (ModUtils.IsModContentPath(texPath))
-                    {
-                        AssetUtils.UnloadAsset(manager, texPath);
-                    }
-                }
-
-                foreach (var kvp in hatData.denxAlternateVisualSets)
-                {
-                    string altPath = Path.Combine(basePath, hatAltSetResourcePaths[kvp.Key]);
-
-                    index = -1;
-
+                    int index = -1;
                     while (++index < 4)
                     {
-                        string texPath = Path.Combine(altPath, directions[index]);
+                        string texPath = Path.Combine(basePath, directions[index]);
 
                         if (ModUtils.IsModContentPath(texPath))
                         {
                             AssetUtils.UnloadAsset(manager, texPath);
+                        }
+                    }
+
+                    foreach (var kvp in hatData.denxAlternateVisualSets)
+                    {
+                        if (hatAltSetResourcePaths[kvp.Key] != null)
+                        {
+                            string altPath = Path.Combine(basePath, hatAltSetResourcePaths[kvp.Key]);
+
+                            index = -1;
+
+                            while (++index < 4)
+                            {
+                                string texPath = Path.Combine(altPath, directions[index]);
+
+                                if (ModUtils.IsModContentPath(texPath))
+                                {
+                                    AssetUtils.UnloadAsset(manager, texPath);
+                                }
+                            }
                         }
                     }
                 }
@@ -860,11 +932,14 @@ namespace SoG.Modding.Content
             else if (vanillaEquip is FacegearInfo)
             {
                 string path = equipResourcePath;
-                int index = -1;
 
-                while (++index < 4)
+                if (path != null)
                 {
-                    AssetUtils.UnloadAsset(manager, Path.Combine(path, directions[index]));
+                    int index = -1;
+                    while (++index < 4)
+                    {
+                        AssetUtils.UnloadAsset(manager, Path.Combine(path, directions[index]));
+                    }
                 }
             }
         }

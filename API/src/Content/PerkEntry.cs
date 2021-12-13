@@ -35,6 +35,8 @@ namespace SoG.Modding.Content
 
         internal string textEntry;
 
+        internal Func<bool> unlockCondition;
+
         #endregion
 
         #region Public Interface
@@ -104,20 +106,30 @@ namespace SoG.Modding.Content
             }
         }
 
+        /// <summary>
+        /// Gets or sets the condition for the perk to be available in Bishop's selection.
+        /// If no condition is provided, the perk is available by default.
+        /// </summary>
+        public Func<bool> UnlockCondition
+        {
+            get => unlockCondition;
+            set
+            {
+                ErrorHelper.ThrowIfNotLoading(Mod);
+                unlockCondition = value;
+            }
+        }
+
         #endregion
 
         internal PerkEntry() { }
 
-        internal PerkEntry(Mod owner, RogueLikeMode.Perks gameID, string modID)
-        {
-            Mod = owner;
-            GameID = gameID;
-            ModID = modID;
-        }
-
         internal override void Initialize()
         {
-            textEntry = $"{(int)GameID}";
+            if (!IsVanilla)
+            {
+                textEntry = $"{(int)GameID}";
+            }
 
             Globals.Game.EXT_AddMiscText("Menus", "Perks_Name_" + textEntry, name);
             Globals.Game.EXT_AddMiscText("Menus", "Perks_Description_" + textEntry, description);

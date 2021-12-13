@@ -66,7 +66,7 @@ namespace SoG.Modding.GrindScriptMod
                 {
                     using (BinaryReader stream = new BinaryReader(new FileStream(path, FileMode.Open, FileAccess.Read)))
                     {
-                        var saveData = Globals.ModManager.Saving.PeekMetadata(stream);
+                        var saveData = Globals.Manager.Saving.PeekMetadata(stream);
 
                         _modSaves[index].ModMetaList.AddRange(saveData.Mods);
                     }
@@ -92,7 +92,7 @@ namespace SoG.Modding.GrindScriptMod
             {
                 using (BinaryReader stream = new BinaryReader(new FileStream(path, FileMode.Open, FileAccess.Read)))
                 {
-                    var saveData = Globals.ModManager.Saving.PeekMetadata(stream);
+                    var saveData = Globals.Manager.Saving.PeekMetadata(stream);
 
                     _arcadeSave.ModMetaList.AddRange(saveData.Mods);
                 }
@@ -116,11 +116,7 @@ namespace SoG.Modding.GrindScriptMod
                 return;
             }
 
-            List<ModMetadata> loadedMods = Globals.ModManager.ActiveMods.Select(x => new ModMetadata(x)).ToList();
-            List<ModMetadata> saveMods = _modSaves[slot].ModMetaList;
-
-            List<ModMetadata> missingMods = saveMods.Where(x => !loadedMods.Any(y => y.NameID == x.NameID)).ToList();
-            List<ModMetadata> newMods = loadedMods.Where(x => !saveMods.Any(y => y.NameID == x.NameID)).ToList();
+            GetNewAndMissingMods(out var missingMods, out var newMods);
 
             RenderMessage(GetSaveCompatibiltyText(missingMods, newMods), 444, 90 + 65);
         }
@@ -139,13 +135,26 @@ namespace SoG.Modding.GrindScriptMod
                 return;
             }
 
-            List<ModMetadata> loadedMods = Globals.ModManager.ActiveMods.Select(x => new ModMetadata(x)).ToList();
-            List<ModMetadata> saveMods = _arcadeSave.ModMetaList;
-
-            List<ModMetadata> missingMods = saveMods.Where(x => !loadedMods.Any(y => y.NameID == x.NameID)).ToList();
-            List<ModMetadata> newMods = loadedMods.Where(x => !saveMods.Any(y => y.NameID == x.NameID)).ToList();
+            GetNewAndMissingMods(out var missingMods, out var newMods);
 
             RenderMessage(GetSaveCompatibiltyText(missingMods, newMods), 422, 243);
+        }
+
+        private void GetNewAndMissingMods(out List<ModMetadata> missingMods, out List<ModMetadata> newMods)
+        {
+            List<ModMetadata> loadedMods = Globals.Manager.SaveableMods
+                .Select(x => new ModMetadata(x))
+                .ToList();
+
+            List<ModMetadata> saveMods = _arcadeSave.ModMetaList;
+
+            missingMods = saveMods
+                .Where(x => !loadedMods.Any(y => y.NameID == x.NameID))
+                .ToList();
+
+            newMods = loadedMods
+                .Where(x => !saveMods.Any(y => y.NameID == x.NameID))
+                .ToList();
         }
 
         private string GetSaveCompatibiltyText(List<ModMetadata> missingMods, List<ModMetadata> newMods)
@@ -248,7 +257,7 @@ namespace SoG.Modding.GrindScriptMod
             Color notSelected = Color.Gray * 0.8f;
             float alpha = menuData.fCurrentMenuAlpha;
 
-            var texture = Globals.ModManager.GrindScript.ModMenuText;
+            var texture = Globals.Manager.GrindScript.ModMenuText;
             Vector2 center = new Vector2(texture.Width / 2, texture.Height / 2);
 
             Color colorToUse = menuData.iTopMenuSelection == 4 ? selected : notSelected;
@@ -300,7 +309,7 @@ namespace SoG.Modding.GrindScriptMod
                 switch (_modMenu.Selection)
                 {
                     case 0:
-                        Globals.ModManager.Loader.Reload();
+                        Globals.Manager.Loader.Reload();
                         break;
                     case 1:
                         break;
@@ -326,13 +335,13 @@ namespace SoG.Modding.GrindScriptMod
             Globals.Game._Menu_RenderContentBox(spriteBatch, alpha, new Rectangle(235, 189, 173, 138));
 
 
-            Texture2D reloadModsTex = Globals.ModManager.GrindScript.ReloadModsText;
+            Texture2D reloadModsTex = Globals.Manager.GrindScript.ReloadModsText;
             Vector2 reloadModsCenter = new Vector2(reloadModsTex.Width / 2, reloadModsTex.Height / 2);
             Color reloadModsColor = _modMenu.Selection == 0 ? selected : notSelected;
 
             spriteBatch.Draw(reloadModsTex, new Vector2(320, 225), null, reloadModsColor, 0f, reloadModsCenter, 1f, SpriteEffects.None, 0f);
 
-            Texture2D modListTex = Globals.ModManager.GrindScript.ModListText;
+            Texture2D modListTex = Globals.Manager.GrindScript.ModListText;
             Vector2 modListCenter = new Vector2(modListTex.Width / 2, modListTex.Height / 2);
             Color modListColor = _modMenu.Selection == 1 ? selected : notSelected;
             modListColor *= 0.6f;
@@ -341,7 +350,7 @@ namespace SoG.Modding.GrindScriptMod
 
             string message = "Mods loaded:\n";
 
-            foreach (Mod mod in Globals.ModManager.ActiveMods)
+            foreach (Mod mod in Globals.Manager.ActiveMods)
             {
                 message += mod.NameID + " v." + (mod.ModVersion?.ToString() ?? "Unknown") + "\n";
             }

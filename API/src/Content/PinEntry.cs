@@ -46,6 +46,11 @@ namespace SoG.Modding.Content
             Coral = 2,
             Conifer = 3,
             BilobaFlower = 4,
+
+            /// <summary>
+            /// This color usually represents sticky pins.
+            /// </summary>
+            White = 1337,
         }
 
         #region IEntry Properties
@@ -77,6 +82,8 @@ namespace SoG.Modding.Content
         internal Action<PlayerView> equipAction = null;
 
         internal Action<PlayerView> unequipAction = null;
+
+        internal bool createCollectionEntry = true;
 
         #endregion
 
@@ -204,6 +211,20 @@ namespace SoG.Modding.Content
             }
         }
 
+        /// <summary>
+        /// Gets or sets whenever to create a pin display in Traveller's pin collection.
+        /// This is set to true by default.
+        /// </summary>
+        public bool CreateCollectionEntry
+        {
+            get => createCollectionEntry;
+            set
+            {
+                ErrorHelper.ThrowIfNotLoading(Mod);
+                createCollectionEntry = value;
+            }
+        }
+
         #endregion
 
         internal PinEntry() { }
@@ -217,12 +238,18 @@ namespace SoG.Modding.Content
 
         internal override void Initialize()
         {
-            PinCodex.SortedPinEntries.Add(GameID);
+            if (createCollectionEntry)
+            {
+                PinCodex.SortedPinEntries.Add(GameID);
+            }
         }
 
         internal override void Cleanup()
         {
-            PinCodex.SortedPinEntries.Remove(GameID);
+            if (createCollectionEntry)
+            {
+                PinCodex.SortedPinEntries.Remove(GameID);
+            }
         }
     }
 }

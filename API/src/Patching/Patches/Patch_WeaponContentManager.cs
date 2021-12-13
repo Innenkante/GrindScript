@@ -14,29 +14,35 @@ namespace SoG.Modding.Patching.Patches
         [HarmonyPatch("LoadBatch", typeof(Dictionary<ushort, string>))] // Protected Method
         internal static bool LoadBatch_Prefix(ref Dictionary<ushort, string> dis, WeaponContentManager __instance)
         {
-            ItemCodex.ItemTypes type = __instance.enType;
+            Globals.Manager.Library.TryGetEntry(__instance.enType, out ItemEntry entry);
 
-            if (!type.IsFromMod())
-                return true;
+            if (entry == null)
+            {
+                return true;  // Unknown mod item??
+            }
 
-            Globals.ModManager.Library.TryGetEntry(type, out ItemEntry entry);
             bool oneHanded = (entry.vanillaEquip as WeaponInfo).enWeaponCategory == WeaponInfo.WeaponCategory.OneHanded;
 
             string resourcePath = entry.equipResourcePath;
 
             foreach (KeyValuePair<ushort, string> kvp in dis)
             {
-                string texPath = kvp.Value.Replace($"Weapons/{resourcePath}/", "");
+                string texPath = kvp.Value;
 
-                if (oneHanded)
+                if (!entry.useVanillaResourceFormat)
                 {
-                    texPath = texPath.Replace("Sprites/Heroes/OneHanded/", resourcePath + "/");
-                    texPath = texPath.Replace("Sprites/Heroes/Charge/OneHand/", resourcePath + "/1HCharge/");
-                }
-                else
-                {
-                    texPath = texPath.Replace("Sprites/Heroes/TwoHanded/", resourcePath + "/");
-                    texPath = texPath.Replace("Sprites/Heroes/Charge/TwoHand/", resourcePath + "/2HCharge/");
+                    texPath = texPath.Replace($"Weapons/{resourcePath}/", "");
+
+                    if (oneHanded)
+                    {
+                        texPath = texPath.Replace("Sprites/Heroes/OneHanded/", resourcePath + "/");
+                        texPath = texPath.Replace("Sprites/Heroes/Charge/OneHand/", resourcePath + "/1HCharge/");
+                    }
+                    else
+                    {
+                        texPath = texPath.Replace("Sprites/Heroes/TwoHanded/", resourcePath + "/");
+                        texPath = texPath.Replace("Sprites/Heroes/Charge/TwoHand/", resourcePath + "/2HCharge/");
+                    }
                 }
 
                 AssetUtils.TryLoadTexture(texPath, __instance.contWeaponContent, out Texture2D tex);

@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework.Graphics;
+﻿using HarmonyLib;
+using Microsoft.Xna.Framework.Graphics;
 using SoG.Modding.Content;
 using SoG.Modding.Utils;
 using System;
@@ -57,6 +58,8 @@ namespace SoG.Modding.GrindScriptMod
                 [nameof(ModTotals)] = ModTotals,
                 [nameof(RenderColliders)] = RenderColliders,
                 [nameof(Version)] = Version,
+                [nameof(SpawnItem)] = SpawnItem,
+                [nameof(ToggleDebugMode)] = ToggleDebugMode,
             };
 
             CommandEntry commands = CreateCommands();
@@ -108,7 +111,7 @@ namespace SoG.Modding.GrindScriptMod
             }
             else
             {
-                Mod mod = Globals.ModManager.ActiveMods.FirstOrDefault(x => x.NameID == args[0]);
+                Mod mod = Globals.Manager.ActiveMods.FirstOrDefault(x => x.NameID == args[0]);
 
                 if (mod == null)
                 {
@@ -147,11 +150,11 @@ namespace SoG.Modding.GrindScriptMod
 
         private void ModList(string[] args, int connection)
         {
-            CAS.AddChatMessage($"[{NameID}] Mod Count: {Globals.ModManager.ActiveMods.Count}");
+            CAS.AddChatMessage($"[{NameID}] Mod Count: {Globals.Manager.ActiveMods.Count}");
 
             var messages = new List<string>();
             var concated = "";
-            foreach (var mod in Globals.ModManager.ActiveMods)
+            foreach (var mod in Globals.Manager.ActiveMods)
             {
                 string name = mod.NameID;
                 if (concated.Length + name.Length > 40)
@@ -186,14 +189,14 @@ namespace SoG.Modding.GrindScriptMod
             switch (args[0])
             {
                 case "Items":
-                    CAS.AddChatMessage($"[{NameID}] Items defined: " + Globals.ModManager.Library.GetStorage<ItemCodex.ItemTypes, ItemEntry>().Count);
+                    CAS.AddChatMessage($"[{NameID}] Items defined: " + Globals.Manager.Library.GetStorage<ItemCodex.ItemTypes, ItemEntry>().Count);
                     break;
                 case "Perks":
-                    CAS.AddChatMessage($"[{NameID}] Perks defined: " + Globals.ModManager.Library.GetStorage<RogueLikeMode.Perks, PerkEntry>().Count);
+                    CAS.AddChatMessage($"[{NameID}] Perks defined: " + Globals.Manager.Library.GetStorage<RogueLikeMode.Perks, PerkEntry>().Count);
                     break;
                 case "Treats":
                 case "Curses":
-                    CAS.AddChatMessage($"[{NameID}] Treats and Curses defined: " + Globals.ModManager.Library.GetStorage<RogueLikeMode.TreatsCurses, CurseEntry>().Count);
+                    CAS.AddChatMessage($"[{NameID}] Treats and Curses defined: " + Globals.Manager.Library.GetStorage<RogueLikeMode.TreatsCurses, CurseEntry>().Count);
                     break;
                 default:
                     CAS.AddChatMessage($"[{NameID}] Usage: /{NameID}:{nameof(ModTotals)} <unique type>");
@@ -228,6 +231,75 @@ namespace SoG.Modding.GrindScriptMod
             else
             {
                 CAS.AddChatMessage("Collider rendering disabled.");
+            }
+        }
+
+        private void SpawnItem(string[] args, int connection)
+        {
+            if (NetUtils.IsClient)
+            {
+                CAS.AddChatMessage("Can't use this command as a client!");
+                return;
+            }
+
+            if (args.Length < 1 || args.Length > 2)
+            {
+                CAS.AddChatMessage("Usage: /GrindScript:SpawnItem <Mod.NameID>:<Item.ModID> [amount]");
+                return;
+            }
+
+            string[] parts = args[0].Split(':');
+            long count = 1;
+
+            if (parts.Length != 2 || args.Length == 2 && !long.TryParse(args[1], out count))
+            {
+                CAS.AddChatMessage("Usage: /GrindScript:SpawnItem <Mod.NameID>:<Item.ModID> [amount]");
+                return;
+            }
+
+            if (count < 1 || count > 128)
+            {
+                CAS.AddChatMessage($"You can only spawn 1 - 128 items at a time.");
+                return;
+            }
+
+            Mod target;
+            if ((target = Manager.GetMod(parts[0])) == null)
+            {
+                CAS.AddChatMessage("No such mod exists!");
+                return;
+            }
+
+            if (!Manager.Library.TryGetModEntry<ItemCodex.ItemTypes, ItemEntry>(target, parts[1], out ItemEntry entry))
+            {
+                CAS.AddChatMessage("The mod doesn't have an entry with that ID!");
+                return;
+            }
+
+            PlayerEntity player = Globals.Game.xLocalPlayer.xEntity;
+
+            long counter = count;
+            while (counter-- > 0)
+            {
+                Globals.Game._EntityMaster_AddItem(entry.GameID, player.xTransform.v2Pos, player.xRenderComponent.fVirtualHeight, player.xCollisionComponent.ibitCurrentColliderLayer, Utility.RandomizeVector2Direction(Globals.Game.randomInVisual));
+            }
+
+            CAS.AddChatMessage($"Spawned {count} items.");
+        }
+
+        private void WorldRegion(string[] args, int connection)
+        {
+            CAS.AddChatMessage($"Level: {Globals.Game.xLevelMaster.xCurrentLevel.enZone}\nWorld region: {Globals.Game.xLevelMaster.xCurrentLevel.enRegion}.");
+        }
+
+        private void ToggleDebugMode(string[] args, int connection)
+        {
+            Globals.Game.bUseDebugInRelease = !Globals.Game.bUseDebugInRelease;
+            CAS.AddChatMessage("Debug mode is now " + (Globals.Game.bUseDebugInRelease ? "on" : "off"));
+
+            if (Globals.Game.bUseDebugInRelease)
+            {
+                CAS.AddChatMessage("Try not to break anything, eh?");
             }
         }
 

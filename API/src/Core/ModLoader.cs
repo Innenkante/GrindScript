@@ -44,6 +44,9 @@ namespace SoG.Modding
 
             List<Mod> candidates = new List<Mod>();
 
+            SetupMod(_manager.VanillaMod);
+            candidates.Add(_manager.VanillaMod);
+
             SetupMod(_manager.GrindScript);
             candidates.Add(_manager.GrindScript);
 
@@ -214,10 +217,14 @@ namespace SoG.Modding
 
                     mod.Disabled = true;
                 }
+
                 ModInLoad = null;
 
                 _manager.Library.GetModView(mod).Initialize();
             }
+
+            // Reloads original recipes
+            Crafting.CraftSystem.InitCraftSystem();
 
             // Post Load Phase
 
@@ -268,7 +275,25 @@ namespace SoG.Modding
             // Experimental / Risky. Unloads all mod assets
             AssetUtils.UnloadModContentPathAssets(RenderMaster.contPlayerStuff);
 
-            Crafting.CraftSystem.InitCraftSystem();
+            // Reloads the english localization
+            Globals.Game.xDialogueGod_Default = DialogueGod.ReadFile("Content/Data/Dialogue/defaultEnglish.dlf");
+            Globals.Game.xMiscTextGod_Default = MiscTextGod.ReadFile("Content/Data/Text/defaultEnglish.vtf");
+
+            // Reloads enemy descriptions
+            EnemyCodex.denxDescriptionDict.Clear();
+            EnemyCodex.lxSortedCardEntries.Clear();
+            EnemyCodex.lxSortedDescriptions.Clear();
+            EnemyCodex.Init();
+
+            // Reloads perk info
+            RogueLikeMode.PerkInfo.lxAllPerks.Clear();
+            RogueLikeMode.PerkInfo.Init();
+
+            // Unloads sorted pins
+            PinCodex.SortedPinEntries.Clear();
+
+            // Clears all regions
+            Globals.Game.xLevelMaster.denxRegionContent.Clear();
         }
 
         private List<string> GetLoadableMods()

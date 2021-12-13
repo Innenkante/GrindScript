@@ -111,6 +111,11 @@ namespace SoG.Modding.Utils
 
         public void FlushToDisk()
         {
+            if (_buffer.Length == 0)
+            {
+                return;
+            }
+
             lock (this)
             {
                 StreamWriter writer = null;

@@ -14,7 +14,7 @@ namespace SoG.Modding.Patching.Patches
         [HarmonyPatch(nameof(BaseStats.Update))]
         public static void Update_Prefix(BaseStats __instance)
         {
-            foreach (Mod mod in Globals.ModManager.ActiveMods)
+            foreach (Mod mod in Globals.Manager.ActiveMods)
                 mod.OnBaseStatsUpdate(__instance);
         }
 
@@ -22,7 +22,7 @@ namespace SoG.Modding.Patching.Patches
         [HarmonyPatch(nameof(BaseStats.Update))]
         public static void Update_Postfix(BaseStats __instance)
         {
-            foreach (Mod mod in Globals.ModManager.ActiveMods)
+            foreach (Mod mod in Globals.Manager.ActiveMods)
                 mod.PostBaseStatsUpdate(__instance);
         }
     }

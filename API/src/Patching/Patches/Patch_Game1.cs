@@ -30,7 +30,7 @@ namespace SoG.Modding.Patching.Patches
         internal static void _EntityMaster_AddEnemyPrefix(ref EnemyCodex.EnemyTypes __state, ref ushort iEnemyID, ref EnemyCodex.EnemyTypes enEnemyType, ref Vector2 p_v2Pos, ref int ibitLayer, ref float fVirtualHeight, ref Enemy.SpawnEffectType enSpawnEffect, ref bool bAsElite, ref bool bDropsLoot, float[] afBehaviourVariables)
         {
             __state = enEnemyType;
-            foreach (Mod mod in Globals.ModManager.ActiveMods)
+            foreach (Mod mod in Globals.Manager.ActiveMods)
                 mod.OnEnemySpawn(ref enEnemyType, ref p_v2Pos, ref bAsElite, ref bDropsLoot, ref ibitLayer, ref fVirtualHeight, afBehaviourVariables);
         }
 
@@ -38,7 +38,7 @@ namespace SoG.Modding.Patching.Patches
         [HarmonyPatch(nameof(Game1._EntityMaster_AddEnemy), typeof(ushort), typeof(EnemyCodex.EnemyTypes), typeof(Vector2), typeof(int), typeof(float), typeof(Enemy.SpawnEffectType), typeof(bool), typeof(bool), typeof(float[]))]
         internal static void _EntityMaster_AddEnemyPostfix(ref EnemyCodex.EnemyTypes __state, Enemy __result, ushort iEnemyID, EnemyCodex.EnemyTypes enEnemyType, Vector2 p_v2Pos, int ibitLayer, float fVirtualHeight, Enemy.SpawnEffectType enSpawnEffect, bool bAsElite, bool bDropsLoot, float[] afBehaviourVariables)
         {
-            foreach (Mod mod in Globals.ModManager.ActiveMods)
+            foreach (Mod mod in Globals.Manager.ActiveMods)
                 mod.PostEnemySpawn(__result, enEnemyType, __state, p_v2Pos, bAsElite, bDropsLoot, ibitLayer, fVirtualHeight, afBehaviourVariables);
         }
 
@@ -49,7 +49,7 @@ namespace SoG.Modding.Patching.Patches
         [HarmonyPatch("Initialize")] // Protected Method
         internal static void Initialize_Prefix()
         {
-            Globals.ModManager.Start();
+            Globals.Manager.Start();
         }
 
         /// <summary>
@@ -92,20 +92,31 @@ namespace SoG.Modding.Patching.Patches
 
             AssetUtils.TryLoadTexture($"Sprites/Heroes/{sAnimation}/{sDirection}", VanillaContent, out __result.txBase);
 
-            string resource = xPlayerView.xEquipment.DisplayShield?.sResourceName ?? "";
-            if (bWithShield && resource != "")
+            if (bWithShield)
             {
-                var enType = xPlayerView.xEquipment.DisplayShield.enItemType;
-                bool modItem = enType.IsFromMod();
+                EquipmentInfo shield = xPlayerView.xEquipment.DisplayShield;
+                ItemEntry entry = null;
 
-                if (modItem)
+                if (shield != null)
                 {
-                    // For mods, sResourceName is actually a partial path
-                    AssetUtils.TryLoadTexture($"{resource}/{sAnimation}/{sDirection}", VanillaContent, out __result.txShield);
+                    Globals.Manager.Library.TryGetEntry(shield.enItemType, out entry);
+                }
+
+                if (entry == null)
+                {
+                    __result.txShield = Globals.Manager.GrindScript.ErrorTexture;
                 }
                 else
                 {
-                    AssetUtils.TryLoadTexture($"Sprites/Heroes/{sAnimation}/Shields/{resource}/{sDirection}", VanillaContent, out __result.txShield);
+                    if (entry.useVanillaResourceFormat)
+                    {
+                        AssetUtils.TryLoadTexture($"Sprites/Heroes/{sAnimation}/Shields/{shield.sResourceName}/{sDirection}", VanillaContent, out __result.txShield);
+                    }
+                    else
+                    {
+                        // Mods use a different path format
+                        AssetUtils.TryLoadTexture($"{shield.sResourceName}/{sAnimation}/{sDirection}", VanillaContent, out __result.txShield);
+                    }
                 }
             }
 
@@ -122,15 +133,69 @@ namespace SoG.Modding.Patching.Patches
         [HarmonyPatch(nameof(Game1._RogueLike_GetPerkTexture))]
         internal static bool _RogueLike_GetPerkTexture_Prefix(RogueLikeMode.Perks enPerk, ref Texture2D __result)
         {
-            if (!enPerk.IsFromMod())
-                return true;
+            Globals.Manager.Library.TryGetEntry(enPerk, out PerkEntry entry);
 
-            var storage = Globals.ModManager.Library.GetStorage<RogueLikeMode.Perks, PerkEntry>();
-            string path = storage[enPerk].texturePath;
+            if (entry == null)
+            {
+                __result = Globals.Manager.GrindScript.ErrorTexture;
+                return false;  // Unknown perk entry??
+            }
 
-            AssetUtils.TryLoadTexture(path, Globals.Game.Content, out __result);
+            if (entry.texturePath == null)
+            {
+                if (entry.IsVanilla)
+                {
+                    return true;  // Grab from vanilla
+                }
+
+                __result = Globals.Manager.GrindScript.ErrorTexture;
+                return false;
+            }
+            else
+            {
+                AssetUtils.TryLoadTexture(entry.texturePath, Globals.Game.Content, out __result);
+            }
 
             return false;
+        }
+
+
+
+        [HarmonyTranspiler]
+        [HarmonyPatch(typeof(Game1), nameof(Game1._RogueLike_ActivatePerks))]
+        public static CodeList _RogueLike_ActivatePerks_Transpiler(CodeList instructions, ILGenerator generator)
+        {
+            List<CodeInstruction> codeList = instructions.ToList();
+
+            int start = -1;
+            int ldloc_pos = 3;
+            while (ldloc_pos-- > 0)
+            {
+                start = codeList.FindIndex(start + 1, x => x.opcode == OpCodes.Ldloc_0);
+            }
+
+            int end = -1;
+            int ldloca_pos = 2;
+            while (ldloca_pos-- > 0)
+            {
+                end = codeList.FindIndex(end + 1, x => x.opcode == OpCodes.Ldloca_S && (x.operand as LocalBuilder).LocalIndex == 3);
+            }
+
+            Label perkProcessedSkip = generator.DefineLabel();
+
+            codeList[end].WithLabels(perkProcessedSkip);
+
+            List<CodeInstruction> inserted = new List<CodeInstruction>()
+            {
+                new CodeInstruction(OpCodes.Ldarg_S, 1).WithLabels(codeList[start].labels).WithBlocks(codeList[start].blocks),
+                new CodeInstruction(OpCodes.Ldloc_0),
+                new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(PatchHelper), nameof(PatchHelper.InActivatePerk))),
+                new CodeInstruction(OpCodes.Brtrue, perkProcessedSkip)
+            };
+
+            codeList.InsertRange(start, inserted);
+
+            return codeList;
         }
 
         /// <summary>
@@ -140,13 +205,30 @@ namespace SoG.Modding.Patching.Patches
         [HarmonyPatch(nameof(Game1._RogueLike_GetTreatCurseTexture))]
         internal static bool _RogueLike_GetTreatCurseTexture_Prefix(RogueLikeMode.TreatsCurses enTreat, ref Texture2D __result)
         {
-            if (!enTreat.IsFromMod())
-                return true;
+            var storage = Globals.Manager.Library.GetStorage<RogueLikeMode.TreatsCurses, CurseEntry>();
 
-            var storage = Globals.ModManager.Library.GetStorage<RogueLikeMode.TreatsCurses, CurseEntry>();
-            string path = storage[enTreat].texturePath;
+            if (storage.TryGetValue(enTreat, out CurseEntry entry))
+            {
+                if (string.IsNullOrEmpty(entry.texturePath))
+                {
+                    // Maybe it's from vanilla. Try loading using original method
 
-            AssetUtils.TryLoadTexture(path, Globals.Game.Content, out __result);
+                    __result = OriginalMethods._RogueLike_GetTreatCurseTexture(Globals.Game, enTreat);
+
+                    if (__result == null)
+                    {
+                        __result = Globals.Manager.GrindScript.ErrorTexture;
+                    }
+                }
+                else
+                {
+                    AssetUtils.TryLoadTexture(entry.texturePath, Globals.Game.Content, out __result);
+                }
+            }
+            else
+            {
+                __result = RenderMaster.txNullTex;  // Covers the case when the treat / curse is None.
+            }
 
             return false;
         }
@@ -158,40 +240,23 @@ namespace SoG.Modding.Patching.Patches
         [HarmonyPatch(nameof(Game1._RogueLike_GetTreatCurseInfo))]
         internal static bool _RogueLike_GetTreatCurseInfo_Prefix(RogueLikeMode.TreatsCurses enTreatCurse, out string sNameHandle, out string sDescriptionHandle, out float fScoreModifier)
         {
-            if (!enTreatCurse.IsFromMod())
+            var storage = Globals.Manager.Library.GetStorage<RogueLikeMode.TreatsCurses, CurseEntry>();
+            
+            if (storage.TryGetValue(enTreatCurse, out CurseEntry entry))
             {
+                sNameHandle = entry.nameHandle;
+                sDescriptionHandle = entry.descriptionHandle;
+                fScoreModifier = entry.scoreModifier;
+            }
+            else
+            {
+                // Covers the cases where the treat / curse is none, or unknown
                 sNameHandle = "";
                 sDescriptionHandle = "";
-                fScoreModifier = 1f;
-                return true;
+                fScoreModifier = 0f;
             }
-
-            var storage = Globals.ModManager.Library.GetStorage<RogueLikeMode.TreatsCurses, CurseEntry>();
-            var entry = storage[enTreatCurse];
-
-            sNameHandle = entry.nameHandle;
-            sDescriptionHandle = entry.descriptionHandle;
-            fScoreModifier = entry.scoreModifier;
 
             return false;
-        }
-
-        /// <summary>
-        /// Implements activation code for custom perks.
-        /// Activation happens when a run starts, and can be used to modify player stats, etc.
-        /// </summary>
-        [HarmonyPostfix]
-        [HarmonyPatch(nameof(Game1._RogueLike_ActivatePerks))]
-        internal static void _RogueLike_ActivatePerks_Postfix(PlayerView xView, List<RogueLikeMode.Perks> len)
-        {
-            foreach (var perk in len)
-            {
-                if (perk.IsFromMod())
-                {
-                    var storage = Globals.ModManager.Library.GetStorage<RogueLikeMode.Perks, PerkEntry>();
-                    storage[perk].runStartActivator?.Invoke(xView);
-                }
-            }
         }
 
         [HarmonyPrefix]
@@ -247,7 +312,7 @@ namespace SoG.Modding.Patching.Patches
             using (BinaryWriter bw = new BinaryWriter(new FileStream($"{chrFile}.temp", FileMode.Create, FileAccess.Write)))
             {
                 Globals.Logger.Info($"Saving mod character {iFileSlot}...");
-                Globals.ModManager.Saving.SaveModCharacter(bw);
+                Globals.Manager.Saving.SaveModCharacter(bw);
             }
 
             try
@@ -303,7 +368,7 @@ namespace SoG.Modding.Patching.Patches
             using (BinaryWriter bw = new BinaryWriter(new FileStream($"{wldFile}.temp", FileMode.Create, FileAccess.Write)))
             {
                 Globals.Logger.Info($"Saving mod world {iFileSlot}...");
-                Globals.ModManager.Saving.SaveModWorld(bw);
+                Globals.Manager.Saving.SaveModWorld(bw);
             }
 
             try
@@ -342,7 +407,7 @@ namespace SoG.Modding.Patching.Patches
             using (BinaryWriter bw = new BinaryWriter(new FileStream($"{savFile}.temp", FileMode.Create, FileAccess.Write)))
             {
                 Globals.Logger.Info($"Saving mod arcade...");
-                Globals.ModManager.Saving.SaveModArcade(bw);
+                Globals.Manager.Saving.SaveModArcade(bw);
             }
 
             File.Copy($"{savFile}.temp", savFile, overwrite: true);
@@ -374,7 +439,7 @@ namespace SoG.Modding.Patching.Patches
             using (BinaryReader br = new BinaryReader(new FileStream(chrFile, FileMode.Open, FileAccess.Read)))
             {
                 Globals.Logger.Info($"Loading mod character {iFileSlot}...");
-                Globals.ModManager.Saving.LoadModCharacter(br);
+                Globals.Manager.Saving.LoadModCharacter(br);
             }
         }
 
@@ -403,7 +468,7 @@ namespace SoG.Modding.Patching.Patches
             using (BinaryReader br = new BinaryReader(new FileStream(wldFile, FileMode.Open, FileAccess.Read)))
             {
                 Globals.Logger.Info($"Loading mod world {iFileSlot}...");
-                Globals.ModManager.Saving.LoadModWorld(br);
+                Globals.Manager.Saving.LoadModWorld(br);
             }
         }
 
@@ -435,7 +500,7 @@ namespace SoG.Modding.Patching.Patches
             using (BinaryReader br = new BinaryReader(new FileStream(savFile, FileMode.Open, FileAccess.Read)))
             {
                 Globals.Logger.Info($"Loading mod arcade...");
-                Globals.ModManager.Saving.LoadModArcade(br);
+                Globals.Manager.Saving.LoadModArcade(br);
             }
         }
 
@@ -500,29 +565,35 @@ namespace SoG.Modding.Patching.Patches
         /// <summary>
         /// Implements custom level load code.
         /// </summary>
-        [HarmonyTranspiler]
+        [HarmonyPrefix]
         [HarmonyPatch(nameof(Game1._LevelLoading_DoStuff))]
-        internal static CodeList _LevelLoading_DoStuff_Transpiler(CodeList code, ILGenerator gen)
+        internal static bool _LevelLoading_DoStuff_Prefix(Game1 __instance, Level.ZoneEnum enLevel, bool bStaticOnly)
         {
-            var codeList = code.ToList();
-
-            MethodInfo target = typeof(Quests.QuestLog).GetMethod("UpdateCheck_PlaceVisited");
-
-            var insert = new List<CodeInstruction>()
+            if (enLevel.IsFromSoG())
             {
-                new CodeInstruction(OpCodes.Ldarg_S, 1),
-                new CodeInstruction(OpCodes.Ldarg_S, 2),
-                new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(PatchHelper), nameof(PatchHelper.InLevelLoadDoStuff)))
-            };
+                Globals.Manager.Library.TryGetEntry(enLevel, out LevelEntry entry);
+                if (entry == null || entry.loader == null)
+                {
+                    // No replacement exists. Call the vanilla method instead.
 
-            return codeList.InsertBeforeMethod(target, insert);
+                    OriginalMethods._LevelLoading_DoStuff(__instance, enLevel, bStaticOnly);
+                    return false;
+                }
+            }
+            else if (!enLevel.IsFromMod())
+            {
+                return false; // Unknown mod entry?
+            }
+
+            EditedMethods._LevelLoading_DoStuff(__instance, enLevel, bStaticOnly);
+            return false;
         }
 
         [HarmonyPostfix]
         [HarmonyPatch(nameof(Game1._Level_Load))]
         internal static void _Level_Load_Postfix(LevelBlueprint xBP, bool bStaticOnly)
         {
-            foreach (Mod mod in Globals.ModManager.ActiveMods)
+            foreach (Mod mod in Globals.Manager.ActiveMods)
                 mod.PostLevelLoad(xBP.enZone, xBP.enRegion, bStaticOnly);
         }
 
@@ -594,7 +665,7 @@ namespace SoG.Modding.Patching.Patches
         [HarmonyPatch(nameof(Game1._Player_TakeDamage))]
         internal static void _Player_TakeDamage_Prefix(PlayerView xView, ref int iInDamage, ref byte byType)
         {
-            foreach (Mod mod in Globals.ModManager.ActiveMods)
+            foreach (Mod mod in Globals.Manager.ActiveMods)
                 mod.OnPlayerDamaged(xView, ref iInDamage, ref byType);
         }
 
@@ -602,7 +673,7 @@ namespace SoG.Modding.Patching.Patches
         [HarmonyPatch(nameof(Game1._Player_KillPlayer), new Type[] { typeof(PlayerView), typeof(bool), typeof(bool) })]
         internal static void _Player_KillPlayer_Prefix(PlayerView xView)
         {
-            foreach (Mod mod in Globals.ModManager.ActiveMods)
+            foreach (Mod mod in Globals.Manager.ActiveMods)
                 mod.OnPlayerKilled(xView);
         }
 
@@ -610,7 +681,7 @@ namespace SoG.Modding.Patching.Patches
         [HarmonyPatch(nameof(Game1._Player_ApplyLvUpBonus))]
         internal static void _Player_ApplyLvUpBonus_Postfix(PlayerView xView)
         {
-            foreach (Mod mod in Globals.ModManager.ActiveMods)
+            foreach (Mod mod in Globals.Manager.ActiveMods)
                 mod.PostPlayerLevelUp(xView);
         }
 
@@ -618,7 +689,7 @@ namespace SoG.Modding.Patching.Patches
         [HarmonyPatch(nameof(Game1._Enemy_TakeDamage))]
         internal static void _Enemy_TakeDamage_Prefix(Enemy xEnemy, ref int iDamage, ref byte byType)
         {
-            foreach (Mod mod in Globals.ModManager.ActiveMods)
+            foreach (Mod mod in Globals.Manager.ActiveMods)
                 mod.OnEnemyDamaged(xEnemy, ref iDamage, ref byType);
         }
 
@@ -626,7 +697,7 @@ namespace SoG.Modding.Patching.Patches
         [HarmonyPatch(nameof(Game1._NPC_TakeDamage))]
         internal static void _NPC_TakeDamage_Prefix(NPC xEnemy, ref int iDamage, ref byte byType)
         {
-            foreach (Mod mod in Globals.ModManager.ActiveMods)
+            foreach (Mod mod in Globals.Manager.ActiveMods)
                 mod.OnNPCDamaged(xEnemy, ref iDamage, ref byType);
         }
 
@@ -634,7 +705,7 @@ namespace SoG.Modding.Patching.Patches
         [HarmonyPatch(nameof(Game1._NPC_Interact))]
         internal static void _NPC_Interact_Prefix(PlayerView xView, NPC xNPC)
         {
-            foreach (Mod mod in Globals.ModManager.ActiveMods)
+            foreach (Mod mod in Globals.Manager.ActiveMods)
                 mod.OnNPCInteraction(xNPC);
         }
 
@@ -642,7 +713,7 @@ namespace SoG.Modding.Patching.Patches
         [HarmonyPatch(nameof(Game1._LevelLoading_DoStuff_Arcadia))]
         internal static void _LevelLoading_DoStuff_Arcadia_Prefix()
         {
-            foreach (Mod mod in Globals.ModManager.ActiveMods)
+            foreach (Mod mod in Globals.Manager.ActiveMods)
                 mod.OnArcadiaLoad();
 
             // Just in case it didn't get set before; submitting modded runs is not a good idea
@@ -655,7 +726,7 @@ namespace SoG.Modding.Patching.Patches
         {
             if (xView.xViewStats.bIsDead)
                 return;
-            foreach (Mod mod in Globals.ModManager.ActiveMods)
+            foreach (Mod mod in Globals.Manager.ActiveMods)
                 mod.OnItemUse(enItem, xView, ref bSend);
         }
 
@@ -663,7 +734,7 @@ namespace SoG.Modding.Patching.Patches
         [HarmonyPatch(nameof(Game1._LevelLoading_DoStuff_ArcadeModeRoom))]
         internal static void _LevelLoading_DoStuff_ArcadeModeRoom_Postfix()
         {
-            foreach (Mod mod in Globals.ModManager.ActiveMods)
+            foreach (Mod mod in Globals.Manager.ActiveMods)
                 mod.PostArcadeRoomStart();
         }
 
@@ -671,53 +742,30 @@ namespace SoG.Modding.Patching.Patches
         [HarmonyPatch(nameof(Game1._Skill_ActivateSkill))]
         internal static void _Skill_ActivateSkill_Postfix(PlayerView xView, ISpellActivation xact, SpellCodex.SpellTypes enType, int iBoostState)
         {
-            foreach (Mod mod in Globals.ModManager.ActiveMods)
+            foreach (Mod mod in Globals.Manager.ActiveMods)
                 mod.PostSpellActivation(xView, xact, enType, iBoostState);
         }
 
+        // Currently this patch does not apply beastmode to modded enemies
+        // Nor does it force boss enemies to ignore pets
         [HarmonyPrefix]
         [HarmonyPatch(nameof(Game1._Enemy_AdjustForDifficulty))]
-        internal static void _Enemy_AdjustForDifficulty_Prefix(Enemy xEn)
+        internal static bool _Enemy_AdjustForDifficulty_Prefix(Enemy xEn)
         {
-            if (!xEn.enType.IsFromMod())
-                return;
+            var storage = Globals.Manager.Library.GetStorage<EnemyCodex.EnemyTypes, EnemyEntry>();
 
-            var storage = Globals.ModManager.Library.GetStorage<EnemyCodex.EnemyTypes, EnemyEntry>();
-            storage[xEn.enType].difficultyScaler?.Invoke(xEn);
-        }
-
-        [HarmonyTranspiler]
-        [HarmonyPatch(nameof(Game1._Enemy_MakeElite))]
-        internal static CodeList _Enemy_MakeElite_Transpiler(CodeList code, ILGenerator gen)
-        {
-            var codeList = code.ToList();
-
-            // * vanilla switch case *
-            // if (!bRet) {
-            // // check if mod enemy, run elite scaler
-            // // assign bRet = true if mod enemy has elite
-            // }
-            // * elite bonuses *
-
-            // However, we need to move ALL of the labels that point to the elite bonuses' "if (bRet)" line to our "if (!bRet)" line
-
-            Label skipBranch = gen.DefineLabel();
-
-            Debug.Assert(codeList[11511].opcode == OpCodes.Ldloc_1, "Enemy_MakeElite transpiler is invalid!");
-
-            var insert = new List<CodeInstruction>()
+            if (storage.TryGetValue(xEn.enType, out EnemyEntry entry))
             {
-                new CodeInstruction(OpCodes.Ldloc_1).WithLabels(codeList[11511].labels.ToArray()),
-                new CodeInstruction(OpCodes.Brtrue, skipBranch),
-                new CodeInstruction(OpCodes.Ldarg_1),
-                new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(PatchHelper), nameof(PatchHelper.InEnemyMakeElite))),
-                new CodeInstruction(OpCodes.Stloc_1), // Store elite status in bRet
-                new CodeInstruction(OpCodes.Nop).WithLabels(skipBranch)
-            };
+                if (entry.difficultyScaler == null && entry.IsVanilla)
+                {
+                    return true;  // No replacement found, run vanilla code
+                }
 
-            codeList[11511].labels.Clear(); // Shifts labels to account for insertion
+                entry.difficultyScaler.Invoke(xEn);
+                return false;
+            }
 
-            return codeList.InsertAt(11511, insert);
+            return false;  // Unknown mod entry?
         }
 
         /// <summary>
@@ -760,16 +808,16 @@ namespace SoG.Modding.Patching.Patches
             }
 
             msg.Append("=== GrindScript Info ===").AppendLine();
-            msg.Append("Active Mods => " + Globals.ModManager.ActiveMods.Count + " mods").AppendLine();
+            msg.Append("Active Mods => " + Globals.Manager.ActiveMods.Count + " mods").AppendLine();
 
-            foreach (Mod mod in Globals.ModManager.ActiveMods)
+            foreach (Mod mod in Globals.Manager.ActiveMods)
             {
                 msg.Append("  " + mod.ToString()).AppendLine();
             }
 
-            msg.Append("All Mods => " + Globals.ModManager.Mods.Count + " mods").AppendLine();
+            msg.Append("All Mods => " + Globals.Manager.Mods.Count + " mods").AppendLine();
 
-            foreach (Mod mod in Globals.ModManager.Mods)
+            foreach (Mod mod in Globals.Manager.Mods)
             {
                 msg.Append("  " + mod.ToString()).AppendLine();
             }
@@ -801,7 +849,7 @@ namespace SoG.Modding.Patching.Patches
         {
             (Globals.Logger?.NextLogger as FileLogger)?.FlushToDisk();
 
-            foreach (Mod mod in Globals.ModManager.ActiveMods)
+            foreach (Mod mod in Globals.Manager.ActiveMods)
             {
                 (mod.Logger?.NextLogger as FileLogger)?.FlushToDisk();
             }
@@ -931,32 +979,54 @@ namespace SoG.Modding.Patching.Patches
         [HarmonyPatch(nameof(Game1._Enemy_HandleDeath))]
         internal static void _Enemy_HandleDeath_Postfix(Enemy xEnemy, AttackPhase xAttackPhaseThatHit)
         {
-            foreach (Mod mod in Globals.ModManager.ActiveMods)
+            foreach (Mod mod in Globals.Manager.ActiveMods)
                 mod.PostEnemyKilled(xEnemy, xAttackPhaseThatHit);
         }
 
-        [HarmonyPostfix]
+        [HarmonyPrefix]
         [HarmonyPatch(nameof(Game1._RogueLike_ActivatePin))]
-        internal static void _RogueLike_ActivatePin_Postfix(PlayerView xView, PinCodex.PinType enEffect, bool bSend)
+        internal static bool _RogueLike_ActivatePinPrefix(PlayerView xView, PinCodex.PinType enEffect, bool bSend)
         {
-            if (!enEffect.IsFromMod())
-                return;
+            EditedMethods.SendPinActivation(Globals.Game, xView, enEffect, bSend);
 
-            var storage = Globals.ModManager.Library.GetStorage<PinCodex.PinType, PinEntry>();
+            Globals.Manager.Library.TryGetEntry(enEffect, out PinEntry entry);
 
-            storage[enEffect].equipAction?.Invoke(xView);
+            if (entry == null)
+            {
+                return false;  // Unknown mod object??
+            }
+
+            if (entry.equipAction == null && entry.IsVanilla)
+            {
+                EditedMethods.ApplyPinEffect(Globals.Game, xView, enEffect, bSend);
+                return false;
+            }
+
+            entry.equipAction?.Invoke(xView);
+            return false;
         }
 
-        [HarmonyPostfix]
+        [HarmonyPrefix]
         [HarmonyPatch(nameof(Game1._RogueLike_DeactivatePin))]
-        internal static void _RogueLike_DeactivatePin_Postfix(PlayerView xView, PinCodex.PinType enEffect, bool bSend)
+        internal static bool _RogueLike_DeactivatePin_Prefix(PlayerView xView, PinCodex.PinType enEffect, bool bSend)
         {
-            if (!enEffect.IsFromMod())
-                return;
+            EditedMethods.SendPinDeactivation(Globals.Game, xView, enEffect, bSend);
 
-            var storage = Globals.ModManager.Library.GetStorage<PinCodex.PinType, PinEntry>();
+            Globals.Manager.Library.TryGetEntry(enEffect, out PinEntry entry);
 
-            storage[enEffect].unequipAction?.Invoke(xView);
+            if (entry == null)
+            {
+                return false;  // Unknown mod object??
+            }
+
+            if (entry.unequipAction == null && entry.IsVanilla)
+            {
+                EditedMethods.RemovePinEffect(Globals.Game, xView, enEffect, bSend);
+                return false;
+            }
+
+            entry.unequipAction?.Invoke(xView);
+            return false;
         }
 
         [HarmonyTranspiler]
@@ -965,15 +1035,36 @@ namespace SoG.Modding.Patching.Patches
         {
             List<CodeInstruction> codeList = code.ToList();
 
+            int start = codeList.FindIndex(x => x.opcode == OpCodes.Stloc_0) + 1;
+
+            int newobj_pos = 2;
+            int end = -1;
+            while (newobj_pos-- > 0)
+            {
+                end = codeList.FindIndex(end + 1, x => x.opcode == OpCodes.Newobj);
+            }
+
             List<CodeInstruction> toInsert = new List<CodeInstruction>()
             {
                 new CodeInstruction(OpCodes.Ldloc_0),
-                new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(PatchHelper), nameof(PatchHelper.AddModdedPinsToList))),
+                new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(Patch_Game1), nameof(InGetRandomPin))),
             };
 
-            MethodInfo target = typeof(List<PinCodex.PinType>).GetMethod(nameof(List<PinCodex.PinType>.Add));
+            codeList.RemoveRange(start, end - start);
+            codeList.InsertAt(start, toInsert);
 
-            return PatchUtils.InsertBeforeMethod(codeList, target, toInsert);
+            return codeList;
+        }
+
+        private static void InGetRandomPin(List<PinCodex.PinType> list)
+        {
+            foreach (var pair in Globals.Manager.Library.GetStorage<PinCodex.PinType, PinEntry>())
+            {
+                if (pair.Value.conditionToDrop == null || pair.Value.conditionToDrop.Invoke())
+                {
+                    list.Add(pair.Key);
+                }
+            }
         }
 
         [HarmonyPostfix]
@@ -1024,32 +1115,42 @@ namespace SoG.Modding.Patching.Patches
             spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, DepthStencilState.Default, null);
         }
 
-        [HarmonyPostfix]
+        [HarmonyPrefix]
         [HarmonyPatch(nameof(Game1.EquipmentSpecialEffectAdded))]
-        internal static void EquipmentSpecialEffectAddedPostfix(EquipmentInfo.SpecialEffect enEffect, PlayerView xView)
+        internal static bool EquipmentSpecialEffectAddedPrefix(EquipmentInfo.SpecialEffect enEffect, PlayerView xView)
         {
-            if (!enEffect.IsFromMod())
+            Globals.Manager.Library.TryGetEntry<EquipmentInfo.SpecialEffect, EquipmentEffectEntry>(enEffect, out var entry);
+
+            if (entry != null)
             {
-                return;
+                if (entry._onEquip == null && entry.IsVanilla)
+                {
+                    return true;  // Use vanilla equip add
+                }
+
+                entry?._onEquip(xView);
             }
 
-            Globals.ModManager.Library.TryGetEntry<EquipmentInfo.SpecialEffect, EquipmentEffectEntry>(enEffect, out var entry);
-
-            entry?.OnEquip(xView);
+            return false;  // Unknown mod object?
         }
 
-        [HarmonyPostfix]
+        [HarmonyPrefix]
         [HarmonyPatch(nameof(Game1.EquipmentSpecialEffectRemoved))]
-        internal static void EquipmentSpecialEffectRemovedPostfix(EquipmentInfo.SpecialEffect enEffect, PlayerView xView)
+        internal static bool EquipmentSpecialEffectRemovedPrefix(EquipmentInfo.SpecialEffect enEffect, PlayerView xView)
         {
-            if (!enEffect.IsFromMod())
+            Globals.Manager.Library.TryGetEntry<EquipmentInfo.SpecialEffect, EquipmentEffectEntry>(enEffect, out var entry);
+
+            if (entry != null)
             {
-                return;
+                if (entry._onRemove == null && entry.IsVanilla)
+                {
+                    return true;  // Use vanilla equip add
+                }
+
+                entry?._onRemove(xView);
             }
 
-            Globals.ModManager.Library.TryGetEntry<EquipmentInfo.SpecialEffect, EquipmentEffectEntry>(enEffect, out var entry);
-
-            entry?.OnRemove(xView);
+            return false;  // Unknown mod object?
         }
     }
 }

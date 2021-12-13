@@ -31,9 +31,13 @@ namespace SoG.Modding
 
         internal GrindScript GrindScript { get; private set; }
 
+        internal VanillaMod VanillaMod { get; private set; }
+
         internal Library Library { get; } = new Library();
 
         internal IDAllocator ID { get; } = new IDAllocator();
+
+        internal List<Mod> SaveableMods => ActiveMods.Where(x => !x.DisableObjectCreation).ToList();
 
         internal List<Mod> ActiveMods => Mods.Where(x => !x.Disabled).ToList();
 
@@ -47,6 +51,7 @@ namespace SoG.Modding
             Saving = new ModSaving(this);
 
             GrindScript = new GrindScript();
+            VanillaMod = new VanillaMod();
 
             Logger.Debug("GrindScript instantiated!");
         }
@@ -106,7 +111,7 @@ namespace SoG.Modding
         }
 
         internal EntryType CreateObject<IDType, EntryType>(Mod mod, string modID)
-            where IDType : struct
+            where IDType : struct, Enum
             where EntryType : Entry<IDType>
         {
             ErrorHelper.ThrowIfNotLoading(mod);
@@ -129,14 +134,14 @@ namespace SoG.Modding
         }
 
         internal bool TryGetGameEntry<IDType, EntryType>(Mod mod, string modID, out EntryType entry)
-            where IDType : struct
+            where IDType : struct, Enum
             where EntryType : Entry<IDType>
         {
             return Library.TryGetModEntry<IDType, EntryType>(mod, modID, out entry);
         }
 
         internal bool TryGetGameID<IDType, EntryType>(Mod mod, string modID, out IDType value)
-            where IDType : struct
+            where IDType : struct, Enum
             where EntryType : Entry<IDType>
         {
             bool found = Library.TryGetModEntry<IDType, EntryType>(mod, modID, out EntryType entry);
@@ -228,6 +233,20 @@ namespace SoG.Modding
                     {
                         Harmony.DEBUG = harmonyDebug;
                         Logger.Debug("Harmony DEBUG mode is " + (harmonyDebug ? "enabled" : "disabled"));
+                    }
+                    if (config.TryGet("log_console_output", out bool consoleOutput))
+                    {
+                        if (consoleOutput && Globals.Logger.NextLogger == null)
+                        {
+                            var time = Launcher.LaunchTime;
+
+                            Globals.Logger.NextLogger = new FileLogger(LogLevels.Debug, "GrindScript")
+                            {
+                                FilePath = Path.Combine("Logs", $"ConsoleLog_{time.Year}.{time.Month}.{time.Day}_{time.Hour}.{time.Minute}.{time.Second}.txt")
+                            };
+
+                            Logger.Debug("Enabled console file logging!");
+                        }
                     }
                 }
             }

@@ -52,12 +52,6 @@ namespace SoG.Modding.Content
 
         internal string displayIconPath = null;
 
-        internal Vector2 approximateCenter = new Vector2(0, -8);
-
-        internal Vector2 approximateSize = new Vector2(16, 16);
-
-        internal EnemyCodex.EnemyTypes cardDropOverride = EnemyCodex.EnemyTypes.Null;
-
         internal string cardIllustrationPath = "GUI/InGameMenu/Journal/CardAlbum/Cards/placeholder";
 
         internal List<Drop> lootTable = new List<Drop>();
@@ -321,7 +315,7 @@ namespace SoG.Modding.Content
         {
             get
             {
-                if (Mod.InLoad)
+                if (!Mod.InLoad)
                 {
                     return new List<Drop>(lootTable);
                 }
@@ -391,19 +385,12 @@ namespace SoG.Modding.Content
 
         internal EnemyEntry() { }
 
-        internal EnemyEntry(Mod owner, EnemyCodex.EnemyTypes gameID, string modID)
-        {
-            Mod = owner;
-            GameID = gameID;
-            ModID = modID;
-        }
-
         internal override void Initialize()
         {
             vanilla.enType = GameID;
 
             // Add a Card entry in the Journal
-            if (vanilla.iCardDropChance != 0 && cardDropOverride == EnemyCodex.EnemyTypes.Null)
+            if (vanilla.iCardDropChance != 0 && vanilla.enCardTypeOverride == EnemyCodex.EnemyTypes.Null)
             {
                 EnemyCodex.lxSortedCardEntries.Add(vanilla);
             }
@@ -415,7 +402,6 @@ namespace SoG.Modding.Content
             }
 
             // Add drops
-            vanilla.lxLootTable.Clear();
             vanilla.lxLootTable.AddRange(lootTable.Select(x => new DropChance((int)(x.Chance * 1000f), x.Item, 1)));
 
             Globals.Game.EXT_AddMiscText("Enemies", vanilla.sNameLibraryHandle, vanilla.sFullName);

@@ -19,87 +19,122 @@ namespace SoG.Modding.Patching.Patches
         [HarmonyPatch(nameof(EnemyCodex.GetEnemyDescription))]
         internal static bool GetEnemyDescription_Prefix(ref EnemyDescription __result, EnemyCodex.EnemyTypes enType)
         {
-            if (!enType.IsFromMod())
-                return true;
+            var storage = Globals.Manager.Library.GetStorage<EnemyCodex.EnemyTypes, EnemyEntry>();
 
-            var storage = Globals.ModManager.Library.GetStorage<EnemyCodex.EnemyTypes, EnemyEntry>();
-            __result = storage[enType].vanilla;
+            if (storage.TryGetValue(enType, out EnemyEntry entry))
+            {
+                __result = entry.vanilla;
+            }
+            else
+            {
+                __result = null;  // Unknown mod item?
+            }
 
             return false;
         }
 
-        /// <summary>
-        /// Implements custom enemy construction by transpiling the second part of GetEnemyInstance.
-        /// (Note that our IDs will always trigger the condition for "CacuteForward" version to be called)
-        /// </summary>
-        [HarmonyTranspiler]
-        [HarmonyPatch(nameof(EnemyCodex.GetEnemyInstance_CacuteForward))]
-        internal static CodeList GetEnemyInstance_CacuteForward_Transpiler(CodeList code, ILGenerator gen)
+        [HarmonyPrefix]
+        [HarmonyPatch(nameof(EnemyCodex.GetEnemyInstance))]
+        internal static bool GetEnemyInstance_Prefix(EnemyCodex.EnemyTypes enType, Level.WorldRegion enOverrideContent, ref Enemy __result)
         {
-            var codeList = code.ToList();
-
-            Debug.Assert(codeList[20].opcode == OpCodes.Ldstr, "GetEnemyInstance transpiler is invalid!");
-
-            var insert = new List<CodeInstruction>()
+            if (enType.IsFromSoG())
             {
-                new CodeInstruction(OpCodes.Ldarg_0),
-                new CodeInstruction(OpCodes.Ldarg_1),
-                new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(PatchHelper), nameof(PatchHelper.InGetEnemyInstance))),
-                new CodeInstruction(OpCodes.Stloc_0) // Store returned enemy
-            };
+                var storage = Globals.Manager.Library.GetStorage<EnemyCodex.EnemyTypes, EnemyEntry>();
+                if (!storage.TryGetValue(enType, out EnemyEntry entry) || entry.constructor == null)
+                {
+                    // No replacement exists. Let's continue to the vanilla code to get the instance!
+                    return true;
+                }
+            }
+            else if (!enType.IsFromMod())
+            {
+                __result = null;
+                return false; // Unknown mod entry?
+            }
 
-            return codeList.InsertAt(20 + 2, insert);
+            __result = EditedMethods.GetModdedEnemyInstance(enType, enOverrideContent);
+            return false;
         }
 
         [HarmonyPrefix]
         [HarmonyPatch(nameof(EnemyCodex.GetEnemyDefaultAnimation))]
         public static bool GetEnemyDefaultAnimation_Prefix(ref Animation __result, EnemyCodex.EnemyTypes enType, ContentManager Content)
         {
-            if (!enType.IsFromMod())
+            var storage = Globals.Manager.Library.GetStorage<EnemyCodex.EnemyTypes, EnemyEntry>();
+
+            if (storage.TryGetValue(enType, out EnemyEntry entry))
             {
-                return true;
+                if (entry.defaultAnimation == null)
+                {
+                    if (entry.IsVanilla)
+                    {
+                        return true;
+                    }
+
+                    __result = new Animation(0, 0, Globals.Manager.GrindScript.ErrorTexture, Vector2.Zero);
+                    return false;  // Animation hasn't been set...
+                }
+
+                __result = entry.defaultAnimation.Invoke(Content);
+                return false;
             }
 
-            var storage = Globals.ModManager.Library.GetStorage<EnemyCodex.EnemyTypes, EnemyEntry>();
-            __result = storage[enType].defaultAnimation?.Invoke(Content);
-
-            if (__result == null)
-            {
-                __result = new Animation(1, 0, RenderMaster.txNullTex, Vector2.Zero);
-            }
-
-            return false;
+            __result = new Animation(0, 0, Globals.Manager.GrindScript.ErrorTexture, Vector2.Zero);
+            return false;  // Unknown mod entry?
         }
 
         [HarmonyPrefix]
         [HarmonyPatch(nameof(EnemyCodex.GetEnemyDisplayIcon))]
         public static bool GetEnemyDisplayIcon_Prefix(ref Texture2D __result, EnemyCodex.EnemyTypes enType, ContentManager Content)
         {
-            if (!enType.IsFromMod())
+            var storage = Globals.Manager.Library.GetStorage<EnemyCodex.EnemyTypes, EnemyEntry>();
+
+            if (storage.TryGetValue(enType, out EnemyEntry entry))
             {
-                return true;
+                if (entry.displayIconPath == null)
+                {
+                    if (entry.IsVanilla)
+                    {
+                        return true;  // No replacement found, get it from vanilla
+                    }
+
+                    __result = Globals.Manager.GrindScript.ErrorTexture;
+                    return false;  // Texture not set...
+                }
+
+                AssetUtils.TryLoadTexture(entry.displayIconPath, Content, out __result);
+                return false;
             }
 
-            var storage = Globals.ModManager.Library.GetStorage<EnemyCodex.EnemyTypes, EnemyEntry>();
-            AssetUtils.TryLoadTexture(storage[enType].displayIconPath, Content, out __result);
-
-            return false;
+            __result = Globals.Manager.GrindScript.ErrorTexture;
+            return false;  // Unknown mod entry?
         }
 
         [HarmonyPrefix]
         [HarmonyPatch(nameof(EnemyCodex.GetEnemyLocationPicture))]
         public static bool GetEnemyLocationPicture_Prefix(ref Texture2D __result, EnemyCodex.EnemyTypes enType, ContentManager Content)
         {
-            if (!enType.IsFromMod())
+            var storage = Globals.Manager.Library.GetStorage<EnemyCodex.EnemyTypes, EnemyEntry>();
+
+            if (storage.TryGetValue(enType, out EnemyEntry entry))
             {
-                return true;
+                if (entry.displayBackgroundPath == null)
+                {
+                    if (entry.IsVanilla)
+                    {
+                        return true;  // No replacement found, get it from vanilla
+                    }
+
+                    __result = Globals.Manager.GrindScript.ErrorTexture;
+                    return false;  // Texture not set...
+                }
+
+                AssetUtils.TryLoadTexture(entry.displayBackgroundPath, Content, out __result);
+                return false;
             }
 
-            var storage = Globals.ModManager.Library.GetStorage<EnemyCodex.EnemyTypes, EnemyEntry>();
-            AssetUtils.TryLoadTexture(storage[enType].displayBackgroundPath, Content, out __result);
-
-            return false;
+            __result = Globals.Manager.GrindScript.ErrorTexture;
+            return false;  // Unknown mod item?
         }
-
     }
 }
