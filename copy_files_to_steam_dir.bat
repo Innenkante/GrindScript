@@ -1,9 +1,12 @@
 Rem Copy the required files
 
 Rem Set your paths here
-set build_dir=C:\Users\Mark\source\repos\GrindScript\build\Debug\net472\
+Rem The first path should point to the build directory (don't modifiy it unless you modify all .csproj too)
+Rem The second path points to your game directory
+set build_dir=..\build\Debug\net472\
 set sog_dir=E:\Steam\steamapps\common\SecretsOfGrindea\
 
+Rem Copies everything
 echo Starting copy...
 xcopy %build_dir%\0Harmony.dll %sog_dir% /y /f
 xcopy %build_dir%\GrindScript.dll %sog_dir% /y /f
