@@ -5,9 +5,15 @@
     <AssemblyTitle>SoG.ItemExample</AssemblyTitle>
     <Product>SoG.ItemExample</Product>
     <Copyright>Copyright ©  2020</Copyright>
-    <OutputPath>bin\$(Configuration)\</OutputPath>
+
+
+    <ApplicationVersion>1.0.0.0</ApplicationVersion>
+    
     <LangVersion>7.3</LangVersion>
 
+    <PlatformTarget>x86</PlatformTarget>
+
+    <BaseOutputPath>$(SolutionDir)build</BaseOutputPath>
   </PropertyGroup>  
  
   
@@ -59,5 +65,10 @@
     <ProjectReference Include="..\Addons\ModGoodies\ModGoodies.csproj" />
     <ProjectReference Include="..\API\API.csproj" />
   </ItemGroup>
+
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="call &quot;$(SolutionDir)copy_files_to_steam_dir.bat&quot;" />
+  </Target>
 
 </Project>
