@@ -3,8 +3,11 @@ Rem Copy the required files
 Rem Set your paths here
 Rem The first path should point to the build directory (don't modifiy it unless you modify all .csproj too)
 Rem The second path points to your game directory
-set build_dir=..\build\Debug\net472\
-set sog_dir=E:\Steam\steamapps\common\SecretsOfGrindea\
+set solution_dir=%1
+set build_dir=%solution_dir%build\x86\Debug\net472\
+set sog_dir="C:\Program Files (x86)\Steam\steamapps\common\SecretsOfGrindea"
+
+echo Build directory is %build_dir%
 
 Rem Copies everything
 echo Starting copy...
