@@ -13,7 +13,7 @@ namespace SoG.Modding.Patching.Patches
         {
             PerkInfo.lxAllPerks.Clear();
 
-            foreach (var pair in Globals.Manager.Library.GetStorage<RogueLikeMode.Perks, PerkEntry>())
+            foreach (var pair in Globals.Manager.Library.GetAllEntries<RogueLikeMode.Perks, PerkEntry>())
             {
                 if (pair.Value.unlockCondition == null || pair.Value.unlockCondition.Invoke())
                 {

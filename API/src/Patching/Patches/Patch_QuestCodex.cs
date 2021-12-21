@@ -11,7 +11,7 @@ namespace SoG.Modding.Patching.Patches
         [HarmonyPatch(nameof(QuestCodex.GetQuestDescription))]
         public static bool GetQuestDescription_Prefix(ref QuestDescription __result, QuestCodex.QuestID p_enID)
         {
-            Globals.Manager.Library.TryGetEntry(p_enID, out QuestEntry entry);
+            Globals.Manager.Library.GetEntry(p_enID, out QuestEntry entry);
 
             if (entry == null)
             {
@@ -27,7 +27,7 @@ namespace SoG.Modding.Patching.Patches
         [HarmonyPatch(nameof(QuestCodex.GetQuestInstance))]
         public static bool GetQuestInstance_Prefix(ref Quest __result, QuestCodex.QuestID p_enID)
         {
-            Globals.Manager.Library.TryGetEntry(p_enID, out QuestEntry entry);
+            Globals.Manager.Library.GetEntry(p_enID, out QuestEntry entry);
 
             if (entry == null)
             {

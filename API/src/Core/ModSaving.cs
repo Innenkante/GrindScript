@@ -300,7 +300,7 @@ namespace SoG.Modding
             where IDType : struct, Enum
             where EntryType : Entry<IDType>
         {
-            UpdateIDs(library.GetStorage<IDType, EntryType>().Values, oldIDs, ref temporaryID, updater);
+            UpdateIDs(library.GetAllEntries<IDType, EntryType>().Values, oldIDs, ref temporaryID, updater);
         }
 
         private void UpdateIDs<IDType>(IEnumerable<Entry<IDType>> entries, Dictionary<IDType, string> oldIDs, ref IDType temporaryID, Action<IDType, IDType> updater) where IDType : struct, Enum
@@ -386,7 +386,7 @@ namespace SoG.Modding
             where IDType : struct, Enum
             where EntryType : Entry<IDType>
         {
-            var entries = library.GetStorage<IDType, EntryType>();
+            var entries = library.GetAllEntries<IDType, EntryType>();
 
             file.Write(entries.Count);
             foreach (var item in entries.Values)

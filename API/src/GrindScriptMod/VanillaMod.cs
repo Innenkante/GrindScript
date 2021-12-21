@@ -33,7 +33,7 @@ namespace SoG.Modding.GrindScriptMod
 
             Logger.Debug("Curses...");
 
-            var curseEntries = Globals.Manager.Library.GetStorage<RogueLikeMode.TreatsCurses, CurseEntry>();
+            var curseEntries = Globals.Manager.Library.GetAllEntries<RogueLikeMode.TreatsCurses, CurseEntry>();
             foreach (var gameID in IDExtension.GetAllSoGIDs<RogueLikeMode.TreatsCurses>())
             {
                 CurseEntry parsedEntry = VanillaParser.ParseCurse(gameID);
@@ -43,7 +43,7 @@ namespace SoG.Modding.GrindScriptMod
 
             Logger.Debug("Enemies...");
 
-            var enemyEntries = Globals.Manager.Library.GetStorage<EnemyCodex.EnemyTypes, EnemyEntry>();
+            var enemyEntries = Globals.Manager.Library.GetAllEntries<EnemyCodex.EnemyTypes, EnemyEntry>();
             foreach (var gameID in IDExtension.GetAllSoGIDs<EnemyCodex.EnemyTypes>())
             {
                 EnemyEntry parsedEntry = VanillaParser.ParseEnemy(gameID);
@@ -56,7 +56,7 @@ namespace SoG.Modding.GrindScriptMod
 
             Logger.Debug("Equipment Effects...");
 
-            var specialEffectEntries = Globals.Manager.Library.GetStorage<EquipmentInfo.SpecialEffect, EquipmentEffectEntry>();
+            var specialEffectEntries = Globals.Manager.Library.GetAllEntries<EquipmentInfo.SpecialEffect, EquipmentEffectEntry>();
             foreach (var gameID in IDExtension.GetAllSoGIDs<EquipmentInfo.SpecialEffect>())
             {
                 EquipmentEffectEntry parsedEntry = VanillaParser.ParseEquipmentEffect(gameID);
@@ -66,7 +66,7 @@ namespace SoG.Modding.GrindScriptMod
 
             Logger.Debug("Items...");
 
-            var itemEntries = Globals.Manager.Library.GetStorage<ItemCodex.ItemTypes, ItemEntry>();
+            var itemEntries = Globals.Manager.Library.GetAllEntries<ItemCodex.ItemTypes, ItemEntry>();
             foreach (var gameID in IDExtension.GetAllSoGIDs<ItemCodex.ItemTypes>())
             {
                 ItemEntry parsedEntry = VanillaParser.ParseItem(gameID);
@@ -76,7 +76,7 @@ namespace SoG.Modding.GrindScriptMod
 
             Logger.Debug("Levels...");
 
-            var levelEntries = Globals.Manager.Library.GetStorage<Level.ZoneEnum, LevelEntry>();
+            var levelEntries = Globals.Manager.Library.GetAllEntries<Level.ZoneEnum, LevelEntry>();
             foreach (var gameID in IDExtension.GetAllSoGIDs<Level.ZoneEnum>())
             {
                 LevelEntry parsedEntry = VanillaParser.ParseLevel(gameID);
@@ -88,7 +88,7 @@ namespace SoG.Modding.GrindScriptMod
 
             OriginalMethods.PerkInfoInit();
 
-            var perkEntries = Globals.Manager.Library.GetStorage<RogueLikeMode.Perks, PerkEntry>();
+            var perkEntries = Globals.Manager.Library.GetAllEntries<RogueLikeMode.Perks, PerkEntry>();
             foreach (var gameID in IDExtension.GetAllSoGIDs<RogueLikeMode.Perks>())
             {
                 PerkEntry parsedEntry = VanillaParser.ParsePerk(gameID);
@@ -100,7 +100,7 @@ namespace SoG.Modding.GrindScriptMod
 
             Logger.Debug("Pins...");
 
-            var pinEntries = Globals.Manager.Library.GetStorage<PinCodex.PinType, PinEntry>();
+            var pinEntries = Globals.Manager.Library.GetAllEntries<PinCodex.PinType, PinEntry>();
             foreach (var gameID in IDExtension.GetAllSoGIDs<PinCodex.PinType>())
             {
                 PinEntry parsedEntry = VanillaParser.ParsePin(gameID);
@@ -112,7 +112,7 @@ namespace SoG.Modding.GrindScriptMod
 
             Logger.Debug("Quests...");
 
-            var questEntries = Globals.Manager.Library.GetStorage<QuestCodex.QuestID, QuestEntry>();
+            var questEntries = Globals.Manager.Library.GetAllEntries<QuestCodex.QuestID, QuestEntry>();
             foreach (var gameID in IDExtension.GetAllSoGIDs<QuestCodex.QuestID>())
             {
                 QuestEntry parsedEntry = VanillaParser.ParseQuest(gameID);
@@ -122,7 +122,7 @@ namespace SoG.Modding.GrindScriptMod
 
             Logger.Debug("Spells...");
 
-            var spellEntries = Globals.Manager.Library.GetStorage<SpellCodex.SpellTypes, SpellEntry>();
+            var spellEntries = Globals.Manager.Library.GetAllEntries<SpellCodex.SpellTypes, SpellEntry>();
             foreach (var gameID in IDExtension.GetAllSoGIDs<SpellCodex.SpellTypes>())
             {
                 SpellEntry parsedEntry = VanillaParser.ParseSpell(gameID);
@@ -132,7 +132,7 @@ namespace SoG.Modding.GrindScriptMod
 
             Logger.Debug("Status Effects...");
 
-            var statusEffectEntries = Globals.Manager.Library.GetStorage<BaseStats.StatusEffectSource, StatusEffectEntry>();
+            var statusEffectEntries = Globals.Manager.Library.GetAllEntries<BaseStats.StatusEffectSource, StatusEffectEntry>();
             foreach (var gameID in IDExtension.GetAllSoGIDs<BaseStats.StatusEffectSource>())
             {
                 StatusEffectEntry parsedEntry = VanillaParser.ParseStatusEffect(gameID);
@@ -142,7 +142,7 @@ namespace SoG.Modding.GrindScriptMod
 
             Logger.Debug("World Regions...");
 
-            var worldRegionEntries = Globals.Manager.Library.GetStorage<Level.WorldRegion, WorldRegionEntry>();
+            var worldRegionEntries = Globals.Manager.Library.GetAllEntries<Level.WorldRegion, WorldRegionEntry>();
             foreach (var gameID in IDExtension.GetAllSoGIDs<Level.WorldRegion>())
             {
                 WorldRegionEntry parsedEntry = VanillaParser.ParseWorldRegion(gameID);

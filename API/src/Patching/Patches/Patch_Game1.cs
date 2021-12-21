@@ -42,14 +42,15 @@ namespace SoG.Modding.Patching.Patches
                 mod.PostEnemySpawn(__result, enEnemyType, __state, p_v2Pos, bAsElite, bDropsLoot, ibitLayer, fVirtualHeight, afBehaviourVariables);
         }
 
-        /// <summary>
-        /// Starts the API, which loads mods and their content.
-        /// </summary>
         [HarmonyPrefix]
         [HarmonyPatch("Initialize")] // Protected Method
         internal static void Initialize_Prefix()
         {
-            Globals.Manager.Start();
+            Assembly gameAssembly = AppDomain.CurrentDomain.GetAssemblies().First(a => a.GetName().Name == "Secrets Of Grindea");
+
+            Globals.Game = (Game1)gameAssembly.GetType("SoG.Program").GetField("game").GetValue(null);
+            Globals.Game.sAppData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "/GrindScript/";
+            Globals.Game.xGameSessionData.xRogueLikeSession.bTemporaryHighScoreBlock = true;
         }
 
         /// <summary>
@@ -99,7 +100,7 @@ namespace SoG.Modding.Patching.Patches
 
                 if (shield != null)
                 {
-                    Globals.Manager.Library.TryGetEntry(shield.enItemType, out entry);
+                    Globals.Manager.Library.GetEntry(shield.enItemType, out entry);
                 }
 
                 if (entry == null)
@@ -133,7 +134,7 @@ namespace SoG.Modding.Patching.Patches
         [HarmonyPatch(nameof(Game1._RogueLike_GetPerkTexture))]
         internal static bool _RogueLike_GetPerkTexture_Prefix(RogueLikeMode.Perks enPerk, ref Texture2D __result)
         {
-            Globals.Manager.Library.TryGetEntry(enPerk, out PerkEntry entry);
+            Globals.Manager.Library.GetEntry(enPerk, out PerkEntry entry);
 
             if (entry == null)
             {
@@ -205,7 +206,7 @@ namespace SoG.Modding.Patching.Patches
         [HarmonyPatch(nameof(Game1._RogueLike_GetTreatCurseTexture))]
         internal static bool _RogueLike_GetTreatCurseTexture_Prefix(RogueLikeMode.TreatsCurses enTreat, ref Texture2D __result)
         {
-            var storage = Globals.Manager.Library.GetStorage<RogueLikeMode.TreatsCurses, CurseEntry>();
+            var storage = Globals.Manager.Library.GetAllEntries<RogueLikeMode.TreatsCurses, CurseEntry>();
 
             if (storage.TryGetValue(enTreat, out CurseEntry entry))
             {
@@ -240,7 +241,7 @@ namespace SoG.Modding.Patching.Patches
         [HarmonyPatch(nameof(Game1._RogueLike_GetTreatCurseInfo))]
         internal static bool _RogueLike_GetTreatCurseInfo_Prefix(RogueLikeMode.TreatsCurses enTreatCurse, out string sNameHandle, out string sDescriptionHandle, out float fScoreModifier)
         {
-            var storage = Globals.Manager.Library.GetStorage<RogueLikeMode.TreatsCurses, CurseEntry>();
+            var storage = Globals.Manager.Library.GetAllEntries<RogueLikeMode.TreatsCurses, CurseEntry>();
             
             if (storage.TryGetValue(enTreatCurse, out CurseEntry entry))
             {
@@ -571,7 +572,7 @@ namespace SoG.Modding.Patching.Patches
         {
             if (enLevel.IsFromSoG())
             {
-                Globals.Manager.Library.TryGetEntry(enLevel, out LevelEntry entry);
+                Globals.Manager.Library.GetEntry(enLevel, out LevelEntry entry);
                 if (entry == null || entry.loader == null)
                 {
                     // No replacement exists. Call the vanilla method instead.
@@ -752,7 +753,7 @@ namespace SoG.Modding.Patching.Patches
         [HarmonyPatch(nameof(Game1._Enemy_AdjustForDifficulty))]
         internal static bool _Enemy_AdjustForDifficulty_Prefix(Enemy xEn)
         {
-            var storage = Globals.Manager.Library.GetStorage<EnemyCodex.EnemyTypes, EnemyEntry>();
+            var storage = Globals.Manager.Library.GetAllEntries<EnemyCodex.EnemyTypes, EnemyEntry>();
 
             if (storage.TryGetValue(xEn.enType, out EnemyEntry entry))
             {
@@ -989,7 +990,7 @@ namespace SoG.Modding.Patching.Patches
         {
             EditedMethods.SendPinActivation(Globals.Game, xView, enEffect, bSend);
 
-            Globals.Manager.Library.TryGetEntry(enEffect, out PinEntry entry);
+            Globals.Manager.Library.GetEntry(enEffect, out PinEntry entry);
 
             if (entry == null)
             {
@@ -1012,7 +1013,7 @@ namespace SoG.Modding.Patching.Patches
         {
             EditedMethods.SendPinDeactivation(Globals.Game, xView, enEffect, bSend);
 
-            Globals.Manager.Library.TryGetEntry(enEffect, out PinEntry entry);
+            Globals.Manager.Library.GetEntry(enEffect, out PinEntry entry);
 
             if (entry == null)
             {
@@ -1058,7 +1059,7 @@ namespace SoG.Modding.Patching.Patches
 
         private static void InGetRandomPin(List<PinCodex.PinType> list)
         {
-            foreach (var pair in Globals.Manager.Library.GetStorage<PinCodex.PinType, PinEntry>())
+            foreach (var pair in Globals.Manager.Library.GetAllEntries<PinCodex.PinType, PinEntry>())
             {
                 if (pair.Value.conditionToDrop == null || pair.Value.conditionToDrop.Invoke())
                 {
@@ -1119,7 +1120,7 @@ namespace SoG.Modding.Patching.Patches
         [HarmonyPatch(nameof(Game1.EquipmentSpecialEffectAdded))]
         internal static bool EquipmentSpecialEffectAddedPrefix(EquipmentInfo.SpecialEffect enEffect, PlayerView xView)
         {
-            Globals.Manager.Library.TryGetEntry<EquipmentInfo.SpecialEffect, EquipmentEffectEntry>(enEffect, out var entry);
+            Globals.Manager.Library.GetEntry<EquipmentInfo.SpecialEffect, EquipmentEffectEntry>(enEffect, out var entry);
 
             if (entry != null)
             {
@@ -1138,7 +1139,7 @@ namespace SoG.Modding.Patching.Patches
         [HarmonyPatch(nameof(Game1.EquipmentSpecialEffectRemoved))]
         internal static bool EquipmentSpecialEffectRemovedPrefix(EquipmentInfo.SpecialEffect enEffect, PlayerView xView)
         {
-            Globals.Manager.Library.TryGetEntry<EquipmentInfo.SpecialEffect, EquipmentEffectEntry>(enEffect, out var entry);
+            Globals.Manager.Library.GetEntry<EquipmentInfo.SpecialEffect, EquipmentEffectEntry>(enEffect, out var entry);
 
             if (entry != null)
             {

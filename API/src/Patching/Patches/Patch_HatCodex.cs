@@ -13,7 +13,7 @@ namespace SoG.Modding.Patching.Patches
         [HarmonyPatch(nameof(HatCodex.GetHatInfo))]
         internal static bool GetHatInfo_Prefix(ref HatInfo __result, ItemCodex.ItemTypes enType)
         {
-            Globals.Manager.Library.TryGetEntry(enType, out ItemEntry entry);
+            Globals.Manager.Library.GetEntry(enType, out ItemEntry entry);
 
             __result = null;
 

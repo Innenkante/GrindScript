@@ -15,24 +15,17 @@ namespace SoG.Modding
 
         private static MethodInfo s_cleanupStorage = AccessTools.Method(typeof(Library), nameof(CleanupStorage));
 
-        private static MethodInfo s_getModStorage = AccessTools.Method(typeof(Library), nameof(GetModStorage));
+        private static MethodInfo s_getModStorage = AccessTools.Method(typeof(Library), nameof(GetAllEntries));
 
-        private static MethodInfo s_unloadFromMod = AccessTools.Method(typeof(Library), nameof(RemoveModEntriesFromStorage));
+        private static MethodInfo s_removeModEntries = AccessTools.Method(typeof(Library), nameof(RemoveModEntriesFromStorage));
 
         private Dictionary<Type, IDictionary> _typeStorage = new Dictionary<Type, IDictionary>();
-
-        #region Non-storage objects
-
-        public Dictionary<string, string> VanillaMusicRedirects { get; } = new Dictionary<string, string>();
-
-        #endregion
 
         /// <summary>
         /// Creates a new Library, and instantiates it using supported game object types.
         /// </summary>
         public Library()
         {
-
             GameObjectStuff.SetupLibrary(this);
         }
 
@@ -40,7 +33,7 @@ namespace SoG.Modding
         /// Gets the entry associated with the given ID.
         /// Returns true if there exists a storage containing an entry for the specified key, false otherwise.
         /// </summary>
-        public bool TryGetEntry<IDType, EntryType>(IDType id, out EntryType entry)
+        public bool GetEntry<IDType, EntryType>(IDType gameID, out EntryType entry)
             where IDType : struct
             where EntryType : Entry<IDType>
         {
@@ -48,7 +41,7 @@ namespace SoG.Modding
             {
                 var typedStorage = (Dictionary<IDType, EntryType>)storage;
 
-                if (typedStorage.TryGetValue(id, out entry))
+                if (typedStorage.TryGetValue(gameID, out entry))
                 {
                     return true;
                 }
@@ -59,26 +52,10 @@ namespace SoG.Modding
         }
 
         /// <summary>
-        /// Gets the entry associated with the given ID.
-        /// If no entry is found, an exception is thrown.
-        /// </summary>
-        public EntryType GetEntry<IDType, EntryType>(IDType id)
-            where IDType : struct
-            where EntryType : Entry<IDType>
-        {
-            if (!TryGetEntry(id, out EntryType type))
-            {
-                throw new KeyNotFoundException("No entry found");
-            }
-
-            return type;
-        }
-
-        /// <summary>
         /// Gets the entry associated with the given modID.
         /// Returns true if there exists a storage containing an entry for the specified key, false otherwise.
         /// </summary>
-        public bool TryGetModEntry<IDType, EntryType>(Mod mod, string modID, out EntryType entry)
+        public bool GetModEntry<IDType, EntryType>(Mod mod, string modID, out EntryType entry)
             where IDType : struct
             where EntryType : Entry<IDType>
         {
@@ -97,7 +74,7 @@ namespace SoG.Modding
         /// <summary>
         /// Gets the storage associated with the given ID and EntryType.
         /// </summary>
-        public Dictionary<IDType, EntryType> GetStorage<IDType, EntryType>()
+        public Dictionary<IDType, EntryType> GetAllEntries<IDType, EntryType>()
             where IDType : struct
             where EntryType : Entry<IDType>
         {
@@ -112,7 +89,7 @@ namespace SoG.Modding
         /// <summary>
         /// Gets the storage associated with the given ID and EntryType, containing items from a mod.
         /// </summary>
-        public Dictionary<IDType, EntryType> GetModStorage<IDType, EntryType>(Mod mod)
+        public Dictionary<IDType, EntryType> GetModEntries<IDType, EntryType>(Mod mod)
             where IDType : struct
             where EntryType : Entry<IDType>
         {
@@ -127,9 +104,33 @@ namespace SoG.Modding
         }
 
         /// <summary>
+        /// Removes all entries from a given mod. 
+        /// This method doesn't cleanup entries. Call <see cref="CleanupEntries"/> before removing them.
+        /// </summary>
+        public void RemoveModEntries(Mod mod)
+        {
+            foreach (var pair in new Dictionary<Type, IDictionary>(_typeStorage))
+            {
+                s_removeModEntries.MakeGenericMethod(pair.Key.GenericTypeArguments).Invoke(this, new object[] { mod });
+            }
+        }
+
+        /// <summary>
+        /// Removes all entries.
+        /// This method doesn't cleanup entries. Call <see cref="CleanupEntries"/> before removing them.
+        /// </summary>
+        public void RemoveAllEntries()
+        {
+            foreach (var pair in _typeStorage)
+            {
+                pair.Value.Clear();
+            }
+        }
+
+        /// <summary>
         /// Calls <see cref="IEntry.Initialize"/> for each entry.
         /// </summary>
-        public void Initialize()
+        public void InitializeEntries()
         {
             foreach (var pair in _typeStorage)
             {
@@ -140,33 +141,11 @@ namespace SoG.Modding
         /// <summary>
         /// Calls <see cref="IEntry.Cleanup"/> for each entry.
         /// </summary>
-        public void Cleanup()
+        public void CleanupEntries()
         {
             foreach (var pair in _typeStorage)
             {
                 s_cleanupStorage.MakeGenericMethod(pair.Key.GenericTypeArguments).Invoke(this, null);
-            }
-        }
-
-        /// <summary>
-        /// Removes all entries from a given mod.
-        /// </summary>
-        public void RemoveMod(Mod mod)
-        {
-            foreach (var pair in new Dictionary<Type, IDictionary>(_typeStorage))
-            {
-                s_unloadFromMod.MakeGenericMethod(pair.Key.GenericTypeArguments).Invoke(this, new object[] { mod });
-            }
-        }
-
-        /// <summary>
-        /// Removes all entries.
-        /// </summary>
-        public void Remove()
-        {
-            foreach (var pair in _typeStorage)
-            {
-                pair.Value.Clear();
             }
         }
 
@@ -222,7 +201,7 @@ namespace SoG.Modding
             _typeStorage[typeof(Dictionary<IDType, EntryType>)] = typedStorage.Where(x => x.Value.Mod != mod).ToDictionary(x => x.Key, x => x.Value);
         }
 
-        public void CreateStorage<IDType, EntryType>()
+        internal void CreateStorage<IDType, EntryType>()
             where IDType : struct
             where EntryType : Entry<IDType>
         {

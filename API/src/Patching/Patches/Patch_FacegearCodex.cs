@@ -14,7 +14,7 @@ namespace SoG.Modding.Patching.Patches
         [HarmonyPatch(nameof(FacegearCodex.GetHatInfo))]
         internal static bool GetHatInfo_Prefix(ref FacegearInfo __result, ItemCodex.ItemTypes enType)
         {
-            Globals.Manager.Library.TryGetEntry(enType, out ItemEntry entry);
+            Globals.Manager.Library.GetEntry(enType, out ItemEntry entry);
 
             __result = entry?.vanillaEquip as FacegearInfo;
 

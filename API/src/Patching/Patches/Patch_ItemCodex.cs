@@ -12,7 +12,7 @@ namespace SoG.Modding.Patching.Patches
         [HarmonyPatch(nameof(ItemCodex.GetItemDescription))]
         internal static bool GetItemDescription_Prefix(ref ItemDescription __result, ItemCodex.ItemTypes enType)
         {
-            Globals.Manager.Library.TryGetEntry(enType, out ItemEntry entry);
+            Globals.Manager.Library.GetEntry(enType, out ItemEntry entry);
 
             if (entry != null)
             {
@@ -42,7 +42,7 @@ namespace SoG.Modding.Patching.Patches
         [HarmonyPatch(nameof(ItemCodex.GetItemInstance))]
         internal static void GetItemInstance_Postfix(ref Item __result, ItemCodex.ItemTypes enType)
         {
-            Globals.Manager.Library.TryGetEntry(enType, out ItemEntry entry);
+            Globals.Manager.Library.GetEntry(enType, out ItemEntry entry);
 
             __result.enType = entry.vanillaItem.enType;
             __result.sFullName = entry.vanillaItem.sFullName;

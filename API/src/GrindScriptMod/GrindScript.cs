@@ -96,7 +96,7 @@ namespace SoG.Modding.GrindScriptMod
         private void Version(string[] args, int connection)
         {
             CAS.AddChatMessage(
-                "SoG Version: " + Globals.GameLongVersion + "\n" +
+                "SoG Version: " + Globals.GameVersionFull + "\n" +
                 "GrindScript Version:" + ModVersion.ToString()
                 );
         }
@@ -189,14 +189,14 @@ namespace SoG.Modding.GrindScriptMod
             switch (args[0])
             {
                 case "Items":
-                    CAS.AddChatMessage($"[{NameID}] Items defined: " + Globals.Manager.Library.GetStorage<ItemCodex.ItemTypes, ItemEntry>().Count);
+                    CAS.AddChatMessage($"[{NameID}] Items defined: " + Globals.Manager.Library.GetAllEntries<ItemCodex.ItemTypes, ItemEntry>().Count);
                     break;
                 case "Perks":
-                    CAS.AddChatMessage($"[{NameID}] Perks defined: " + Globals.Manager.Library.GetStorage<RogueLikeMode.Perks, PerkEntry>().Count);
+                    CAS.AddChatMessage($"[{NameID}] Perks defined: " + Globals.Manager.Library.GetAllEntries<RogueLikeMode.Perks, PerkEntry>().Count);
                     break;
                 case "Treats":
                 case "Curses":
-                    CAS.AddChatMessage($"[{NameID}] Treats and Curses defined: " + Globals.Manager.Library.GetStorage<RogueLikeMode.TreatsCurses, CurseEntry>().Count);
+                    CAS.AddChatMessage($"[{NameID}] Treats and Curses defined: " + Globals.Manager.Library.GetAllEntries<RogueLikeMode.TreatsCurses, CurseEntry>().Count);
                     break;
                 default:
                     CAS.AddChatMessage($"[{NameID}] Usage: /{NameID}:{nameof(ModTotals)} <unique type>");
@@ -270,7 +270,7 @@ namespace SoG.Modding.GrindScriptMod
                 return;
             }
 
-            if (!Manager.Library.TryGetModEntry<ItemCodex.ItemTypes, ItemEntry>(target, parts[1], out ItemEntry entry))
+            if (!Manager.Library.GetModEntry<ItemCodex.ItemTypes, ItemEntry>(target, parts[1], out ItemEntry entry))
             {
                 CAS.AddChatMessage("The mod doesn't have an entry with that ID!");
                 return;

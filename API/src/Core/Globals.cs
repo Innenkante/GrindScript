@@ -10,6 +10,10 @@ namespace SoG.Modding
     /// </summary>
     public static class Globals
     {
+        private static FieldInfo s_sVersion = AccessTools.Field(typeof(Game1), "sVersion");
+
+        private static FieldInfo s_spriteBatch = AccessTools.Field(typeof(Game1), "spriteBatch");
+
         /// <summary>
         /// Secrets of Grindea's game instance.
         /// </summary>
@@ -18,22 +22,17 @@ namespace SoG.Modding
         /// <summary>
         /// The game's initial (vanilla) version.
         /// </summary>
-        public static string GameVanillaVersion { get; internal set; }
-
-        /// <summary>
-        /// The game's modded version, short form.
-        /// </summary>
-        public static string GameShortVersion => Game.sVersionNumberOnly;
+        public static string GameVersion { get; internal set; }
 
         /// <summary>
         /// The game's modded version, long form.
         /// </summary>
-        public static string GameLongVersion => AccessTools.Field(typeof(Game1), "sVersion").GetValue(Game) as string;
+        public static string GameVersionFull => s_sVersion.GetValue(Game) as string;
 
         /// <summary>
         /// The game's sprite batch. 
         /// </summary>
-        public static SpriteBatch SpriteBatch => AccessTools.Field(typeof(Game1), "spriteBatch").GetValue(Game) as SpriteBatch;
+        public static SpriteBatch SpriteBatch => s_spriteBatch.GetValue(Game) as SpriteBatch;
 
         /// <summary>
         /// Changes the perceived version of the game.
@@ -41,7 +40,7 @@ namespace SoG.Modding
         /// </summary>
         internal static void SetVersionTypeAsModded(bool modded)
         {
-            Game.sVersionNumberOnly = GameVanillaVersion + (modded ? "-modded" : "");
+            Game.sVersionNumberOnly = GameVersion + (modded ? "-modded" : "");
         }
 
         /// <summary>
@@ -49,18 +48,9 @@ namespace SoG.Modding
         /// </summary>
         internal static ILogger Logger { get; set; }
 
-        private static ModManager _modManager = null;
-
-        internal static ModManager Manager
-        {
-            get
-            {
-                return _modManager;
-            }
-            set
-            {
-                _modManager = value;
-            }
-        }
+        /// <summary>
+        /// The mod manager.
+        /// </summary>
+        internal static ModManager Manager { get; set; }
     }
 }

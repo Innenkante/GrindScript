@@ -32,17 +32,16 @@ namespace SoG.Modding.Patching
         {
             Globals.Logger.Debug("Updating Version Number...");
 
-            Globals.GameVanillaVersion = Globals.Game.sVersionNumberOnly;
+            Globals.GameVersion = Globals.Game.sVersionNumberOnly;
 
             Globals.SetVersionTypeAsModded(true);
 
             var versionDisplayField = typeof(Game1).GetField("sVersion", BindingFlags.NonPublic | BindingFlags.Instance);
 
-            versionDisplayField.SetValue(Globals.Game, Globals.GameVanillaVersion as string + " with GrindScript");
+            versionDisplayField.SetValue(Globals.Game, Globals.GameVersion as string + " with GrindScript");
 
-            Globals.Logger.Debug("Game Long Version: " + Globals.GameLongVersion);
-            Globals.Logger.Debug("Game Short Version: " + Globals.GameShortVersion);
-            Globals.Logger.Debug("Game Vanilla Version: " + Globals.GameVanillaVersion);
+            Globals.Logger.Debug("Game Long Version: " + Globals.GameVersionFull);
+            Globals.Logger.Debug("Game Vanilla Version: " + Globals.GameVersion);
         }
 
         /// <summary>
@@ -50,7 +49,7 @@ namespace SoG.Modding.Patching
         /// </summary>
         public static void InLevelLoadDoStuff(Level.ZoneEnum type, bool staticOnly)
         {
-            Globals.Manager.Library.TryGetEntry(type, out LevelEntry entry);
+            Globals.Manager.Library.GetEntry(type, out LevelEntry entry);
 
             Debug.Assert(entry != null && entry.IsModded);
 
@@ -67,7 +66,7 @@ namespace SoG.Modding.Patching
         // If this method returns true, the vanilla switch case is skipped
         public static bool InActivatePerk(PlayerView view, RogueLikeMode.Perks perk)
         {
-            Globals.Manager.Library.TryGetEntry(perk, out PerkEntry entry);
+            Globals.Manager.Library.GetEntry(perk, out PerkEntry entry);
 
             if (entry == null)
             {
@@ -112,7 +111,7 @@ namespace SoG.Modding.Patching
                 return true;
             }
 
-            Globals.Manager.Library.TryGetModEntry<GrindScriptID.CommandID, CommandEntry>(mod, "", out CommandEntry entry);
+            Globals.Manager.Library.GetModEntry<GrindScriptID.CommandID, CommandEntry>(mod, "", out CommandEntry entry);
 
             if (entry == null || !entry.commands.TryGetValue(trueCommand, out var parser))
             {
@@ -139,7 +138,7 @@ namespace SoG.Modding.Patching
         /// </summary>
         public static Enemy InGetEnemyInstance(EnemyCodex.EnemyTypes gameID, Level.WorldRegion assetRegion)
         {
-            Globals.Manager.Library.TryGetEntry(gameID, out EnemyEntry entry);
+            Globals.Manager.Library.GetEntry(gameID, out EnemyEntry entry);
 
             Debug.Assert(entry != null && entry.IsModded);
 
@@ -160,7 +159,7 @@ namespace SoG.Modding.Patching
         /// </summary>
         public static bool InEnemyMakeElite(Enemy enemy)
         {
-            Globals.Manager.Library.TryGetEntry(enemy.enType, out EnemyEntry entry);
+            Globals.Manager.Library.GetEntry(enemy.enType, out EnemyEntry entry);
 
             Debug.Assert(entry != null && entry.IsModded);
 
@@ -247,7 +246,7 @@ namespace SoG.Modding.Patching
 
         public static void AddModdedPinsToList(List<PinCodex.PinType> list)
         {
-            foreach (PinEntry entry in Globals.Manager.Library.GetStorage<PinCodex.PinType, PinEntry>().Values)
+            foreach (PinEntry entry in Globals.Manager.Library.GetAllEntries<PinCodex.PinType, PinEntry>().Values)
             {
                 if (entry.conditionToDrop == null || entry.conditionToDrop.Invoke())
                 {
@@ -261,7 +260,7 @@ namespace SoG.Modding.Patching
             if (!ModUtils.SplitAudioID(GSID, out int entryID, out bool isMusic, out int cueID))
                 return "";
 
-            if (!Globals.Manager.Library.TryGetEntry<GrindScriptID.AudioID, AudioEntry>((GrindScriptID.AudioID)entryID, out var entry))
+            if (!Globals.Manager.Library.GetEntry<GrindScriptID.AudioID, AudioEntry>((GrindScriptID.AudioID)entryID, out var entry))
             {
                 return "";
             }
@@ -275,7 +274,7 @@ namespace SoG.Modding.Patching
             if (!(success && !isMusic))
                 return null;
 
-            Globals.Manager.Library.TryGetEntry<GrindScriptID.AudioID, AudioEntry>((GrindScriptID.AudioID)entryID, out var entry);
+            Globals.Manager.Library.GetEntry<GrindScriptID.AudioID, AudioEntry>((GrindScriptID.AudioID)entryID, out var entry);
 
             return entry?.effectsSB;
         }
@@ -287,7 +286,7 @@ namespace SoG.Modding.Patching
             if (!(success && isMusic))
                 return null;
 
-            Globals.Manager.Library.TryGetEntry<GrindScriptID.AudioID, AudioEntry>((GrindScriptID.AudioID)entryID, out var entry);
+            Globals.Manager.Library.GetEntry<GrindScriptID.AudioID, AudioEntry>((GrindScriptID.AudioID)entryID, out var entry);
 
             return entry?.musicSB;
         }
@@ -317,7 +316,7 @@ namespace SoG.Modding.Patching
 
             foreach (var mod in Globals.Manager.ActiveMods)
             {
-                Globals.Manager.Library.TryGetModEntry<GrindScriptID.AudioID, AudioEntry>(mod, "", out var entry);
+                Globals.Manager.Library.GetModEntry<GrindScriptID.AudioID, AudioEntry>(mod, "", out var entry);
                 if (entry != null && entry.universalWB == bank)
                     return true;
             }

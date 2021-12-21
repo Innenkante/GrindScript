@@ -43,8 +43,7 @@ namespace SoG.Modding.Patching.Patches
         {
             var codeList = code.ToList();
 
-            // Original: soundBank.PlayCue(sCueName)
-            // Modified: (local1 = GetEffectSoundBank(sCueName)) != null ? local1.PlayCue(sCueName) : soundBank.PlayCue(sCueName)
+            // (local1 = GetEffectSoundBank(sCueName)) != null ? local1.PlayCue(sCueName) : soundBank.PlayCue(sCueName)
 
             Label skipVanillaBank = gen.DefineLabel();
             Label doVanillaBank = gen.DefineLabel();
@@ -55,13 +54,13 @@ namespace SoG.Modding.Patching.Patches
             var insertBefore = new List<CodeInstruction>()
             {
                 new CodeInstruction(OpCodes.Ldarg_1),
-                new CodeInstruction(OpCodes.Call, typeof(PatchHelper).GetMethod("GetEffectSoundBank")),
+                new CodeInstruction(OpCodes.Call, typeof(PatchHelper).GetMethod(nameof(PatchHelper.GetEffectSoundBank))),
                 new CodeInstruction(OpCodes.Stloc_S, modBank.LocalIndex),
                 new CodeInstruction(OpCodes.Ldloc_S, modBank.LocalIndex),
                 new CodeInstruction(OpCodes.Brfalse, doVanillaBank),
                 new CodeInstruction(OpCodes.Ldloc_S, modBank.LocalIndex),
                 new CodeInstruction(OpCodes.Ldarg_1),
-                new CodeInstruction(OpCodes.Call, typeof(PatchHelper).GetMethod("GetCueName")),
+                new CodeInstruction(OpCodes.Call, typeof(PatchHelper).GetMethod(nameof(PatchHelper.GetCueName))),
                 new CodeInstruction(OpCodes.Call, target),
                 new CodeInstruction(OpCodes.Br, skipVanillaBank),
                 new CodeInstruction(OpCodes.Nop).WithLabels(doVanillaBank)
@@ -93,13 +92,13 @@ namespace SoG.Modding.Patching.Patches
             var insertBefore = new List<CodeInstruction>()
             {
                 new CodeInstruction(OpCodes.Ldarg_1),
-                new CodeInstruction(OpCodes.Call, typeof(PatchHelper).GetMethod("GetEffectSoundBank")),
+                new CodeInstruction(OpCodes.Call, typeof(PatchHelper).GetMethod(nameof(PatchHelper.GetEffectSoundBank))),
                 new CodeInstruction(OpCodes.Stloc_S, modBank.LocalIndex),
                 new CodeInstruction(OpCodes.Ldloc_S, modBank.LocalIndex),
                 new CodeInstruction(OpCodes.Brfalse, doVanillaBank),
                 new CodeInstruction(OpCodes.Ldloc_S, modBank.LocalIndex),
                 new CodeInstruction(OpCodes.Ldarg_1),
-                new CodeInstruction(OpCodes.Call, typeof(PatchHelper).GetMethod("GetCueName")),
+                new CodeInstruction(OpCodes.Call, typeof(PatchHelper).GetMethod(nameof(PatchHelper.GetCueName))),
                 new CodeInstruction(OpCodes.Call, target),
                 new CodeInstruction(OpCodes.Br, skipVanillaBank),
                 new CodeInstruction(OpCodes.Nop).WithLabels(doVanillaBank)
@@ -147,8 +146,7 @@ namespace SoG.Modding.Patching.Patches
         {
             var codeList = code.ToList();
 
-            // Original: musicBank.GetCue(sCueName)
-            // Modified: (local1 = GetMusicSoundBank(sCueName)) != null ? local1.GetCue(sCueName) : soundBank.GetCue(sCueName)
+            // (local1 = GetMusicSoundBank(sCueName)) != null ? local1.GetCue(sCueName) : soundBank.GetCue(sCueName)
 
             Label skipVanillaBank = gen.DefineLabel();
             Label doVanillaBank = gen.DefineLabel();
@@ -159,13 +157,13 @@ namespace SoG.Modding.Patching.Patches
             var insertBefore = new List<CodeInstruction>()
             {
                 new CodeInstruction(OpCodes.Ldarg_1),
-                new CodeInstruction(OpCodes.Call, typeof(PatchHelper).GetMethod("GetMusicSoundBank")),
+                new CodeInstruction(OpCodes.Call, typeof(PatchHelper).GetMethod(nameof(PatchHelper.GetMusicSoundBank))),
                 new CodeInstruction(OpCodes.Stloc_S, modBank.LocalIndex),
                 new CodeInstruction(OpCodes.Ldloc_S, modBank.LocalIndex),
                 new CodeInstruction(OpCodes.Brfalse, doVanillaBank),
                 new CodeInstruction(OpCodes.Ldloc_S, modBank.LocalIndex),
                 new CodeInstruction(OpCodes.Ldarg_1),
-                new CodeInstruction(OpCodes.Call, typeof(PatchHelper).GetMethod("GetCueName")),
+                new CodeInstruction(OpCodes.Call, typeof(PatchHelper).GetMethod(nameof(PatchHelper.GetCueName))),
                 new CodeInstruction(OpCodes.Call, target),
                 new CodeInstruction(OpCodes.Br, skipVanillaBank),
                 new CodeInstruction(OpCodes.Nop).WithLabels(doVanillaBank)
@@ -183,7 +181,7 @@ namespace SoG.Modding.Patching.Patches
         [HarmonyPatch(nameof(SoundSystem.PlaySong))]
         internal static void PlaySong_Prefix(ref string sSongName, bool bFadeIn)
         {
-            var redirects = Globals.Manager.Library.VanillaMusicRedirects;
+            var redirects = Globals.Manager.VanillaMusicRedirects;
             string audioIDToUse = sSongName;
 
             if (!audioIDToUse.StartsWith("GS_") && redirects.ContainsKey(audioIDToUse))
@@ -218,13 +216,13 @@ namespace SoG.Modding.Patching.Patches
             var insertBefore_one = new List<CodeInstruction>()
             {
                 new CodeInstruction(OpCodes.Ldarg_1),
-                new CodeInstruction(OpCodes.Call, typeof(PatchHelper).GetMethod("GetMusicSoundBank")),
+                new CodeInstruction(OpCodes.Call, typeof(PatchHelper).GetMethod(nameof(PatchHelper.GetMusicSoundBank))),
                 new CodeInstruction(OpCodes.Stloc_S, modBank_one.LocalIndex),
                 new CodeInstruction(OpCodes.Ldloc_S, modBank_one.LocalIndex),
                 new CodeInstruction(OpCodes.Brfalse, doVanillaBank_one),
                 new CodeInstruction(OpCodes.Ldloc_S, modBank_one.LocalIndex),
                 new CodeInstruction(OpCodes.Ldarg_1),
-                new CodeInstruction(OpCodes.Call, typeof(PatchHelper).GetMethod("GetCueName")),
+                new CodeInstruction(OpCodes.Call, typeof(PatchHelper).GetMethod(nameof(PatchHelper.GetCueName))),
                 new CodeInstruction(OpCodes.Call, target),
                 new CodeInstruction(OpCodes.Br, skipVanillaBank_one),
                 new CodeInstruction(OpCodes.Nop).WithLabels(doVanillaBank_one)
@@ -238,13 +236,13 @@ namespace SoG.Modding.Patching.Patches
             var insertBefore_two = new List<CodeInstruction>()
             {
                 new CodeInstruction(OpCodes.Ldarg_1),
-                new CodeInstruction(OpCodes.Call, typeof(PatchHelper).GetMethod("GetMusicSoundBank")),
+                new CodeInstruction(OpCodes.Call, typeof(PatchHelper).GetMethod(nameof(PatchHelper.GetMusicSoundBank))),
                 new CodeInstruction(OpCodes.Stloc_S, modBank_two.LocalIndex),
                 new CodeInstruction(OpCodes.Ldloc_S, modBank_two.LocalIndex),
                 new CodeInstruction(OpCodes.Brfalse, doVanillaBank_two),
                 new CodeInstruction(OpCodes.Ldloc_S, modBank_two.LocalIndex),
                 new CodeInstruction(OpCodes.Ldarg_1),
-                new CodeInstruction(OpCodes.Call, typeof(PatchHelper).GetMethod("GetCueName")),
+                new CodeInstruction(OpCodes.Call, typeof(PatchHelper).GetMethod(nameof(PatchHelper.GetCueName))),
                 new CodeInstruction(OpCodes.Call, target),
                 new CodeInstruction(OpCodes.Br, skipVanillaBank_two),
                 new CodeInstruction(OpCodes.Nop).WithLabels(doVanillaBank_two)
@@ -283,7 +281,7 @@ namespace SoG.Modding.Patching.Patches
 
             if (currentIsModded)
             {
-                Globals.Manager.Library.TryGetEntry((GrindScriptID.AudioID)entryID, out entry);
+                Globals.Manager.Library.GetEntry((GrindScriptID.AudioID)entryID, out entry);
                 mod = entry.Mod;
             }
 

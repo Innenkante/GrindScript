@@ -10,7 +10,7 @@ namespace SoG.Modding.Patching.Patches
         [HarmonyPatch(nameof(PinCodex.GetInfo))]
         internal static bool GetInfo_Prefix(ref PinInfo __result, PinCodex.PinType enType)
         {
-            Globals.Manager.Library.TryGetEntry(enType, out PinEntry entry);
+            Globals.Manager.Library.GetEntry(enType, out PinEntry entry);
 
             if (entry == null)
             {

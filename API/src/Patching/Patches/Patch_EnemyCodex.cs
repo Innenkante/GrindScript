@@ -19,7 +19,7 @@ namespace SoG.Modding.Patching.Patches
         [HarmonyPatch(nameof(EnemyCodex.GetEnemyDescription))]
         internal static bool GetEnemyDescription_Prefix(ref EnemyDescription __result, EnemyCodex.EnemyTypes enType)
         {
-            var storage = Globals.Manager.Library.GetStorage<EnemyCodex.EnemyTypes, EnemyEntry>();
+            var storage = Globals.Manager.Library.GetAllEntries<EnemyCodex.EnemyTypes, EnemyEntry>();
 
             if (storage.TryGetValue(enType, out EnemyEntry entry))
             {
@@ -39,7 +39,7 @@ namespace SoG.Modding.Patching.Patches
         {
             if (enType.IsFromSoG())
             {
-                var storage = Globals.Manager.Library.GetStorage<EnemyCodex.EnemyTypes, EnemyEntry>();
+                var storage = Globals.Manager.Library.GetAllEntries<EnemyCodex.EnemyTypes, EnemyEntry>();
                 if (!storage.TryGetValue(enType, out EnemyEntry entry) || entry.constructor == null)
                 {
                     // No replacement exists. Let's continue to the vanilla code to get the instance!
@@ -60,7 +60,7 @@ namespace SoG.Modding.Patching.Patches
         [HarmonyPatch(nameof(EnemyCodex.GetEnemyDefaultAnimation))]
         public static bool GetEnemyDefaultAnimation_Prefix(ref Animation __result, EnemyCodex.EnemyTypes enType, ContentManager Content)
         {
-            var storage = Globals.Manager.Library.GetStorage<EnemyCodex.EnemyTypes, EnemyEntry>();
+            var storage = Globals.Manager.Library.GetAllEntries<EnemyCodex.EnemyTypes, EnemyEntry>();
 
             if (storage.TryGetValue(enType, out EnemyEntry entry))
             {
@@ -87,7 +87,7 @@ namespace SoG.Modding.Patching.Patches
         [HarmonyPatch(nameof(EnemyCodex.GetEnemyDisplayIcon))]
         public static bool GetEnemyDisplayIcon_Prefix(ref Texture2D __result, EnemyCodex.EnemyTypes enType, ContentManager Content)
         {
-            var storage = Globals.Manager.Library.GetStorage<EnemyCodex.EnemyTypes, EnemyEntry>();
+            var storage = Globals.Manager.Library.GetAllEntries<EnemyCodex.EnemyTypes, EnemyEntry>();
 
             if (storage.TryGetValue(enType, out EnemyEntry entry))
             {
@@ -114,7 +114,7 @@ namespace SoG.Modding.Patching.Patches
         [HarmonyPatch(nameof(EnemyCodex.GetEnemyLocationPicture))]
         public static bool GetEnemyLocationPicture_Prefix(ref Texture2D __result, EnemyCodex.EnemyTypes enType, ContentManager Content)
         {
-            var storage = Globals.Manager.Library.GetStorage<EnemyCodex.EnemyTypes, EnemyEntry>();
+            var storage = Globals.Manager.Library.GetAllEntries<EnemyCodex.EnemyTypes, EnemyEntry>();
 
             if (storage.TryGetValue(enType, out EnemyEntry entry))
             {

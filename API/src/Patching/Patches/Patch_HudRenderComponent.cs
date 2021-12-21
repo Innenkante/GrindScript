@@ -12,7 +12,7 @@ namespace SoG.Modding.Patching.Patches
         [HarmonyPatch(nameof(HudRenderComponent.GetBuffTexture))]
         internal static bool GetBuffTexture_Prefix(ref Texture2D __result, BaseStats.StatusEffectSource en)
         {
-            Globals.Manager.Library.TryGetEntry(en, out StatusEffectEntry entry);
+            Globals.Manager.Library.GetEntry(en, out StatusEffectEntry entry);
 
             if (entry == null)
             {

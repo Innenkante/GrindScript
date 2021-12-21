@@ -10,7 +10,7 @@ namespace SoG.Modding.Patching.Patches
         [HarmonyPatch(nameof(EquipmentCodex.GetArmorInfo))]
         internal static bool GetArmorInfo_Prefix(ref EquipmentInfo __result, ItemCodex.ItemTypes enType)
         {
-            Globals.Manager.Library.TryGetEntry(enType, out ItemEntry entry);
+            Globals.Manager.Library.GetEntry(enType, out ItemEntry entry);
 
             __result = entry?.vanillaEquip;
 

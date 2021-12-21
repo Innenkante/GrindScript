@@ -67,7 +67,7 @@ namespace SoG.Modding.Utils
             GrindScriptID.NetworkID gameID = (GrindScriptID.NetworkID) msg.ReadInt32();
             packetID = msg.ReadUInt16();
 
-            Globals.Manager.Library.TryGetEntry<GrindScriptID.NetworkID, NetworkEntry>(gameID, out NetworkEntry entry);
+            Globals.Manager.Library.GetEntry<GrindScriptID.NetworkID, NetworkEntry>(gameID, out NetworkEntry entry);
 
             mod = entry.Mod;
         }

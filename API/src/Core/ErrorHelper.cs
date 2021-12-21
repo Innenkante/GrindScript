@@ -25,6 +25,8 @@ namespace SoG.Modding
 
         public static string InternalError => "Something bad happened inside the modding tool. Report this to the developer, please!";
 
+        public static string UnknownEntry => "Failed to retrieve a valid mod entry in a method that doesn't use default entries.";
+
         public static void ThrowIfNotLoading(Mod mod)
         {
             if (!mod.InLoad)
@@ -63,10 +65,18 @@ namespace SoG.Modding
             where IDType : struct
             where EntryType : Entry<IDType>
         {
-            bool existingEntry = mod.Manager.Library.TryGetModEntry<IDType, EntryType>(mod, modID, out _);
+            bool existingEntry = mod.Manager.Library.GetModEntry<IDType, EntryType>(mod, modID, out _);
 
             if (existingEntry)
                 throw new InvalidOperationException(DuplicateModID);
+        }
+
+        public static void Assert(bool trueCondition, string exceptionMessage = null)
+        {
+            if (!trueCondition)
+            {
+                throw new InvalidOperationException(exceptionMessage ?? InternalError);
+            }
         }
     }
 }

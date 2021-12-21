@@ -200,7 +200,7 @@ namespace SoG.Modding
                 {
                     Globals.Logger.Error($"Mod {mod.GetType().Name} threw an exception during mod content loading: {e.Message}");
 
-                    _manager.Library.RemoveMod(mod);
+                    _manager.Library.RemoveModEntries(mod);
 
                     // Disable depending mods - we can't load them with a broken dependency
 
@@ -220,7 +220,7 @@ namespace SoG.Modding
 
                 ModInLoad = null;
 
-                _manager.Library.GetModView(mod).Initialize();
+                _manager.Library.GetModView(mod).InitializeEntries();
             }
 
             // Reloads original recipes
@@ -262,8 +262,8 @@ namespace SoG.Modding
 
             Globals.Game.xSoundSystem.PlaySong(currentMusic, true);
 
-            _manager.Library.Cleanup();
-            _manager.Library.Remove();
+            _manager.Library.CleanupEntries();
+            _manager.Library.RemoveAllEntries();
 
             _manager.ID.Reset();
 

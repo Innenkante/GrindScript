@@ -13,7 +13,7 @@ namespace SoG.Modding.Patching.Patches
         [HarmonyPatch(nameof(LevelBlueprint.GetBlueprint))]
         internal static bool GetBlueprint_Prefix(ref LevelBlueprint __result, Level.ZoneEnum enZoneToGet)
         {
-            Globals.Manager.Library.TryGetEntry(enZoneToGet, out LevelEntry entry);
+            Globals.Manager.Library.GetEntry(enZoneToGet, out LevelEntry entry);
 
             if (entry == null)
             {

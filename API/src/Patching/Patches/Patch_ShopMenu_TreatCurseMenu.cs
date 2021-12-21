@@ -14,7 +14,7 @@ namespace SoG.Modding.Patching.Patches
         [HarmonyPatch(nameof(TreatCurseMenu.FillCurseList))]
         internal static bool FillCurseList_Prefix(TreatCurseMenu __instance)
         {
-            var storage = Globals.Manager.Library.GetStorage<RogueLikeMode.TreatsCurses, CurseEntry>();
+            var storage = Globals.Manager.Library.GetAllEntries<RogueLikeMode.TreatsCurses, CurseEntry>();
 
             __instance.lenTreatCursesAvailable.Clear();
 
@@ -34,7 +34,7 @@ namespace SoG.Modding.Patching.Patches
         [HarmonyPatch(nameof(TreatCurseMenu.FillTreatList))]
         internal static bool FillTreatList_Prefix(TreatCurseMenu __instance)
         {
-            var storage = Globals.Manager.Library.GetStorage<RogueLikeMode.TreatsCurses, CurseEntry>();
+            var storage = Globals.Manager.Library.GetAllEntries<RogueLikeMode.TreatsCurses, CurseEntry>();
 
             __instance.lenTreatCursesAvailable.Clear();
 

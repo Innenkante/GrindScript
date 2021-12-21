@@ -21,7 +21,7 @@ namespace SoG.Modding
 
         private Harmony _harmony;
 
-        private int _launchState = 0;
+        internal Dictionary<string, string> VanillaMusicRedirects { get; } = new Dictionary<string, string>();
 
         internal ILogger Logger { get; }
 
@@ -83,7 +83,7 @@ namespace SoG.Modding
 
             bool isModded = ModUtils.SplitAudioID(modID, out int entryID, out bool isMusic, out int cueID);
 
-            Library.TryGetEntry<GrindScriptID.AudioID, AudioEntry>((GrindScriptID.AudioID)entryID, out var entry);
+            Library.GetEntry<GrindScriptID.AudioID, AudioEntry>((GrindScriptID.AudioID)entryID, out var entry);
 
             string cueName = null;
 
@@ -101,12 +101,12 @@ namespace SoG.Modding
             if (modID == "")
             {
                 Globals.Logger.Info($"Removed music redirect for {vanillaName}.");
-                Library.VanillaMusicRedirects.Remove(vanillaName);
+                VanillaMusicRedirects.Remove(vanillaName);
             }
             else
             {
                 Globals.Logger.Info($"Set music redirect {vanillaName} -> {modID} ({cueName})");
-                Library.VanillaMusicRedirects[vanillaName] = modID;
+                VanillaMusicRedirects[vanillaName] = modID;
             }
         }
 
@@ -120,7 +120,7 @@ namespace SoG.Modding
 
             EntryType entry = GameObjectStuff.CreateEntry<IDType, EntryType>();
 
-            Dictionary<IDType, EntryType> storage = Library.GetStorage<IDType, EntryType>();
+            Dictionary<IDType, EntryType> storage = Library.GetAllEntries<IDType, EntryType>();
 
             IDType gameID = ID.AllocateID<IDType>();
 
@@ -137,14 +137,14 @@ namespace SoG.Modding
             where IDType : struct, Enum
             where EntryType : Entry<IDType>
         {
-            return Library.TryGetModEntry<IDType, EntryType>(mod, modID, out entry);
+            return Library.GetModEntry<IDType, EntryType>(mod, modID, out entry);
         }
 
         internal bool TryGetGameID<IDType, EntryType>(Mod mod, string modID, out IDType value)
             where IDType : struct, Enum
             where EntryType : Entry<IDType>
         {
-            bool found = Library.TryGetModEntry<IDType, EntryType>(mod, modID, out EntryType entry);
+            bool found = Library.GetModEntry<IDType, EntryType>(mod, modID, out EntryType entry);
 
             value = found ? entry.GameID : default;
             return found;
@@ -153,10 +153,6 @@ namespace SoG.Modding
         /// <remarks> This method contains code that must run before SoG's Main() method, such as Harmony patching. </remarks>
         internal void Setup()
         {
-            Debug.Assert(_launchState == 0, $"Expected status 0 (= not set up) in {nameof(Setup)}, but got {_launchState}!");
-
-            _launchState = 1;
-
             ReadConfig();
 
             if (AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name == "Secrets Of Grindea") == null)
@@ -182,22 +178,6 @@ namespace SoG.Modding
             }
 
             Logger.Info($"Patched {_harmony.GetPatchedMethods().Count()} methods!");
-        }
-
-        /// <remarks> This method contains code that must run before any "critical" game code (such as content and save loading). </remarks>
-        internal void Start()
-        {
-            Debug.Assert(_launchState == 1, $"Expected status 1 (= set up, not started) in {nameof(Start)}, but got {_launchState}!");
-
-            _launchState = 2;
-
-            Assembly gameAssembly = AppDomain.CurrentDomain.GetAssemblies().First(a => a.GetName().Name == "Secrets Of Grindea");
-
-            Globals.Game = (Game1)gameAssembly.GetType("SoG.Program").GetField("game").GetValue(null);
-            Globals.Game.sAppData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "/GrindScript/";
-            Globals.Game.xGameSessionData.xRogueLikeSession.bTemporaryHighScoreBlock = true;
-
-            //Loader.LoadAssemblies(GetLoadableMods(), GrindScript);
         }
 
         private void ReadConfig()
