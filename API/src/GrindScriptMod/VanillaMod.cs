@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Quests;
 using SoG.Modding.Content;
 using SoG.Modding.Patching;
+using SoG.Modding.Utils;
 
 namespace SoG.Modding.GrindScriptMod
 {
@@ -29,133 +31,74 @@ namespace SoG.Modding.GrindScriptMod
 
         public override void Load()
         {
-            Logger.Debug("Parsing vanilla Objects!");
+            FileLogger parseLog = null;
 
-            Logger.Debug("Curses...");
-
-            var curseEntries = Globals.Manager.Library.GetAllEntries<RogueLikeMode.TreatsCurses, CurseEntry>();
-            foreach (var gameID in IDExtension.GetAllSoGIDs<RogueLikeMode.TreatsCurses>())
+            if (Logger.LogLevel <= LogLevels.Debug)
             {
-                CurseEntry parsedEntry = VanillaParser.ParseCurse(gameID);
+                Logger.Debug("Opening log VanillaParseLog.txt!");
 
-                curseEntries.Add(gameID, parsedEntry);
+                File.Delete(Path.Combine("Logs", "VanillaParseLog.txt"));
+                parseLog = new FileLogger(LogLevels.Debug, "Source")
+                {
+                    FilePath = Path.Combine("Logs", "VanillaParseLog.txt")
+                };
             }
 
-            Logger.Debug("Enemies...");
+            OriginalMethods.FillTreatList(Globals.Game.xShopMenu.xTreatCurseMenu);
+            ParseEntries<RogueLikeMode.TreatsCurses, CurseEntry>(VanillaParser.ParseCurse, parseLog);
 
-            var enemyEntries = Globals.Manager.Library.GetAllEntries<EnemyCodex.EnemyTypes, EnemyEntry>();
-            foreach (var gameID in IDExtension.GetAllSoGIDs<EnemyCodex.EnemyTypes>())
-            {
-                EnemyEntry parsedEntry = VanillaParser.ParseEnemy(gameID);
-
-                enemyEntries.Add(gameID, parsedEntry);
-            }
-
+            ParseEntries<EnemyCodex.EnemyTypes, EnemyEntry>(VanillaParser.ParseEnemy, parseLog);
             EnemyCodex.lxSortedCardEntries.Clear();
             EnemyCodex.lxSortedDescriptions.Clear();
 
-            Logger.Debug("Equipment Effects...");
+            ParseEntries<EquipmentInfo.SpecialEffect, EquipmentEffectEntry>(VanillaParser.ParseEquipmentEffect, parseLog);
 
-            var specialEffectEntries = Globals.Manager.Library.GetAllEntries<EquipmentInfo.SpecialEffect, EquipmentEffectEntry>();
-            foreach (var gameID in IDExtension.GetAllSoGIDs<EquipmentInfo.SpecialEffect>())
-            {
-                EquipmentEffectEntry parsedEntry = VanillaParser.ParseEquipmentEffect(gameID);
+            ParseEntries<ItemCodex.ItemTypes, ItemEntry>(VanillaParser.ParseItem, parseLog);
 
-                specialEffectEntries.Add(gameID, parsedEntry);
-            }
-
-            Logger.Debug("Items...");
-
-            var itemEntries = Globals.Manager.Library.GetAllEntries<ItemCodex.ItemTypes, ItemEntry>();
-            foreach (var gameID in IDExtension.GetAllSoGIDs<ItemCodex.ItemTypes>())
-            {
-                ItemEntry parsedEntry = VanillaParser.ParseItem(gameID);
-
-                itemEntries.Add(gameID, parsedEntry);
-            }
-
-            Logger.Debug("Levels...");
-
-            var levelEntries = Globals.Manager.Library.GetAllEntries<Level.ZoneEnum, LevelEntry>();
-            foreach (var gameID in IDExtension.GetAllSoGIDs<Level.ZoneEnum>())
-            {
-                LevelEntry parsedEntry = VanillaParser.ParseLevel(gameID);
-
-                levelEntries.Add(gameID, parsedEntry);
-            }
-
-            Logger.Debug("Perks...");
+            ParseEntries<Level.ZoneEnum, LevelEntry>(VanillaParser.ParseLevel, parseLog);
 
             OriginalMethods.PerkInfoInit();
-
-            var perkEntries = Globals.Manager.Library.GetAllEntries<RogueLikeMode.Perks, PerkEntry>();
-            foreach (var gameID in IDExtension.GetAllSoGIDs<RogueLikeMode.Perks>())
-            {
-                PerkEntry parsedEntry = VanillaParser.ParsePerk(gameID);
-
-                perkEntries.Add(gameID, parsedEntry);
-            }
-
+            ParseEntries<RogueLikeMode.Perks, PerkEntry>(VanillaParser.ParsePerk, parseLog);
             RogueLikeMode.PerkInfo.lxAllPerks.Clear();
 
-            Logger.Debug("Pins...");
+            ParseEntries<PinCodex.PinType, PinEntry>(VanillaParser.ParsePin, parseLog);
 
-            var pinEntries = Globals.Manager.Library.GetAllEntries<PinCodex.PinType, PinEntry>();
-            foreach (var gameID in IDExtension.GetAllSoGIDs<PinCodex.PinType>())
-            {
-                PinEntry parsedEntry = VanillaParser.ParsePin(gameID);
+            ParseEntries<QuestCodex.QuestID, QuestEntry>(VanillaParser.ParseQuest, parseLog);
 
-                pinEntries.Add(gameID, parsedEntry);
-            }
+            ParseEntries<SpellCodex.SpellTypes, SpellEntry>(VanillaParser.ParseSpell, parseLog);
 
-            Logger.Debug("Loaded Vanilla Objects!");
+            ParseEntries<BaseStats.StatusEffectSource, StatusEffectEntry>(VanillaParser.ParseStatusEffect, parseLog);
 
-            Logger.Debug("Quests...");
+            ParseEntries<Level.WorldRegion, WorldRegionEntry>(VanillaParser.ParseWorldRegion, parseLog);
 
-            var questEntries = Globals.Manager.Library.GetAllEntries<QuestCodex.QuestID, QuestEntry>();
-            foreach (var gameID in IDExtension.GetAllSoGIDs<QuestCodex.QuestID>())
-            {
-                QuestEntry parsedEntry = VanillaParser.ParseQuest(gameID);
-
-                questEntries.Add(gameID, parsedEntry);
-            }
-
-            Logger.Debug("Spells...");
-
-            var spellEntries = Globals.Manager.Library.GetAllEntries<SpellCodex.SpellTypes, SpellEntry>();
-            foreach (var gameID in IDExtension.GetAllSoGIDs<SpellCodex.SpellTypes>())
-            {
-                SpellEntry parsedEntry = VanillaParser.ParseSpell(gameID);
-
-                spellEntries.Add(gameID, parsedEntry);
-            }
-
-            Logger.Debug("Status Effects...");
-
-            var statusEffectEntries = Globals.Manager.Library.GetAllEntries<BaseStats.StatusEffectSource, StatusEffectEntry>();
-            foreach (var gameID in IDExtension.GetAllSoGIDs<BaseStats.StatusEffectSource>())
-            {
-                StatusEffectEntry parsedEntry = VanillaParser.ParseStatusEffect(gameID);
-
-                statusEffectEntries.Add(gameID, parsedEntry);
-            }
-
-            Logger.Debug("World Regions...");
-
-            var worldRegionEntries = Globals.Manager.Library.GetAllEntries<Level.WorldRegion, WorldRegionEntry>();
-            foreach (var gameID in IDExtension.GetAllSoGIDs<Level.WorldRegion>())
-            {
-                WorldRegionEntry parsedEntry = VanillaParser.ParseWorldRegion(gameID);
-
-                worldRegionEntries.Add(gameID, parsedEntry);
-            }
-
-            Logger.Debug("Parsed all vanilla objects!");
+            parseLog?.FlushToDisk();
         }
 
         public override void Unload()
         {
             Logger.Debug("Unloaded VanillaMod!");
+        }
+
+        private void ParseEntries<IDType, EntryType>(Func<IDType, EntryType> parser, FileLogger log = null)
+            where IDType : struct, Enum
+            where EntryType : Entry<IDType>
+        {
+            Logger.Debug("Parsing " + typeof(IDType) + " entries...");
+
+            var entries = Globals.Manager.Library.GetAllEntries<IDType, EntryType>();
+            foreach (var gameID in IDExtension.GetAllSoGIDs<IDType>())
+            {
+                try
+                {
+                    EntryType parsedEntry = parser.Invoke(gameID);
+                    entries.Add(gameID, parsedEntry);
+                }
+                catch (Exception e)
+                {
+                    log?.Debug("Failed to parse entry " + typeof(IDType).Name + ":" + gameID + ". Exception: " + e.Message);
+                    continue;
+                }
+            }
         }
     }
 }

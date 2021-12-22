@@ -64,7 +64,7 @@ namespace SoG.Modding.Patching.Patches
 
             Label afterRet = gen.DefineLabel();
 
-            MethodInfo target = typeof(string).GetMethod("ToLowerInvariant");
+            MethodInfo target = typeof(string).GetMethod(nameof(string.ToLowerInvariant));
 
             var insert = new List<CodeInstruction>()
             {
@@ -1036,7 +1036,7 @@ namespace SoG.Modding.Patching.Patches
         {
             List<CodeInstruction> codeList = code.ToList();
 
-            int start = codeList.FindIndex(x => x.opcode == OpCodes.Stloc_0) + 1;
+            int start = codeList.FindIndex(x => x.opcode == OpCodes.Stloc_1) + 1;
 
             int newobj_pos = 2;
             int end = -1;
@@ -1047,7 +1047,7 @@ namespace SoG.Modding.Patching.Patches
 
             List<CodeInstruction> toInsert = new List<CodeInstruction>()
             {
-                new CodeInstruction(OpCodes.Ldloc_0),
+                new CodeInstruction(OpCodes.Ldloc_1),
                 new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(Patch_Game1), nameof(InGetRandomPin))),
             };
 

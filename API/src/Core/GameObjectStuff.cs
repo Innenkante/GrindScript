@@ -50,8 +50,7 @@ namespace SoG.Modding
 			AddVanillaIDs<StatusEffectID>();
 			AddVanillaIDs<PinID>();
 
-			// Some IDs should be removed
-			// They're either unimplemented, not used, or whatever
+			// If it is needed, manually remove problematic IDs
 
 			RemoveVanillaIDs(
 				CurseID.None, CurseID.Curse_Hard, CurseID.Treat_Easy

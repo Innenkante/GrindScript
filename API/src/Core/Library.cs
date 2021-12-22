@@ -15,7 +15,7 @@ namespace SoG.Modding
 
         private static MethodInfo s_cleanupStorage = AccessTools.Method(typeof(Library), nameof(CleanupStorage));
 
-        private static MethodInfo s_getModStorage = AccessTools.Method(typeof(Library), nameof(GetAllEntries));
+        private static MethodInfo s_getModStorage = AccessTools.Method(typeof(Library), nameof(GetModEntries));
 
         private static MethodInfo s_removeModEntries = AccessTools.Method(typeof(Library), nameof(RemoveModEntriesFromStorage));
 

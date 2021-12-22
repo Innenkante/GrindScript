@@ -248,13 +248,44 @@ namespace SoG.Modding.GrindScriptMod
 
             var perkInfo = RogueLikeMode.PerkInfo.lxAllPerks.FirstOrDefault(x => x.enPerk == gameID);
 
-            if (perkInfo == null && gameID == RogueLikeMode.Perks.PetWhisperer)
+            if (perkInfo == null)
             {
-                // Pet Whisperer is dumb and has a special condition for retrieving its info.
+                // These perks are dumb and have a special unlock condition.
 
-                perkInfo = new RogueLikeMode.PerkInfo(RogueLikeMode.Perks.PetWhisperer, 20, "PetWhisperer");
+                if (gameID == RogueLikeMode.Perks.PetWhisperer)
+                {
+                    perkInfo = new RogueLikeMode.PerkInfo(RogueLikeMode.Perks.PetWhisperer, 20, "PetWhisperer");
 
-                entry.unlockCondition = () => CAS.WorldRogueLikeData.henActiveFlags.Contains(FlagCodex.FlagID._Roguelike_TalkedToWeivForTheFirstTime);
+                    entry.unlockCondition = () => CAS.WorldRogueLikeData.henActiveFlags.Contains(FlagCodex.FlagID._Roguelike_TalkedToWeivForTheFirstTime);
+                }
+                else if (gameID == RogueLikeMode.Perks.MoreFishingRooms)
+                {
+                    perkInfo = new RogueLikeMode.PerkInfo(RogueLikeMode.Perks.MoreFishingRooms, 25, "MoreFishingRooms");
+
+                    entry.unlockCondition = () => CAS.WorldRogueLikeData.henActiveFlags.Contains(FlagCodex.FlagID._Roguelike_Improvement_Aquarium);
+                }
+                else if (gameID == RogueLikeMode.Perks.OnlyPinsAfterChallenges)
+                {
+                    perkInfo = new RogueLikeMode.PerkInfo(RogueLikeMode.Perks.OnlyPinsAfterChallenges, 30, "OnlyPinsAfterChallenges");
+
+                    entry.unlockCondition = () => CAS.WorldRogueLikeData.henActiveFlags.Contains(FlagCodex.FlagID._Roguelike_PinsUnlocked);
+                }
+                else if (gameID == RogueLikeMode.Perks.ChanceAtPinAfterBattleRoom)
+                {
+                    perkInfo = new RogueLikeMode.PerkInfo(RogueLikeMode.Perks.ChanceAtPinAfterBattleRoom, 30, "ChanceAtPinAfterBattleRoom");
+
+                    entry.unlockCondition = () => CAS.WorldRogueLikeData.henActiveFlags.Contains(FlagCodex.FlagID._Roguelike_PinsUnlocked);
+                }
+                else if (gameID == RogueLikeMode.Perks.MoreLoods)
+                {
+                    perkInfo = new RogueLikeMode.PerkInfo(RogueLikeMode.Perks.MoreLoods, 25, "MoreLoods");
+
+                    entry.unlockCondition = () => CAS.WorldRogueLikeData.henActiveFlags.Contains(FlagCodex.FlagID._Roguelike_HasSeenLood);
+                }
+                else
+                {
+                    throw new Exception("Perk description unavailable.");
+                }
             }
 
             entry.essenceCost = perkInfo.iEssenceCost;
