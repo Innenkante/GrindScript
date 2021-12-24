@@ -390,9 +390,21 @@ namespace SoG.Modding.Content
             vanilla.enType = GameID;
 
             // Add a Card entry in the Journal
-            if (vanilla.iCardDropChance != 0 && vanilla.enCardTypeOverride == EnemyCodex.EnemyTypes.Null)
+            if (vanilla.iCardDropChance != 0)
             {
-                EnemyCodex.lxSortedCardEntries.Add(vanilla);
+                if (vanilla.enCardTypeOverride == EnemyCodex.EnemyTypes.Null)
+                {
+                    EnemyCodex.lxSortedCardEntries.Add(vanilla);
+                }
+                else
+                {
+                    EnemyDescription desc = EnemyCodex.GetEnemyDescription(vanilla.enCardTypeOverride);
+
+                    if (!EnemyCodex.lxSortedCardEntries.Contains(desc))
+                    {
+                        EnemyCodex.lxSortedCardEntries.Add(desc);
+                    }
+                }
             }
 
             // Add an Enemy entry in the Journal

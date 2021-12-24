@@ -29,7 +29,7 @@ namespace SoG.Modding
         /// </summary>
         public bool AllowHigherVersions { get; }
 
-        public ModDependencyAttribute(string NameID, string ModVersion, bool AllowHigherVersions = true)
+        public ModDependencyAttribute(string NameID, string ModVersion = "", bool AllowHigherVersions = true)
         {
             this.NameID = NameID;
             this.ModVersion = ModVersion;

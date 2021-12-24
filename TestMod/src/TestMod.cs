@@ -15,8 +15,8 @@ namespace SoG.Modding.TestMod
     using EventType = AnimInsEvent.EventType;
     using LoopSettings = Animation.LoopSettings;
 
-    [ModDependency("GrindScript", "0.14")]
-    [ModDependency("Addons.ModGoodies", "0.14")]
+    [ModDependency("GrindScript")]
+    [ModDependency("Addons.ModGoodies")]
     public class TestMod: Mod
     {
         int levelUpsSoFar = 0;
@@ -41,47 +41,37 @@ namespace SoG.Modding.TestMod
 
         public override string NameID => "TestMod";
 
-        public override Version ModVersion => new Version("0.14");
+        public override Version ModVersion => Globals.ModToolVersion;
 
         public override void Load()
         {
             Logger.Info("Loading FeatureExample mod....");
-            try
-            {
-                SetupItems();
 
-                SetupAudio();
+            SetupItems();
 
-                SetupCommands();
+            SetupAudio();
 
-                SetupLevels();
+            SetupCommands();
 
-                SetupRoguelike();
+            SetupLevels();
 
-                SetupEnemies();
+            SetupRoguelike();
 
-                SetupQuests();
+            SetupEnemies();
 
-                SetupNetworking();
+            SetupQuests();
 
-                Mod addon = Manager.GetMod("Addons.ModGoodies");
+            SetupNetworking();
 
-                if (addon != null)
+            Mod addon = GetMod("Addons.ModGoodies");
+
+            (addon as Addons.ModGoodies).AddSkillEditCallback((SpellCodex.SpellTypes skill, byte level, ref int modifiedLevel) => {
+                if (buffTalents && SpellCodex.IsTalent(skill))
                 {
-                    (addon as Addons.ModGoodies).AddSkillEditCallback((SpellCodex.SpellTypes skill, byte level, ref int modifiedLevel) => {
-                        if (buffTalents && SpellCodex.IsTalent(skill))
-                        {
-                            modifiedLevel += 10;
-                        }
-                    });
+                    modifiedLevel += 10;
                 }
+            });
 
-            }
-            catch(Exception e)
-            {
-                Logger.Error($"Failed to load! Exception message: {e.Message}");
-                return;
-            }
             Logger.Info("Loaded Successfully!");
         }
 
@@ -169,8 +159,9 @@ namespace SoG.Modding.TestMod
             stream.Write("<World Data here or sumthin'>");
         }
 
-        public override void LoadArcadeData(BinaryReader stream)
+        public override void LoadArcadeData(BinaryReader stream, Version saveVersion)
         {
+            Logger.Info("Arcade mod version: " + saveVersion.ToString());
             try
             {
                 Logger.Info("Arcade data: " + stream.ReadString());
@@ -181,8 +172,9 @@ namespace SoG.Modding.TestMod
             }
         }
 
-        public override void LoadCharacterData(BinaryReader stream)
+        public override void LoadCharacterData(BinaryReader stream, Version saveVersion)
         {
+            Logger.Info("Character mod version: " + saveVersion.ToString());
             try
             {
                 Logger.Info("Char data: " + stream.ReadString());
@@ -193,8 +185,9 @@ namespace SoG.Modding.TestMod
             }
         }
 
-        public override void LoadWorldData(BinaryReader stream)
+        public override void LoadWorldData(BinaryReader stream, Version saveVersion)
         {
+            Logger.Info("World mod version: " + saveVersion.ToString());
             try
             {
                 Logger.Info("World data: " + stream.ReadString());

@@ -21,6 +21,11 @@ namespace SoG.Modding
     public abstract class Mod : IModMetadata
     {
         /// <summary>
+        /// Gets a reference to the mod manager.
+        /// </summary>
+        internal ModManager Manager { get; set; }
+
+        /// <summary>
         /// Gets the name of the mod. <para/>
         /// The name of a mod is used as an identifier, and should be unique between different mods!
         /// </summary>
@@ -37,12 +42,6 @@ namespace SoG.Modding
         /// Additionally, mod information won't be sent in multiplayer or written in save files.
         /// </summary>
         public virtual bool DisableObjectCreation => false;
-
-        /// <summary>
-        /// Gets whenever <see cref="ModManager.GetMod(string)"/> can return a reference to this mod. <para/>
-        /// Setting this to false will prevent other mods from accessing your mod, other than through reflection, or static methods of your own.
-        /// </summary>
-        public virtual bool AllowDiscoveryByMods => true;
 
         /// <summary>
         /// Gets or sets the disable status of the mod. Disabled mods act as if they weren't loaded at all.
@@ -64,11 +63,6 @@ namespace SoG.Modding
         /// The default value is "ModContent/{NameID}".
         /// </summary>
         public string AssetPath => Path.Combine("ModContent", NameID) + "/";
-
-        /// <summary>
-        /// Gets a reference to the mod manager.
-        /// </summary>
-        public ModManager Manager { get; internal set; }
 
         /// <summary>
         /// Gets whenever the mod is currently being loaded.
@@ -119,6 +113,7 @@ namespace SoG.Modding
         /// Called when character files (".cha") need saving.
         /// You can write your Story Mode character-related information into the given stream.
         /// </summary>
+        /// <param name="stream">A stream where you write the mod data.</param>
         public virtual void SaveCharacterData(BinaryWriter stream) { }
 
         /// <summary>
@@ -126,12 +121,15 @@ namespace SoG.Modding
         /// You can load your previously written data from this stream.
         /// The method must also handle cases where the stream is empty, or incomplete.
         /// </summary>
-        public virtual void LoadCharacterData(BinaryReader stream) { }
+        /// <param name="stream">A stream that contains the mod data.</param>
+        /// <param name="saveVersion">The version that the mod had when the data was saved. You can use this to parse data based on mod version.</param>
+        public virtual void LoadCharacterData(BinaryReader stream, Version saveVersion) { }
 
         /// <summary>
         /// Called when world files (".wld") need saving.
         /// You can write your Story Mode world-related information into the given stream.
         /// </summary>
+        /// <param name="stream">A stream where you write the mod data.</param>
         public virtual void SaveWorldData(BinaryWriter stream) { }
 
         /// <summary>
@@ -139,12 +137,15 @@ namespace SoG.Modding
         /// You can load your previously written data from this stream.
         /// The method must also handle cases where the stream is empty, or incomplete.
         /// </summary>
-        public virtual void LoadWorldData(BinaryReader stream) { }
+        /// <param name="stream">A stream that contains the mod data.</param>
+        /// <param name="saveVersion">The version that the mod had when the data was saved. You can use this to parse data based on mod version.</param>
+        public virtual void LoadWorldData(BinaryReader stream, Version saveVersion) { }
 
         /// <summary>
         /// Called when arcade files (".sav") need saving.
         /// You can write your Arcade-related information into the given stream.
         /// </summary>
+        /// <param name="stream">A stream where you write the mod data.</param>
         public virtual void SaveArcadeData(BinaryWriter stream) { }
 
         /// <summary>
@@ -152,7 +153,9 @@ namespace SoG.Modding
         /// You can load your previously written data from this stream.
         /// The method must also handle cases where the stream is empty, or incomplete.
         /// </summary>
-        public virtual void LoadArcadeData(BinaryReader stream) { }
+        /// <param name="stream">A stream that contains the mod data.</param>
+        /// <param name="saveVersion">The version that the mod had when the data was saved. You can use this to parse data based on mod version.</param>
+        public virtual void LoadArcadeData(BinaryReader stream, Version saveVersion) { }
 
         #endregion
 
@@ -336,6 +339,17 @@ namespace SoG.Modding
         #endregion
 
         #region Game Object Getters
+
+        /// <summary>
+        /// Gets an active mod using its nameID.
+        /// Returns null if the mod isn't currently loaded.
+        /// </summary>
+        /// <param name="nameID">The NameID of the mod.</param>
+        /// <returns></returns>
+        public Mod GetMod(string nameID)
+        {
+            return Manager.GetMod(nameID);
+        }
 
         public AudioEntry GetAudio()
         {

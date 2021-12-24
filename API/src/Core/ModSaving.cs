@@ -32,9 +32,17 @@ namespace SoG.Modding
             CurseID = 1006,
         }
 
-        private Dictionary<ModDataBlock, Action<Mod, Library, BinaryReader>> _readers = new Dictionary<ModDataBlock, Action<Mod, Library, BinaryReader>>();
+        public delegate void ModDataReader(BinaryReader reader, Version modVersion);
 
-        private Dictionary<ModDataBlock, Action<Mod, Library, BinaryWriter>> _writers = new Dictionary<ModDataBlock, Action<Mod, Library, BinaryWriter>>();
+        public delegate void ModDataWriter(BinaryWriter writer);
+
+        private delegate void BlockReader(Mod mod, ModMetadata savedMeta, Library lbirary, BinaryReader reader);
+
+        private delegate void BlockWriter(Mod mod, Library library, BinaryWriter writer);
+
+        private Dictionary<ModDataBlock, BlockReader> _readers = new Dictionary<ModDataBlock, BlockReader>();
+
+        private Dictionary<ModDataBlock, BlockWriter> _writers = new Dictionary<ModDataBlock, BlockWriter>();
 
         public readonly int FileVersion = 2;
 
@@ -48,17 +56,17 @@ namespace SoG.Modding
 
             #region Readers
 
-            _readers[ModDataBlock.ModData_CharacterFile] = (mod, library, reader) => ReadModBlock(reader, mod.LoadCharacterData);
-            _readers[ModDataBlock.ModData_WorldFile] = (mod, library, reader) => ReadModBlock(reader, mod.LoadWorldData);
-            _readers[ModDataBlock.ModData_ArcadeFile] = (mod, library, reader) => ReadModBlock(reader, mod.LoadArcadeData);
+            _readers[ModDataBlock.ModData_CharacterFile] = (mod, savedMeta, _, reader) => ReadModBlock(reader, savedMeta.ModVersion, mod.LoadCharacterData);
+            _readers[ModDataBlock.ModData_WorldFile] = (mod, savedMeta, _, reader) => ReadModBlock(reader, savedMeta.ModVersion, mod.LoadWorldData);
+            _readers[ModDataBlock.ModData_ArcadeFile] = (mod, savedMeta, _, reader) => ReadModBlock(reader, savedMeta.ModVersion, mod.LoadArcadeData);
 
-            _readers[ModDataBlock.ItemID] = (mod, library, reader) => ReadIDBlock<ItemCodex.ItemTypes, ItemEntry>(reader, library, UpdateItemIDs);
-            _readers[ModDataBlock.EnemyID] = (mod, library, reader) => ReadIDBlock<EnemyCodex.EnemyTypes, EnemyEntry>(reader, library, UpdateEnemyIDs);
-            _readers[ModDataBlock.QuestID_Character] = (mod, library, reader) => ReadIDBlock<QuestCodex.QuestID, QuestEntry>(reader, library, UpdateQuestIDs_Character);
-            _readers[ModDataBlock.QuestID_World] = (mod, library, reader) => ReadIDBlock<QuestCodex.QuestID, QuestEntry>(reader, library, UpdateQuestIDs_World);
-            _readers[ModDataBlock.QuestID_Arcade] = (mod, library, reader) => ReadIDBlock<QuestCodex.QuestID, QuestEntry>(reader, library, UpdateQuestIDs_Arcade);
-            _readers[ModDataBlock.PerkID] = (mod, library, reader) => ReadIDBlock<RogueLikeMode.Perks, PerkEntry>(reader, library, UpdatePerkIDs);
-            _readers[ModDataBlock.CurseID] = (mod, library, reader) => ReadIDBlock<RogueLikeMode.TreatsCurses, CurseEntry>(reader, library, UpdateCurseIDs);
+            _readers[ModDataBlock.ItemID] = (mod, _, library, reader) => ReadIDBlock<ItemCodex.ItemTypes, ItemEntry>(reader, library, UpdateItemIDs);
+            _readers[ModDataBlock.EnemyID] = (mod, _, library, reader) => ReadIDBlock<EnemyCodex.EnemyTypes, EnemyEntry>(reader, library, UpdateEnemyIDs);
+            _readers[ModDataBlock.QuestID_Character] = (mod, _, library, reader) => ReadIDBlock<QuestCodex.QuestID, QuestEntry>(reader, library, UpdateQuestIDs_Character);
+            _readers[ModDataBlock.QuestID_World] = (mod, _, library, reader) => ReadIDBlock<QuestCodex.QuestID, QuestEntry>(reader, library, UpdateQuestIDs_World);
+            _readers[ModDataBlock.QuestID_Arcade] = (mod, _, library, reader) => ReadIDBlock<QuestCodex.QuestID, QuestEntry>(reader, library, UpdateQuestIDs_Arcade);
+            _readers[ModDataBlock.PerkID] = (mod, _, library, reader) => ReadIDBlock<RogueLikeMode.Perks, PerkEntry>(reader, library, UpdatePerkIDs);
+            _readers[ModDataBlock.CurseID] = (mod, _, library, reader) => ReadIDBlock<RogueLikeMode.TreatsCurses, CurseEntry>(reader, library, UpdateCurseIDs);
 
             #endregion
 
@@ -182,7 +190,7 @@ namespace SoG.Modding
 
                     if (_readers.TryGetValue(blockType, out var reader))
                     {
-                        reader.Invoke(mod, library, file);
+                        reader.Invoke(mod, meta, library, file);
                     }
                     else
                     {
@@ -396,7 +404,7 @@ namespace SoG.Modding
             }
         }
 
-        private void ReadModBlock(BinaryReader file, Action<BinaryReader> modReader)
+        private void ReadModBlock(BinaryReader file, Version saveVersion, ModDataReader modReader)
         {
             int byteCount = file.ReadInt32();
 
@@ -404,11 +412,11 @@ namespace SoG.Modding
 
             using (BinaryReader reader = new BinaryReader(new MemoryStream(data)))
             {
-                modReader.Invoke(reader);
+                modReader.Invoke(reader, saveVersion);
             }
         }
 
-        private void WriteModBlock(BinaryWriter file, Action<BinaryWriter> modWriter)
+        private void WriteModBlock(BinaryWriter file, ModDataWriter modWriter)
         {
             MemoryStream stream;
 

@@ -2,6 +2,7 @@
 using System.Reflection;
 using Microsoft.Xna.Framework.Graphics;
 using HarmonyLib;
+using System;
 
 namespace SoG.Modding
 {
@@ -13,6 +14,11 @@ namespace SoG.Modding
         private static FieldInfo s_sVersion = AccessTools.Field(typeof(Game1), "sVersion");
 
         private static FieldInfo s_spriteBatch = AccessTools.Field(typeof(Game1), "spriteBatch");
+
+        /// <summary>
+        /// The version of the mod tool.
+        /// </summary>
+        public static Version ModToolVersion => new Version("0.16");
 
         /// <summary>
         /// Secrets of Grindea's game instance.

@@ -12,7 +12,7 @@ using SoG.Modding.Utils;
 namespace SoG.Modding.GrindScriptMod
 {
     /// <summary>
-    /// Dummy class that acts as an interface for the game's content.
+    /// Dummy mod that holds parsed vanilla entries.
     /// </summary>
     public class VanillaMod : Mod
     {
@@ -22,8 +22,6 @@ namespace SoG.Modding.GrindScriptMod
         }
 
         public override bool DisableObjectCreation => true;
-
-        public override bool AllowDiscoveryByMods => true;
 
         public override Version ModVersion => new Version("0.0.0.0");
 
@@ -50,6 +48,7 @@ namespace SoG.Modding.GrindScriptMod
             ParseEntries<EnemyCodex.EnemyTypes, EnemyEntry>(VanillaParser.ParseEnemy, parseLog);
             EnemyCodex.lxSortedCardEntries.Clear();
             EnemyCodex.lxSortedDescriptions.Clear();
+            EnemyCodex.denxDescriptionDict.Clear();
 
             ParseEntries<EquipmentInfo.SpecialEffect, EquipmentEffectEntry>(VanillaParser.ParseEquipmentEffect, parseLog);
 

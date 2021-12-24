@@ -15,7 +15,7 @@ namespace SoG.Modding
     /// <summary>
     /// Provides access to the objects used for modding, and some miscellaneous functionality.
     /// </summary>
-    public class ModManager
+    internal class ModManager
     {
         private static FieldInfo s_songRegionMap = AccessTools.Field(typeof(SoundSystem), "dssSongRegionMap");
 
@@ -41,6 +41,7 @@ namespace SoG.Modding
 
         internal List<Mod> ActiveMods => Mods.Where(x => !x.Disabled).ToList();
 
+        // Unless you have a good reason, use ActiveMods. The plain Mods list also has "disabled" mods.
         internal List<Mod> Mods { get; } = new List<Mod>();
 
         internal ModManager()
@@ -58,18 +59,33 @@ namespace SoG.Modding
 
         #region Public Methods
 
-        /// <summary>
-        /// Gets a loaded mod.
-        /// You can only query for mods that have AllowDiscoveryByMods set to true.
-        /// </summary>
         public Mod GetMod(string nameID)
         {
-            Mod mod = ActiveMods.FirstOrDefault(x => x.NameID == nameID);
-
-            return mod.AllowDiscoveryByMods ? mod : null;
+            return ActiveMods.FirstOrDefault(x => x.NameID == nameID);
         }
 
         #endregion
+
+        internal void DisableMod(Mod mod)
+        {
+            Globals.Logger.Warn("Disabling mod " + mod.NameID);
+
+            Library.RemoveModEntries(mod);
+
+            // Disable depending mods - we can't load them with a broken dependency
+
+            if (Loader.DependencyGraph[mod].Count > 0)
+            {
+                Globals.Logger.Warn($"Disabling {Loader.DependencyGraph[mod].Count} depending mods:");
+            }
+
+            foreach (var dep in Loader.DependencyGraph[mod])
+            {
+                DisableMod(dep);
+            }
+
+            mod.Disabled = true;
+        }
 
         internal void RedirectVanillaMusic(string vanillaName, string modID)
         {
@@ -209,11 +225,13 @@ namespace SoG.Modding
                         Logger.LogLevel = value;
                         Logger.Debug("Set logging level to " + value);
                     }
+
                     if (config.TryGet("harmony_debug", out bool harmonyDebug))
                     {
                         Harmony.DEBUG = harmonyDebug;
                         Logger.Debug("Harmony DEBUG mode is " + (harmonyDebug ? "enabled" : "disabled"));
                     }
+
                     if (config.TryGet("log_console_output", out bool consoleOutput))
                     {
                         if (consoleOutput && Globals.Logger.NextLogger == null)

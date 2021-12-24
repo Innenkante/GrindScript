@@ -16,9 +16,8 @@ namespace SoG.Modding.Patching.Patches
         {
             Globals.Manager.Library.GetEntry(enType, out ItemEntry entry);
 
-            ErrorHelper.Assert(entry != null, ErrorHelper.UnknownEntry);
+            __result = entry.vanillaEquip as WeaponInfo;
 
-            __result = (WeaponInfo)(entry.vanillaEquip ?? throw new NullReferenceException("WeaponInfo is null."));
             return false;
         }
     }

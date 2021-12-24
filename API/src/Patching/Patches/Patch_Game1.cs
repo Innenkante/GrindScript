@@ -25,6 +25,15 @@ namespace SoG.Modding.Patching.Patches
     [HarmonyPatch(typeof(Game1))]
     internal static class Patch_Game1
     {
+        [HarmonyPriority(Priority.First)]
+        [HarmonyPrefix]
+        [HarmonyPatch(nameof(Game1._Leaderboards_UploadEntryToSteamLeaderboards))]
+        internal static bool _Leaderboards_UploadEntryToSteamLeaderboardsPrefix(ref bool __result)
+        {
+            __result = true;
+            return false;
+        }
+
         [HarmonyPrefix]
         [HarmonyPatch(nameof(Game1._EntityMaster_AddEnemy), typeof(ushort), typeof(EnemyCodex.EnemyTypes), typeof(Vector2), typeof(int), typeof(float), typeof(Enemy.SpawnEffectType), typeof(bool), typeof(bool), typeof(float[]))]
         internal static void _EntityMaster_AddEnemyPrefix(ref EnemyCodex.EnemyTypes __state, ref ushort iEnemyID, ref EnemyCodex.EnemyTypes enEnemyType, ref Vector2 p_v2Pos, ref int ibitLayer, ref float fVirtualHeight, ref Enemy.SpawnEffectType enSpawnEffect, ref bool bAsElite, ref bool bDropsLoot, float[] afBehaviourVariables)

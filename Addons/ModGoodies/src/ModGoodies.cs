@@ -32,9 +32,7 @@ namespace SoG.Modding.Addons
 
         public override string NameID => "Addons.ModGoodies";
 
-        public override bool AllowDiscoveryByMods => true;
-
-        public override Version ModVersion => new Version("0.14");
+        public override Version ModVersion => Globals.ModToolVersion;
 
         public override void Load()
         {

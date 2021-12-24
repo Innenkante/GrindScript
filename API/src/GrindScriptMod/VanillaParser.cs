@@ -55,22 +55,22 @@ namespace SoG.Modding.GrindScriptMod
 
             if (gameID == EnemyCodex.EnemyTypes.TimeTemple_GiantWorm_Recolor)
             {
-                var normal = OriginalMethods.GetEnemyDescription(EnemyCodex.EnemyTypes.TimeTemple_GiantWorm);
+                var desc = OriginalMethods.GetEnemyDescription(EnemyCodex.EnemyTypes.TimeTemple_GiantWorm);
 
                 // Recolored worm borrows its enemy description!
-                entry.vanilla = new EnemyDescription(gameID, normal.sNameLibraryHandle, normal.iLevel, normal.iMaxHealth)
+                entry.vanilla = new EnemyDescription(gameID, desc.sNameLibraryHandle, desc.iLevel, desc.iMaxHealth)
                 {
-                    sOnHitSound = normal.sOnHitSound,
-                    sOnDeathSound = normal.sOnDeathSound,
-                    lxLootTable = new List<DropChance>(normal.lxLootTable),
-                    sFullName = normal.sFullName,
-                    sFlavorText = normal.sFlavorText,
-                    sFlavorLibraryHandle = normal.sFlavorLibraryHandle,
-                    sDetailedDescription = normal.sDetailedDescription,
-                    sDetailedDescriptionLibraryHandle = normal.sDetailedDescriptionLibraryHandle,
-                    iCardDropChance = normal.iCardDropChance,
-                    v2ApproximateOffsetToMid = normal.v2ApproximateOffsetToMid,
-                    v2ApproximateSize = normal.v2ApproximateSize,
+                    sOnHitSound = desc.sOnHitSound,
+                    sOnDeathSound = desc.sOnDeathSound,
+                    lxLootTable = new List<DropChance>(desc.lxLootTable),
+                    sFullName = desc.sFullName,
+                    sFlavorText = desc.sFlavorText,
+                    sFlavorLibraryHandle = desc.sFlavorLibraryHandle,
+                    sDetailedDescription = desc.sDetailedDescription,
+                    sDetailedDescriptionLibraryHandle = desc.sDetailedDescriptionLibraryHandle,
+                    iCardDropChance = desc.iCardDropChance,
+                    v2ApproximateOffsetToMid = desc.v2ApproximateOffsetToMid,
+                    v2ApproximateSize = desc.v2ApproximateSize,
                 };
 
                 entry.createJournalEntry = false;
@@ -97,7 +97,8 @@ namespace SoG.Modding.GrindScriptMod
                 EnemyCodex.EnemyTypes.Pumpking,
                 EnemyCodex.EnemyTypes.Marino,
                 EnemyCodex.EnemyTypes.Boss_MotherPlant,
-                EnemyCodex.EnemyTypes.TwilightBoar
+                EnemyCodex.EnemyTypes.TwilightBoar,
+                EnemyCodex.EnemyTypes.Desert_VegetableCardEntry
 
             };
 
@@ -248,44 +249,41 @@ namespace SoG.Modding.GrindScriptMod
 
             var perkInfo = RogueLikeMode.PerkInfo.lxAllPerks.FirstOrDefault(x => x.enPerk == gameID);
 
+            var fallbackInfos = new Dictionary<RogueLikeMode.Perks, RogueLikeMode.PerkInfo>()
+            {
+                [RogueLikeMode.Perks.PetWhisperer] = new RogueLikeMode.PerkInfo(RogueLikeMode.Perks.PetWhisperer, 20, "PetWhisperer"),
+                [RogueLikeMode.Perks.MoreFishingRooms] = new RogueLikeMode.PerkInfo(RogueLikeMode.Perks.MoreFishingRooms, 25, "MoreFishingRooms"),
+                [RogueLikeMode.Perks.OnlyPinsAfterChallenges] = new RogueLikeMode.PerkInfo(RogueLikeMode.Perks.OnlyPinsAfterChallenges, 30, "OnlyPinsAfterChallenges"),
+                [RogueLikeMode.Perks.ChanceAtPinAfterBattleRoom] = new RogueLikeMode.PerkInfo(RogueLikeMode.Perks.ChanceAtPinAfterBattleRoom, 30, "ChanceAtPinAfterBattleRoom"),
+                [RogueLikeMode.Perks.MoreLoods] = new RogueLikeMode.PerkInfo(RogueLikeMode.Perks.MoreLoods, 25, "MoreLoods")
+
+            };
+
+            var fallbackUnlocks = new Dictionary<RogueLikeMode.Perks, Func<bool>>()
+            {
+                [RogueLikeMode.Perks.PetWhisperer] = () => CAS.WorldRogueLikeData.henActiveFlags.Contains(FlagCodex.FlagID._Roguelike_TalkedToWeivForTheFirstTime),
+                [RogueLikeMode.Perks.MoreFishingRooms] = () => CAS.WorldRogueLikeData.henActiveFlags.Contains(FlagCodex.FlagID._Roguelike_Improvement_Aquarium),
+                [RogueLikeMode.Perks.OnlyPinsAfterChallenges] = () => CAS.WorldRogueLikeData.henActiveFlags.Contains(FlagCodex.FlagID._Roguelike_PinsUnlocked),
+                [RogueLikeMode.Perks.ChanceAtPinAfterBattleRoom] = () => CAS.WorldRogueLikeData.henActiveFlags.Contains(FlagCodex.FlagID._Roguelike_PinsUnlocked),
+                [RogueLikeMode.Perks.MoreLoods] = () => CAS.WorldRogueLikeData.henActiveFlags.Contains(FlagCodex.FlagID._Roguelike_HasSeenLood)
+
+            };
+
             if (perkInfo == null)
             {
-                // These perks are dumb and have a special unlock condition.
-
-                if (gameID == RogueLikeMode.Perks.PetWhisperer)
+                if (fallbackInfos.ContainsKey(gameID))
                 {
-                    perkInfo = new RogueLikeMode.PerkInfo(RogueLikeMode.Perks.PetWhisperer, 20, "PetWhisperer");
-
-                    entry.unlockCondition = () => CAS.WorldRogueLikeData.henActiveFlags.Contains(FlagCodex.FlagID._Roguelike_TalkedToWeivForTheFirstTime);
-                }
-                else if (gameID == RogueLikeMode.Perks.MoreFishingRooms)
-                {
-                    perkInfo = new RogueLikeMode.PerkInfo(RogueLikeMode.Perks.MoreFishingRooms, 25, "MoreFishingRooms");
-
-                    entry.unlockCondition = () => CAS.WorldRogueLikeData.henActiveFlags.Contains(FlagCodex.FlagID._Roguelike_Improvement_Aquarium);
-                }
-                else if (gameID == RogueLikeMode.Perks.OnlyPinsAfterChallenges)
-                {
-                    perkInfo = new RogueLikeMode.PerkInfo(RogueLikeMode.Perks.OnlyPinsAfterChallenges, 30, "OnlyPinsAfterChallenges");
-
-                    entry.unlockCondition = () => CAS.WorldRogueLikeData.henActiveFlags.Contains(FlagCodex.FlagID._Roguelike_PinsUnlocked);
-                }
-                else if (gameID == RogueLikeMode.Perks.ChanceAtPinAfterBattleRoom)
-                {
-                    perkInfo = new RogueLikeMode.PerkInfo(RogueLikeMode.Perks.ChanceAtPinAfterBattleRoom, 30, "ChanceAtPinAfterBattleRoom");
-
-                    entry.unlockCondition = () => CAS.WorldRogueLikeData.henActiveFlags.Contains(FlagCodex.FlagID._Roguelike_PinsUnlocked);
-                }
-                else if (gameID == RogueLikeMode.Perks.MoreLoods)
-                {
-                    perkInfo = new RogueLikeMode.PerkInfo(RogueLikeMode.Perks.MoreLoods, 25, "MoreLoods");
-
-                    entry.unlockCondition = () => CAS.WorldRogueLikeData.henActiveFlags.Contains(FlagCodex.FlagID._Roguelike_HasSeenLood);
+                    perkInfo = fallbackInfos[gameID];
                 }
                 else
                 {
                     throw new Exception("Perk description unavailable.");
                 }
+            }
+            
+            if (entry.unlockCondition == null && fallbackUnlocks.ContainsKey(gameID))
+            {
+                entry.unlockCondition = fallbackUnlocks[gameID];
             }
 
             entry.essenceCost = perkInfo.iEssenceCost;

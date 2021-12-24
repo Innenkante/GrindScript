@@ -1,19 +1,24 @@
 ﻿using HarmonyLib;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using SoG.Modding.Content;
 using SoG.Modding.Utils;
+using Steamworks;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Watchers;
 
 namespace SoG.Modding.GrindScriptMod
 {
+    using Version = System.Version;
+
     internal class GrindScript : Mod
     {
         public override string NameID => "GrindScript";
 
-        public override Version ModVersion => new Version("0.16");
+        public override Version ModVersion => Globals.ModToolVersion;
 
         public Texture2D ErrorTexture { get; private set; }
 
@@ -60,6 +65,8 @@ namespace SoG.Modding.GrindScriptMod
                 [nameof(Version)] = Version,
                 [nameof(SpawnItem)] = SpawnItem,
                 [nameof(ToggleDebugMode)] = ToggleDebugMode,
+                [nameof(SpawnPin)] = SpawnPin
+
             };
 
             CommandEntry commands = CreateCommands();
@@ -242,6 +249,12 @@ namespace SoG.Modding.GrindScriptMod
                 return;
             }
 
+            if (!Globals.Game.bUseDebugInRelease)
+            {
+                CAS.AddChatMessage("You must switch to debug mode first!");
+                return;
+            }
+
             if (args.Length < 1 || args.Length > 2)
             {
                 CAS.AddChatMessage("Usage: /GrindScript:SpawnItem <Mod.NameID>:<Item.ModID> [amount]");
@@ -285,6 +298,48 @@ namespace SoG.Modding.GrindScriptMod
             }
 
             CAS.AddChatMessage($"Spawned {count} items.");
+        }
+
+        private void SpawnPin(string[] args, int connection)
+        {
+            if (NetUtils.IsClient)
+            {
+                CAS.AddChatMessage("Can't use this command as a client!");
+                return;
+            }
+
+            if (!Globals.Game.bUseDebugInRelease)
+            {
+                CAS.AddChatMessage("You must switch to debug mode first!");
+                return;
+            }
+
+            if (args.Length != 1)
+            {
+                CAS.AddChatMessage("Usage: /GrindScript:SpawnPin <Mod.NameID>:<Pin.ModID>");
+                return;
+            }
+
+            string[] parts = args[0].Split(':');
+
+            Mod target;
+            if ((target = Manager.GetMod(parts[0])) == null)
+            {
+                CAS.AddChatMessage("No such mod exists!");
+                return;
+            }
+
+            if (!Manager.Library.GetModEntry<PinCodex.PinType, PinEntry>(target, parts[1], out PinEntry entry))
+            {
+                CAS.AddChatMessage("The mod doesn't have an entry with that ID!");
+                return;
+            }
+
+            PlayerEntity player = Globals.Game.xLocalPlayer.xEntity;
+
+            Globals.Game._EntityMaster_AddWatcher(new PinSpawned(entry.GameID, new Vector2(330f, 324f), player.xTransform.v2Pos));
+
+            CAS.AddChatMessage($"Spawned pin.");
         }
 
         private void WorldRegion(string[] args, int connection)

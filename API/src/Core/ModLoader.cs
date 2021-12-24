@@ -17,6 +17,8 @@ namespace SoG.Modding
 
         private Dictionary<Mod, List<Mod>> _dependencyGraph = new Dictionary<Mod, List<Mod>>();
 
+        internal Dictionary<Mod, List<Mod>> DependencyGraph => _dependencyGraph;
+
         public ModLoader(ModManager manager)
         {
             _manager = manager;
@@ -118,7 +120,10 @@ namespace SoG.Modding
 
                 foreach (var dep in pair.Value)
                 {
-                    Globals.Logger.Error($"    {dep.NameID}, Version {dep.ModVersion}" + (dep.AllowHigherVersions ? " or higher" : ""));
+                    string id = $"    {dep.NameID}";
+                    string version = string.IsNullOrEmpty(dep.ModVersion) ? "" : ($", Version {dep.ModVersion}" + (dep.AllowHigherVersions ? " or higher" : ""));
+
+                    Globals.Logger.Error(id + version);
                 }
             }
 
@@ -127,10 +132,25 @@ namespace SoG.Modding
 
         private bool CheckDependency(Mod mod, ModDependencyAttribute dep)
         {
-            return dep.NameID == mod.NameID &&
-                dep.ModVersion == null ||
-                dep.AllowHigherVersions && Version.Parse(dep.ModVersion) <= mod.ModVersion ||
-                Version.Parse(dep.ModVersion) == mod.ModVersion;
+            if (dep.NameID != mod.NameID)
+            {
+                return false;
+            }
+
+            if (string.IsNullOrEmpty(dep.ModVersion))
+            {
+                return true;
+            }
+
+            bool validVersion = Version.TryParse(dep.ModVersion, out Version parsed);
+            bool higherVersion = validVersion && mod.ModVersion > parsed;
+            bool equalVersion = validVersion && mod.ModVersion == parsed;
+
+            bool dependencyOK = 
+                validVersion &&
+                (equalVersion || dep.AllowHigherVersions && higherVersion);
+
+            return dependencyOK;
         }
 
         /// <summary>
@@ -158,10 +178,15 @@ namespace SoG.Modding
 
                 return mod;
             }
+            catch (MissingMethodException)
+            {
+                Globals.Logger.Error($"Failed to load mod {ModUtils.ShortenModPaths(path)}. No parameterless constructor found!");
+                Globals.Logger.Error($"You need to define a parameterless constructor so that the mod tool can instantiate the mod.");
+            }
             catch (BadImageFormatException) { /* Ignore non-managed DLLs */ }
             catch (Exception e)
             {
-                Globals.Logger.Error($"Failed to load mod {ModUtils.ShortenModPaths(path)}. Exception message: {ModUtils.ShortenModPaths(e.Message)}");
+                Globals.Logger.Error($"Failed to load mod {ModUtils.ShortenModPaths(path)}. An unknown exception occurred: {ModUtils.ShortenModPaths(e.Message)}");
             }
 
             return null;
@@ -198,24 +223,9 @@ namespace SoG.Modding
                 }
                 catch (Exception e)
                 {
-                    Globals.Logger.Error($"Mod {mod.GetType().Name} threw an exception during mod content loading: {e.Message}");
+                    Globals.Logger.Error($"Mod {mod.GetType().Name} threw an exception during Load(): {e.Message}");
 
-                    _manager.Library.RemoveModEntries(mod);
-
-                    // Disable depending mods - we can't load them with a broken dependency
-
-                    if (_dependencyGraph[mod].Count > 0)
-                    {
-                        Globals.Logger.Warn("Disabling depending mods: ");
-                    }
-
-                    foreach (var dep in _dependencyGraph[mod])
-                    {
-                        dep.Disabled = true;
-                        Globals.Logger.Warn($"    {dep.NameID}");
-                    }
-
-                    mod.Disabled = true;
+                    _manager.DisableMod(mod);
                 }
 
                 ModInLoad = null;
@@ -230,7 +240,16 @@ namespace SoG.Modding
 
             foreach (Mod mod in _manager.ActiveMods)
             {
-                mod.PostLoad();
+                try
+                {
+                    mod.PostLoad();
+                }
+                catch (Exception e)
+                {
+                    Globals.Logger.Error($"Mod {mod.GetType().Name} threw an exception during PostLoad(): {e.Message}");
+
+                    _manager.DisableMod(mod);
+                }
             }
 
             // Reloads menu characters for new textures and item descriptions
@@ -245,12 +264,11 @@ namespace SoG.Modding
         private void UnloadMods()
         {
             string currentMusic = Globals.Game.xSoundSystem.xMusicVolumeMods.sCurrentSong;
+            Globals.Game.xSoundSystem.StopSong(false);
 
             Globals.Logger.Debug("Unloading mods...");
 
             List<Mod> unloadOrder = _manager.Mods.AsEnumerable().Reverse().ToList();
-
-            Globals.Game.xSoundSystem.StopSong(false);
 
             foreach (Mod mod in unloadOrder)
             {
