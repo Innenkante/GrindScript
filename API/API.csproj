@@ -22,8 +22,9 @@
     <BaseOutputPath>$(SolutionDir)build</BaseOutputPath>
 
     <Platforms>x86</Platforms>
+    
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
-
 
   <!-- Nuget -->
   <ItemGroup>

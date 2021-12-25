@@ -33,5 +33,8 @@
   <ItemGroup>
     <Content Include="WoodenSword.ico" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\.editorconfig" Link=".editorconfig" />
+  </ItemGroup>
 
 </Project>
