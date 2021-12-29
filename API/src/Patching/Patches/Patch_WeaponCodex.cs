@@ -16,7 +16,7 @@ namespace SoG.Modding.Patching.Patches
         {
             Globals.Manager.Library.GetEntry(enType, out ItemEntry entry);
 
-            __result = entry.vanillaEquip as WeaponInfo;
+            __result = entry?.vanillaEquip as WeaponInfo;
 
             return false;
         }

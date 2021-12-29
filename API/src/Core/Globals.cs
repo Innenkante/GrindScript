@@ -18,7 +18,7 @@ namespace SoG.Modding
         /// <summary>
         /// The version of the mod tool.
         /// </summary>
-        public static Version ModToolVersion => new Version("0.16");
+        public static Version ModToolVersion => new Version("0.16.1");
 
         /// <summary>
         /// Secrets of Grindea's game instance.
